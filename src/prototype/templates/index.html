@@ -1,0 +1,31 @@
+<script type="text/javascript" src="/static/js/main.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+
+var ringbuf = new RingBuffer;
+
+
+
+var start = Date.now();
+var counts = [];
+var i = 1;
+stream_from("/data", function(arr) {
+  ringbuf.write(arr);
+  if (counts.length > 1000 || (Date.now() - start) > 1000 * 2) {
+    i = i + 1;
+    $.get("/setval", { val: JSON.stringify({ i: i}) }, function() {
+      console.log("got response from setval");
+    });
+    debug();
+    console.log(ringbuf.bufs[0])
+    start = Date.now();
+    counts = [];
+  }
+  // console.log(ringbuf.bufs)
+  // var res = (new JSONDecoder).decode(ringbuf.bufs[0])
+  // console.log(res)
+
+});
+
+
+</script>
