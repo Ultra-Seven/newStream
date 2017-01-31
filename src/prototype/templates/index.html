@@ -2,8 +2,19 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script>
 
-var ringbuf = new RingBuffer;
+var ringbuf = new RingBuffer();
+ringbuf.register(0, new TableDecoder);
+ringbuf.on(0, function(block) {
+  console.log(block);
+});
 
+
+var setval = function() {
+  i = i + 1;
+  $.get("/setval", { val: JSON.stringify({ i: i}) }, function() {
+    console.log("got response from setval");
+  });
+}
 
 
 var start = Date.now();
@@ -12,12 +23,8 @@ var i = 1;
 stream_from("/data", function(arr) {
   ringbuf.write(arr);
   if (counts.length > 1000 || (Date.now() - start) > 1000 * 2) {
-    i = i + 1;
-    $.get("/setval", { val: JSON.stringify({ i: i}) }, function() {
-      console.log("got response from setval");
-    });
+    //setval()
     debug();
-    console.log(ringbuf.bufs[0])
     start = Date.now();
     counts = [];
   }

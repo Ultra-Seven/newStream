@@ -6,6 +6,7 @@ import numpy as np
 from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
+from ds import *
 
 from flask import Flask, render_template, Response, request, stream_with_context
 from flask_socketio import SocketIO, send, emit
@@ -16,22 +17,6 @@ flask.val = 0
 @app.route("/")
 def index():
   return render_template("index.html")
-
-def gen_data():
-  arr = np.zeros(10000).astype(np.uint8)
-  bstr = arr.tobytes()
-  start = time.time()
-  while (time.time() - start) < 5:
-    yield bstr
-    time.sleep(0.001)
-    if arr[0] != flask.val:
-      #print "setting ", arr[0], " to ", flask.val
-      arr[:] = flask.val
-      bstr = arr.tobytes()
-
-  #import json
-  #yield json.dumps("[1,2]")
-  #return
 
 
 def round_robin_manager(dist):
@@ -93,8 +78,36 @@ def dist_set():
 
 @app.route("/data")
 def data():
-  return Response(gen_data(),
+  q = "SELECT a - a%:a, avg(d)::int FROM data WHERE b = :b GROUP BY a - a%:a"
+  pp = ProgressivePrecompute(None, [q])
+  s = pp.lookup_bytes(text(q), dict(a=1, b=0))
+  #s = encode_table(["a", "b"], zip(range(10), range(10)))
+  def f():
+    #yield struct.pack("2s", "hi")
+    #return
+    for i in xrange(5000):
+      yield struct.pack("2I", 0, len(s))
+      yield s
+  return Response(f(),
                   mimetype="text/event-stream")
+
+
+
+def gen_fake_data():
+  arr = np.zeros(10000).astype(np.uint8)
+  bstr = arr.tobytes()
+  start = time.time()
+  while (time.time() - start) < 5:
+    yield bstr
+    time.sleep(0.001)
+    if arr[0] != flask.val:
+      #print "setting ", arr[0], " to ", flask.val
+      arr[:] = flask.val
+      bstr = arr.tobytes()
+
+  #import json
+  #yield json.dumps("[1,2]")
+  #return
 
 
 if __name__ == '__main__':
