@@ -3,6 +3,7 @@ import random
 from ds import *
 from sqlalchemy import *
 from sqlalchemy.sql import text
+from table_pb2 import *
 
 
 def gen_csv_file(outf, param_ranges, attrs, n=100):

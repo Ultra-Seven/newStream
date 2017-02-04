@@ -8,6 +8,7 @@ from Queue import Queue
 from StringIO import StringIO
 from sqlalchemy import text
 from sqlalchemy.sql.elements import TextClause
+from table_pb2 import *
 
 """
 Data structures need to
@@ -21,7 +22,7 @@ They need to provide server methods
 
 They need to provide client methods
 
-    run_query(q, bytearay_block)
+    __call__(q, bytearay_block)
 
 """
 
@@ -45,8 +46,19 @@ class DS(object):
     """
     pass
 
+  def cost_est(self, q):
+    return None
+
+
+class CubeDataStruct(DS):
+  def __init__(self, db, select, fr, groupby):
+    self.name = "cubequery"
 
 class ProgressivePrecompute(DS):
+  """
+  Precomputes templated queries
+  """
+
   def __init__(self, db, query_templates):
     super(ProgressivePrecompute, self).__init__()
     def to_text(qstr):
@@ -59,12 +71,22 @@ class ProgressivePrecompute(DS):
     self.query_templates = map(to_text, query_templates)
     self.cache = bsddb3.hashopen("./pprecompute.cache")
 
-  def __call__(self, args):
+  def __call__(self, query, block_size=50):
     for q in self.query_templates:
-      return self.lookup(q, args)
+      res = self.lookup(q, query)
+      if res: return res
+    return None
+
+  def get_iter(self, query, block_size=50):
+    for q in self.query_templates:
+      res = self.lookup(q, query)
+      if res: return res
+    return None
 
   def setup_cache(self, param_ranges):
     """
+    This is called ahead of time to create data structures
+
     @param_ranges dictionary of param name --> iterable of assignable values
     """
     from itertools import product
@@ -93,7 +115,7 @@ class ProgressivePrecompute(DS):
   def lookup(self, q, args):
     s = self.lookup_bytes(q, args)
     if not s: return None, None
-    return decode_table(StringIO(s))
+    return decode_table(s)
 
   def lookup_bytes(self, q, args):
     key = self.key(q, args)
@@ -119,26 +141,11 @@ class NaiveQuery(DS):
     return f()
 
 
+
 def decode_table(buf):
-  schema = decode_schema(buf)
-  cols = []
-  for attr in schema:
-    cols.append(decode_col(buf))
-  return schema, cols
-
-def decode_schema(buf):
-  nattrs, = struct.unpack("b", buf.read(1))
-  attrs = []
-  for i in xrange(nattrs):
-    slen, = struct.unpack("b", buf.read(1))
-    attr, = struct.unpack("%ss"%slen, buf.read(slen))
-    attrs.append(attr)
-  return attrs
-
-def decode_col(buf):
-  nrows, = struct.unpack("I", buf.read(4))
-  col = struct.unpack("%dI" % nrows, buf.read(4*nrows))
-  return col
+  table = Table()
+  table.ParseFromString(buf)
+  return table
 
 def encode_table(schema, rows):
   """
@@ -146,31 +153,8 @@ def encode_table(schema, rows):
   @schema list of attr names
   @rows 
   """
-  cols = zip(*rows)
-  bschema = encode_schema(schema)
-  buf = StringIO()
-  buf.write(bschema)
-  for col in cols:
-    bcol = encode_col(col)
-    buf.write(bcol)
-  return buf.getvalue()
-
-def encode_col(col):
-  buf = StringIO()
-  buf.write(struct.pack("I", len(col)))
-  buf.write(struct.pack("%dI" % len(col), *col))
-  val = buf.getvalue()
-  buf.close()
-  return val
-
-def encode_schema(schema):
-  schema_buf = StringIO()
-  schema_buf.write(struct.pack("b", len(schema)))
-  for attr in schema:
-    schema_buf.write(struct.pack("b", len(attr)))
-    schema_buf.write(struct.pack("%ds" % len(attr), str(attr)))
-  val = schema_buf.getvalue()
-  schema_buf.close()
-  return val
-
-
+  s = Table.Schema()
+  s.name.extend(schema)
+  table = Table(schema=s)
+  table.cols.extend(Table.Col(val=col) for col in zip(*rows))
+  return table.SerializeToString()

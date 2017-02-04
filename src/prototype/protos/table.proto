@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message Table {
+  Schema schema = 1;
+  repeated Col cols = 2;
+
+  message Col {
+    repeated int32 val = 1;
+  }
+
+  message Schema {
+    repeated string name = 1;
+  }
+}

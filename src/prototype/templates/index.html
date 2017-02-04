@@ -1,38 +1,20 @@
-<script type="text/javascript" src="/static/js/main.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-<script>
-
-var ringbuf = new RingBuffer();
-ringbuf.register(0, new TableDecoder);
-ringbuf.on(0, function(block) {
-  console.log(block);
-});
-
-
-var setval = function() {
-  i = i + 1;
-  $.get("/setval", { val: JSON.stringify({ i: i}) }, function() {
-    console.log("got response from setval");
-  });
-}
-
-
-var start = Date.now();
-var counts = [];
-var i = 1;
-stream_from("/data", function(arr) {
-  ringbuf.write(arr);
-  if (counts.length > 1000 || (Date.now() - start) > 1000 * 2) {
-    //setval()
-    debug();
-    start = Date.now();
-    counts = [];
-  }
-  // console.log(ringbuf.bufs)
-  // var res = (new JSONDecoder).decode(ringbuf.bufs[0])
-  // console.log(res)
-
-});
-
-
-</script>
+<html>
+<head>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+</head>
+<body>
+  <div>
+    <button id="btn1">Show A vs B</button>
+    <button id="btn2">Show D vs B</button>
+    <button id="btn3">Show E vs B</button>
+  </div>
+  <div>
+    <svg id="viz1"></svg>
+    <svg id="viz2"></svg>
+  </div>
+    
+</body>
+<script type="text/javascript" src="/static/js/index.js"></script>
+</html>
