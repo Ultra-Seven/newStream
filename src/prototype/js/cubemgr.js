@@ -1,18 +1,19 @@
 var DataStructure = require("./datastruct").DataStructure;
 var Decoders = require("./decoders");
 var RangeIndex = require("./rangeidx");
+var GBQueryTemplate = require("./query").GBQueryTemplate;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
-// Client version of ds.py:CubeDataStructure
-var CubeManager = (function(DataStructure) {
-  extend(CubeManager, DataStructure);
+// Client version of ds.py:GBDataStructure
+var GBDataStructure = (function(DataStructure) {
+  extend(GBDataStructure, DataStructure);
 
   var encoding = 1;
   this.encoding = encoding;
 
-  function CubeManager() {
+  function GBDataStructure() {
     this.decoder = new Decoders.TableDecoder();
     this.rangeIdx = new RangeIndex.RangeIndex();
     this.textDecoder = new TextDecoder("utf-8");
@@ -25,11 +26,13 @@ var CubeManager = (function(DataStructure) {
     //   template.id + ":" + queryToKey()
     this.idx = {};  // key -> data
 
+    this.encoding = encoding;
+
     DataStructure.call(this);
   };
 
   // @param block arraybuffer
-  CubeManager.prototype.readHeader = function(block) {
+  GBDataStructure.prototype.readHeader = function(block) {
     var header = new Uint32Array(block.slice(0, 8));
     var keylen = header[0];
     var id = header[1];
@@ -44,7 +47,7 @@ var CubeManager = (function(DataStructure) {
 
   // @param range  [startidx, endidx] of block in ringbuffer
   // @param block  ArrayBuffer object
-  CubeManager.prototype.addBlock = function(range, block) {
+  GBDataStructure.prototype.addBlock = function(byteRange, block) {
     var header = this.readHeader(block);
     var key = header.key;
     var table = null;
@@ -59,25 +62,27 @@ var CubeManager = (function(DataStructure) {
       block: block,
       table: table
     };
-    this.rangeIdx.add(range, data);
+    this.rangeIdx.add(byteRange, data);
     this.idx[key] = data;
 
     //console.log(["cubmgr.emit", key, table])
     this.emit(key, table);
   };
 
-  CubeManager.prototype.dealloc = function(sidx, eidx) {
-    var rms = this.rangeIdx.rm([sidx, eidx]);
+  GBDataStructure.prototype.dealloc = function(byteRange) {
+    var rms = this.rangeIdx.rm(byteRange);
     for (var i = 0; i < rms.length; i++) {
       delete this.idx[rms[i].data.key]
     }
   };
 
-  CubeManager.prototype.canAnswer = function(q) {
-    return q.template.name == "cubequery";
+  GBDataStructure.prototype.canAnswer = function(q) {
+    return q.template.name == "gbquery";
   };
 
-  CubeManager.prototype.tryExec = function(q, cb) {
+  GBDataStructure.prototype.tryExec = function(q, cb) {
+    if (!this.canAnswer(q)) 
+      return null;
     var key = this.queryToKey(q);
     if (key in this.idx) {
       if (cb) cb(this.idx[key].table);
@@ -87,10 +92,10 @@ var CubeManager = (function(DataStructure) {
     return null;
   };
 
-  return CubeManager;
+  return GBDataStructure;
 })(DataStructure);
 
 
 module.exports = {
-  CubeManager: CubeManager
+  GBDataStructure: GBDataStructure
 }

@@ -19,22 +19,102 @@ var QueryTemplateBase = (function(EventEmitter) {
 
   // @return a list of parameter name and type [ {name:, type: }]
   //         type can be "num", "str"
-  //
-  QueryTemplateBase.prototype.getParamNames = function() {return [];}
+  QueryTemplateBase.prototype.getParamNames = function() {
+    return [];
+  }
 
-  // Return a query string, or null if params are invalid in some way
-  QueryTemplateBase.prototype.toSQL = function(params) {return null;}
+  // @return query string, or null if params are invalid in some way
+  QueryTemplateBase.prototype.toSQL = function(params) {
+    return null;
+  }
 
-  QueryTemplateBase.prototype.toWire = function() {return this.toSQL({});}
+  // @return javascript JSON-able representation to be sent to the server
+  QueryTemplateBase.prototype.toWire = function() {
+    return this.toSQL({});
+  }
 
   return QueryTemplateBase;
 })(EventEmitter);
 
 
+
+// Highly constrained subset of single-table olap queries
+var GBQueryTemplate = (function(QueryTemplateBase) {
+  extend(GBQueryTemplate, QueryTemplateBase);
+
+  // @param select: a mapping from output alias to an expression string
+  //         { x: "month", y: "avg(salary)" }
+  // @param from:   table name
+  // @param groupby list of groupby strings
+  //         [ "month" ]
+  // @param params: a mapping from an attribute to its data type.
+  //         specifies the attribute predicates in the WHERE clause
+  //
+  //         for example, if params is { "hour": "num" } 
+  //         then setting "hour" to 1 is the same as adding
+  //
+  //           WHERE hour = 1
+  //         to the query
+  //
+  function GBQueryTemplate(select, from, groupby, params) {
+    this.select = select;
+    this.from = from;
+    this.groupby = groupby;
+    this.params = params || {};
+    this.name = "gbquery"
+    QueryTemplateBase.call(this);
+  }
+
+  GBQueryTemplate.prototype.getParamNames = function() { return this.params; }
+
+  GBQueryTemplate.prototype.toSQL = function(params) {
+    // which of the arguments are allowed by this.params?
+    var p = {};
+    params = params || {};
+    for (var key in this.params) {
+      if (key in params && !_.isNull(params[key])) {
+       p[key] = params[key] 
+      }
+    }
+
+    var sel = _.map(this.select, function(e, alias) {
+      return e + " AS " + alias;
+    }).join(", ");
+
+    var gb = this.groupby.join(", ");
+    
+    // TODO: make work for str attr types too.  Either way, not very secure..
+    var where = _.map(p, function(v, attr) { return attr + " = " + v; });
+    where = where.join(" AND ");
+    where = (where.length > 0)? " WHERE " + where : "";
+    
+    var sql = ["SELECT", sel, "FROM", this.from, where, "GROUP BY", gb].join(" ");
+    return sql;
+  }
+
+  GBQueryTemplate.prototype.toWire = function() {
+    return {
+      qid: this.id,
+      name: name,
+      select: this.select,
+      from: this.from,
+      fr: this.from,
+      groupby: this.groupby,
+      params: this.params
+    };
+  }
+
+  return GBQueryTemplate;
+})(QueryTemplateBase);
+
+//var q = new GBQueryTemplate({x: "avg(sal)", y: "sum(sal)"}, "data", ["month"], { a: "num", b: "num"});
+//console.log(q.toSQL({a: 1, b: 99}))
+
+
 // Uses jssqlparser package to parse a parameterized query string into a query object
 //
-// XXX: We don't use this because it requires a corresponding SQL parser
-//      on the server, which we don't have.
+// XXX: We don't use this because it requires a corresponding SQL parser on the server, 
+//      which we don't have.
 //
 var QueryTemplate = (function(QueryTemplateBase) {
   extend(QueryTemplate, QueryTemplateBase);
@@ -74,78 +154,6 @@ var QueryTemplate = (function(QueryTemplateBase) {
 })(QueryTemplateBase);
 
 
-// Highly constrained subset of single-table olap queries
-var CubeQueryTemplate = (function(QueryTemplateBase) {
-  extend(CubeQueryTemplate, QueryTemplateBase);
-  var name = CubeQueryTemplate.name = "cubequery";
-
-  // @param select: a mapping from output alias to an expression string
-  //         { x: "month", y: "avg(salary)" }
-  // @param from:   table name
-  // @param groupby list of groupby strings
-  //         [ "month" ]
-  // @param params: a mapping from an attribute to its data type.
-  //         specifies the attribute predicates in the WHERE clause
-  //
-  //         for example, if params is { "hour": "num" } 
-  //         then setting "hour" to 1 is the same as adding
-  //
-  //           WHERE hour = 1
-  //         to the query
-  //
-  function CubeQueryTemplate(select, from, groupby, params) {
-    this.select = select;
-    this.from = from;
-    this.groupby = groupby;
-    this.params = params || {};
-    this.name = "cubequery"
-    QueryTemplateBase.call(this);
-  }
-
-  CubeQueryTemplate.prototype.getParamNames = function() { return this.params; }
-
-  CubeQueryTemplate.prototype.toSQL = function(params) {
-    // which of the arguments are allowed by this.params?
-    var p = {};
-    params = params || {};
-    for (var key in this.params) {
-      if (key in params && !_.isNull(params[key])) {
-       p[key] = params[key] 
-      }
-    }
-
-    var sel = _.map(this.select, function(e, alias) {
-      return e + " AS " + alias;
-    }).join(", ");
-
-    var gb = this.groupby.join(", ");
-    
-    // TODO: make work for str attr types too.  Either way, not very secure..
-    var where = _.map(p, function(v, attr) { return attr + " = " + v; });
-    where = where.join(" AND ");
-    where = (where.length > 0)? " WHERE " + where : "";
-    
-    var sql = ["SELECT", sel, "FROM", this.from, where, "GROUP BY", gb].join(" ");
-    return sql;
-  }
-
-  CubeQueryTemplate.prototype.toWire = function() {
-    return {
-      qid: this.id,
-      name: name,
-      select: this.select,
-      from: this.from,
-      fr: this.from,
-      groupby: this.groupby,
-      params: this.params
-    };
-  }
-
-  return CubeQueryTemplate;
-})(QueryTemplateBase);
-
-//var q = new CubeQueryTemplate({x: "avg(sal)", y: "sum(sal)"}, "data", ["month"], { a: "num", b: "num"});
-//console.log(q.toSQL({a: 1, b: 99}))
 
 
 // A query is simply a query template (one of the above classes) and a dictionary of
@@ -174,7 +182,14 @@ var Query = (function(EventEmitter) {
   return Query;
 })(EventEmitter);
 
+
+
+
+
+
+
+
  module.exports = {
-   CubeQueryTemplate: CubeQueryTemplate,
+   GBQueryTemplate: GBQueryTemplate,
    Query: Query
 }

@@ -1,39 +1,39 @@
 var async = require("async");
 var Engine = require("./engine").Engine;
 var Main = window.Main = require("./main");
-var CubeManager = require("./cubemgr").CubeManager;
+var GBDataStructure = require("./cubemgr").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
 
 
 var bytespermb = 1048576;
-var cubemgr = new CubeManager();
+var gbDS = new GBDataStructure();
 var engine = window.engine = new Engine(450);
-engine.registerDataStruct(cubemgr);
+engine.registerDataStruct(gbDS);
 
 
-var cubeQ1 = window.cubeQ1 = new Query.CubeQueryTemplate(
+var q1 = window.q1 = new Query.GBQueryTemplate(
     { x: "a", y: "avg(d)", fill: "'black'" },
     "data",
     [ "a"],
     { "b": "num", "c": "num"}
 );
-var cubeQ2 = window.cubeQ2 = new Query.CubeQueryTemplate(
+var q2 = window.q2 = new Query.GBQueryTemplate(
     { x: "b", y: "avg(e)", fill: "'black'" },
     "data",
     [ "b"],
     { "a": "num", "c": "num"}
 );
-var cubeQ3 = window.cubeQ3 = new Query.CubeQueryTemplate(
+var q3 = window.q3 = new Query.GBQueryTemplate(
     { x: "c", y: "avg(e)", fill: "'black'" },
     "data",
     [ "c"],
     { "a": "num", "b": "num"}
 );
-engine.registerQueryTemplate(cubeQ1);
-engine.registerQueryTemplate(cubeQ2);
-engine.registerQueryTemplate(cubeQ3);
+engine.registerQueryTemplate(q1);
+engine.registerQueryTemplate(q2);
+engine.registerQueryTemplate(q3);
 
 
 
@@ -53,9 +53,9 @@ var makeViz1 = function(cb) {
         ydomain: data.d
       };
 
-      var viz = new Viz.Viz(engine, cubeQ1, opts).setup();
+      var viz = new Viz.Viz(engine, q1, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ1, {});
+      var q = new Query.Query(q1, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })
@@ -76,9 +76,9 @@ var makeViz2 = function(cb) {
         ydomain: data.e
       };
 
-      var viz = new Viz.Viz(engine, cubeQ2, opts).setup();
+      var viz = new Viz.Viz(engine, q2, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ2, {});
+      var q = new Query.Query(q2, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })
@@ -101,9 +101,9 @@ var makeViz3 = function(cb) {
         ydomain: data.e
       };
 
-      var viz = new Viz.Viz(engine, cubeQ3, opts).setup();
+      var viz = new Viz.Viz(engine, q3, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ3, {});
+      var q = new Query.Query(q3, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })

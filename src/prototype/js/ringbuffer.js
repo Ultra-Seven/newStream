@@ -95,7 +95,7 @@ var RingBuffer = (function(EventEmitter) {
 
     // since we are overwriting these bytes, make sure any data structures
     // dependent on those bytes know
-    this.emit("dealloc", this.whead.pos, this.whead.moveNew(toWrite).pos);
+    this.emit("dealloc", [this.whead.pos, this.whead.moveNew(toWrite).pos]);
 
     this.whead.move(toWrite);
 

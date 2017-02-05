@@ -3,6 +3,10 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
+//
+// These are the JS versions of the data structures defined in py/ds.py
+// This is the base class
+//
 var DataStructure = (function(EventEmitter) {
   extend(DataStructure, EventEmitter);
 
@@ -11,7 +15,6 @@ var DataStructure = (function(EventEmitter) {
     EventEmitter.call(this);
   };
 
-  //
   // if data structure supports this type of query. 
   // For example, data cube data structures may not support arbitrary queries
   //
@@ -21,20 +24,26 @@ var DataStructure = (function(EventEmitter) {
   };
 
 
-
-  //
   // if can execute q from data structure's cached content, 
   // then get the result and send it to @param{cb}
+  //
   // @return true if could answer, false otherwise
   DataStructure.prototype.tryExec = function(q, cb) {
     if (!this.canAnswer(q)) return false;
     return false;
   };
 
-  DataStructure.prototype.decode = function(sidx, eidx) { };
+  // @param byteRange in memory byte range of the block
+  // @param block ArrayBuffer that is decodable by this data structure (based on matching encoding ids)
+  DataStructure.prototype.addBlock = function(byteRange, block) { };
 
-  DataStructure.prototype.free = function(sidx, eidx) { };
+  // @param byteRange notification that a byte range in the ring buffer has been deallocated
+  DataStructure.prototype.dealloc = function(byteRange) { };
 
+  // Client version of server-side data struture's key() method (py/ds.py:key())
+  // The output, given a query, must match the server side's output exactly
+  //
+  // @param q instance of js/query.js:Query
   DataStructure.prototype.queryToKey = function(q) {
     var keys =_.keys(q.data);
     keys.sort();
@@ -42,11 +51,16 @@ var DataStructure = (function(EventEmitter) {
     return q.template.id + ":" + JSON.stringify(pairs);
   }
 
+  // Register a consumer's interest in a query 
+  //
+  // @param q instance of js/query.js:Query
+  // @param cb callback when q's results are available
   DataStructure.prototype.register = function(q, cb) {
-    //console.log(["register ", q.template.id, this.queryToKey(q), q])
+    console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 
+  // remove a consumer's interest in a query 
   DataStructure.prototype.deregister = function(q, cb) {
     return this.removeListener(this.queryToKey(q), cb);
   };

@@ -63,22 +63,22 @@ var Engine = (function(EventEmitter) {
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) { return; }
+      if (ds.tryExec(q, cb)) { 
+        return; 
+      }
     }
     
     // 2. register with data structures that support this query
-
     cb = _.once(cb);
-    var me = this;
     var cb2 = function() {
-      for (var dsid in me.datastructs) {
-        var ds = me.datastructs[dsid];
-        ds.deregister(q, cb2);
+      for (var dsid in this.datastructs) {
+        this.datastructs[dsid].deregister(q, cb2);
       }
       cb.apply(cb, arguments);
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
+      console.log([q, ds.canAnswer(q)])
       if (ds.canAnswer(q)) 
         ds.register(q, cb2);
     }

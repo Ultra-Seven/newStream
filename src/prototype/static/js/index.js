@@ -10,18 +10,19 @@ module.exports = {
 var DataStructure = require("./datastruct").DataStructure;
 var Decoders = require("./decoders");
 var RangeIndex = require("./rangeidx");
+var GBQueryTemplate = require("./query").GBQueryTemplate;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
-// Client version of ds.py:CubeDataStructure
-var CubeManager = (function(DataStructure) {
-  extend(CubeManager, DataStructure);
+// Client version of ds.py:GBDataStructure
+var GBDataStructure = (function(DataStructure) {
+  extend(GBDataStructure, DataStructure);
 
   var encoding = 1;
   this.encoding = encoding;
 
-  function CubeManager() {
+  function GBDataStructure() {
     this.decoder = new Decoders.TableDecoder();
     this.rangeIdx = new RangeIndex.RangeIndex();
     this.textDecoder = new TextDecoder("utf-8");
@@ -34,11 +35,13 @@ var CubeManager = (function(DataStructure) {
     //   template.id + ":" + queryToKey()
     this.idx = {};  // key -> data
 
+    this.encoding = encoding;
+
     DataStructure.call(this);
   };
 
   // @param block arraybuffer
-  CubeManager.prototype.readHeader = function(block) {
+  GBDataStructure.prototype.readHeader = function(block) {
     var header = new Uint32Array(block.slice(0, 8));
     var keylen = header[0];
     var id = header[1];
@@ -53,7 +56,7 @@ var CubeManager = (function(DataStructure) {
 
   // @param range  [startidx, endidx] of block in ringbuffer
   // @param block  ArrayBuffer object
-  CubeManager.prototype.addBlock = function(range, block) {
+  GBDataStructure.prototype.addBlock = function(byteRange, block) {
     var header = this.readHeader(block);
     var key = header.key;
     var table = null;
@@ -68,25 +71,27 @@ var CubeManager = (function(DataStructure) {
       block: block,
       table: table
     };
-    this.rangeIdx.add(range, data);
+    this.rangeIdx.add(byteRange, data);
     this.idx[key] = data;
 
     //console.log(["cubmgr.emit", key, table])
     this.emit(key, table);
   };
 
-  CubeManager.prototype.dealloc = function(sidx, eidx) {
-    var rms = this.rangeIdx.rm([sidx, eidx]);
+  GBDataStructure.prototype.dealloc = function(byteRange) {
+    var rms = this.rangeIdx.rm(byteRange);
     for (var i = 0; i < rms.length; i++) {
       delete this.idx[rms[i].data.key]
     }
   };
 
-  CubeManager.prototype.canAnswer = function(q) {
-    return q.template.name == "cubequery";
+  GBDataStructure.prototype.canAnswer = function(q) {
+    return q.template.name == "gbquery";
   };
 
-  CubeManager.prototype.tryExec = function(q, cb) {
+  GBDataStructure.prototype.tryExec = function(q, cb) {
+    if (!this.canAnswer(q)) 
+      return null;
     var key = this.queryToKey(q);
     if (key in this.idx) {
       if (cb) cb(this.idx[key].table);
@@ -96,20 +101,24 @@ var CubeManager = (function(DataStructure) {
     return null;
   };
 
-  return CubeManager;
+  return GBDataStructure;
 })(DataStructure);
 
 
 module.exports = {
-  CubeManager: CubeManager
+  GBDataStructure: GBDataStructure
 }
 
-},{"./datastruct":3,"./decoders":4,"./rangeidx":10}],3:[function(require,module,exports){
+},{"./datastruct":3,"./decoders":4,"./query":9,"./rangeidx":10}],3:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
+//
+// These are the JS versions of the data structures defined in py/ds.py
+// This is the base class
+//
 var DataStructure = (function(EventEmitter) {
   extend(DataStructure, EventEmitter);
 
@@ -118,7 +127,6 @@ var DataStructure = (function(EventEmitter) {
     EventEmitter.call(this);
   };
 
-  //
   // if data structure supports this type of query. 
   // For example, data cube data structures may not support arbitrary queries
   //
@@ -128,20 +136,26 @@ var DataStructure = (function(EventEmitter) {
   };
 
 
-
-  //
   // if can execute q from data structure's cached content, 
   // then get the result and send it to @param{cb}
+  //
   // @return true if could answer, false otherwise
   DataStructure.prototype.tryExec = function(q, cb) {
     if (!this.canAnswer(q)) return false;
     return false;
   };
 
-  DataStructure.prototype.decode = function(sidx, eidx) { };
+  // @param byteRange in memory byte range of the block
+  // @param block ArrayBuffer that is decodable by this data structure (based on matching encoding ids)
+  DataStructure.prototype.addBlock = function(byteRange, block) { };
 
-  DataStructure.prototype.free = function(sidx, eidx) { };
+  // @param byteRange notification that a byte range in the ring buffer has been deallocated
+  DataStructure.prototype.dealloc = function(byteRange) { };
 
+  // Client version of server-side data struture's key() method (py/ds.py:key())
+  // The output, given a query, must match the server side's output exactly
+  //
+  // @param q instance of js/query.js:Query
   DataStructure.prototype.queryToKey = function(q) {
     var keys =_.keys(q.data);
     keys.sort();
@@ -149,11 +163,16 @@ var DataStructure = (function(EventEmitter) {
     return q.template.id + ":" + JSON.stringify(pairs);
   }
 
+  // Register a consumer's interest in a query 
+  //
+  // @param q instance of js/query.js:Query
+  // @param cb callback when q's results are available
   DataStructure.prototype.register = function(q, cb) {
-    //console.log(["register ", q.template.id, this.queryToKey(q), q])
+    console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 
+  // remove a consumer's interest in a query 
   DataStructure.prototype.deregister = function(q, cb) {
     return this.removeListener(this.queryToKey(q), cb);
   };
@@ -515,22 +534,22 @@ var Engine = (function(EventEmitter) {
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) { return; }
+      if (ds.tryExec(q, cb)) { 
+        return; 
+      }
     }
     
     // 2. register with data structures that support this query
-
     cb = _.once(cb);
-    var me = this;
     var cb2 = function() {
-      for (var dsid in me.datastructs) {
-        var ds = me.datastructs[dsid];
-        ds.deregister(q, cb2);
+      for (var dsid in this.datastructs) {
+        this.datastructs[dsid].deregister(q, cb2);
       }
       cb.apply(cb, arguments);
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
+      console.log([q, ds.canAnswer(q)])
       if (ds.canAnswer(q)) 
         ds.register(q, cb2);
     }
@@ -556,39 +575,39 @@ module.exports = {
 var async = require("async");
 var Engine = require("./engine").Engine;
 var Main = window.Main = require("./main");
-var CubeManager = require("./cubemgr").CubeManager;
+var GBDataStructure = require("./cubemgr").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
 
 
 var bytespermb = 1048576;
-var cubemgr = new CubeManager();
+var gbDS = new GBDataStructure();
 var engine = window.engine = new Engine(450);
-engine.registerDataStruct(cubemgr);
+engine.registerDataStruct(gbDS);
 
 
-var cubeQ1 = window.cubeQ1 = new Query.CubeQueryTemplate(
+var q1 = window.q1 = new Query.GBQueryTemplate(
     { x: "a", y: "avg(d)", fill: "'black'" },
     "data",
     [ "a"],
     { "b": "num", "c": "num"}
 );
-var cubeQ2 = window.cubeQ2 = new Query.CubeQueryTemplate(
+var q2 = window.q2 = new Query.GBQueryTemplate(
     { x: "b", y: "avg(e)", fill: "'black'" },
     "data",
     [ "b"],
     { "a": "num", "c": "num"}
 );
-var cubeQ3 = window.cubeQ3 = new Query.CubeQueryTemplate(
+var q3 = window.q3 = new Query.GBQueryTemplate(
     { x: "c", y: "avg(e)", fill: "'black'" },
     "data",
     [ "c"],
     { "a": "num", "b": "num"}
 );
-engine.registerQueryTemplate(cubeQ1);
-engine.registerQueryTemplate(cubeQ2);
-engine.registerQueryTemplate(cubeQ3);
+engine.registerQueryTemplate(q1);
+engine.registerQueryTemplate(q2);
+engine.registerQueryTemplate(q3);
 
 
 
@@ -608,9 +627,9 @@ var makeViz1 = function(cb) {
         ydomain: data.d
       };
 
-      var viz = new Viz.Viz(engine, cubeQ1, opts).setup();
+      var viz = new Viz.Viz(engine, q1, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ1, {});
+      var q = new Query.Query(q1, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })
@@ -631,9 +650,9 @@ var makeViz2 = function(cb) {
         ydomain: data.e
       };
 
-      var viz = new Viz.Viz(engine, cubeQ2, opts).setup();
+      var viz = new Viz.Viz(engine, q2, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ2, {});
+      var q = new Query.Query(q2, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })
@@ -656,9 +675,9 @@ var makeViz3 = function(cb) {
         ydomain: data.e
       };
 
-      var viz = new Viz.Viz(engine, cubeQ3, opts).setup();
+      var viz = new Viz.Viz(engine, q3, opts).setup();
       engine.registerViz(viz);
-      var q = new Query.Query(cubeQ3, {});
+      var q = new Query.Query(q3, {});
       engine.registerQuery(q, viz.render.bind(viz));
       cb(null, viz)
   })
@@ -808,22 +827,103 @@ var QueryTemplateBase = (function(EventEmitter) {
 
   // @return a list of parameter name and type [ {name:, type: }]
   //         type can be "num", "str"
-  //
-  QueryTemplateBase.prototype.getParamNames = function() {return [];}
+  QueryTemplateBase.prototype.getParamNames = function() {
+    return [];
+  }
 
-  // Return a query string, or null if params are invalid in some way
-  QueryTemplateBase.prototype.toSQL = function(params) {return null;}
+  // @return query string, or null if params are invalid in some way
+  QueryTemplateBase.prototype.toSQL = function(params) {
+    return null;
+  }
 
-  QueryTemplateBase.prototype.toWire = function() {return this.toSQL({});}
+  // @return javascript JSON-able representation to be sent to the server
+  QueryTemplateBase.prototype.toWire = function() {
+    return this.toSQL({});
+  }
 
   return QueryTemplateBase;
 })(EventEmitter);
 
 
+
+// Highly constrained subset of single-table olap queries
+var GBQueryTemplate = (function(QueryTemplateBase) {
+  extend(GBQueryTemplate, QueryTemplateBase);
+  this.name = GBQueryTemplate.name = "gbquery";
+
+  // @param select: a mapping from output alias to an expression string
+  //         { x: "month", y: "avg(salary)" }
+  // @param from:   table name
+  // @param groupby list of groupby strings
+  //         [ "month" ]
+  // @param params: a mapping from an attribute to its data type.
+  //         specifies the attribute predicates in the WHERE clause
+  //
+  //         for example, if params is { "hour": "num" } 
+  //         then setting "hour" to 1 is the same as adding
+  //
+  //           WHERE hour = 1
+  //         to the query
+  //
+  function GBQueryTemplate(select, from, groupby, params) {
+    this.select = select;
+    this.from = from;
+    this.groupby = groupby;
+    this.params = params || {};
+    this.name = "gbquery"
+    QueryTemplateBase.call(this);
+  }
+
+  GBQueryTemplate.prototype.getParamNames = function() { return this.params; }
+
+  GBQueryTemplate.prototype.toSQL = function(params) {
+    // which of the arguments are allowed by this.params?
+    var p = {};
+    params = params || {};
+    for (var key in this.params) {
+      if (key in params && !_.isNull(params[key])) {
+       p[key] = params[key] 
+      }
+    }
+
+    var sel = _.map(this.select, function(e, alias) {
+      return e + " AS " + alias;
+    }).join(", ");
+
+    var gb = this.groupby.join(", ");
+    
+    // TODO: make work for str attr types too.  Either way, not very secure..
+    var where = _.map(p, function(v, attr) { return attr + " = " + v; });
+    where = where.join(" AND ");
+    where = (where.length > 0)? " WHERE " + where : "";
+    
+    var sql = ["SELECT", sel, "FROM", this.from, where, "GROUP BY", gb].join(" ");
+    return sql;
+  }
+
+  GBQueryTemplate.prototype.toWire = function() {
+    return {
+      qid: this.id,
+      name: name,
+      select: this.select,
+      from: this.from,
+      fr: this.from,
+      groupby: this.groupby,
+      params: this.params
+    };
+  }
+
+  return GBQueryTemplate;
+})(QueryTemplateBase);
+
+//var q = new GBQueryTemplate({x: "avg(sal)", y: "sum(sal)"}, "data", ["month"], { a: "num", b: "num"});
+//console.log(q.toSQL({a: 1, b: 99}))
+
+
 // Uses jssqlparser package to parse a parameterized query string into a query object
 //
-// XXX: We don't use this because it requires a corresponding SQL parser
-//      on the server, which we don't have.
+// XXX: We don't use this because it requires a corresponding SQL parser on the server, 
+//      which we don't have.
 //
 var QueryTemplate = (function(QueryTemplateBase) {
   extend(QueryTemplate, QueryTemplateBase);
@@ -863,78 +963,6 @@ var QueryTemplate = (function(QueryTemplateBase) {
 })(QueryTemplateBase);
 
 
-// Highly constrained subset of single-table olap queries
-var CubeQueryTemplate = (function(QueryTemplateBase) {
-  extend(CubeQueryTemplate, QueryTemplateBase);
-  var name = CubeQueryTemplate.name = "cubequery";
-
-  // @param select: a mapping from output alias to an expression string
-  //         { x: "month", y: "avg(salary)" }
-  // @param from:   table name
-  // @param groupby list of groupby strings
-  //         [ "month" ]
-  // @param params: a mapping from an attribute to its data type.
-  //         specifies the attribute predicates in the WHERE clause
-  //
-  //         for example, if params is { "hour": "num" } 
-  //         then setting "hour" to 1 is the same as adding
-  //
-  //           WHERE hour = 1
-  //         to the query
-  //
-  function CubeQueryTemplate(select, from, groupby, params) {
-    this.select = select;
-    this.from = from;
-    this.groupby = groupby;
-    this.params = params || {};
-    this.name = "cubequery"
-    QueryTemplateBase.call(this);
-  }
-
-  CubeQueryTemplate.prototype.getParamNames = function() { return this.params; }
-
-  CubeQueryTemplate.prototype.toSQL = function(params) {
-    // which of the arguments are allowed by this.params?
-    var p = {};
-    params = params || {};
-    for (var key in this.params) {
-      if (key in params && !_.isNull(params[key])) {
-       p[key] = params[key] 
-      }
-    }
-
-    var sel = _.map(this.select, function(e, alias) {
-      return e + " AS " + alias;
-    }).join(", ");
-
-    var gb = this.groupby.join(", ");
-    
-    // TODO: make work for str attr types too.  Either way, not very secure..
-    var where = _.map(p, function(v, attr) { return attr + " = " + v; });
-    where = where.join(" AND ");
-    where = (where.length > 0)? " WHERE " + where : "";
-    
-    var sql = ["SELECT", sel, "FROM", this.from, where, "GROUP BY", gb].join(" ");
-    return sql;
-  }
-
-  CubeQueryTemplate.prototype.toWire = function() {
-    return {
-      qid: this.id,
-      name: name,
-      select: this.select,
-      from: this.from,
-      fr: this.from,
-      groupby: this.groupby,
-      params: this.params
-    };
-  }
-
-  return CubeQueryTemplate;
-})(QueryTemplateBase);
-
-//var q = new CubeQueryTemplate({x: "avg(sal)", y: "sum(sal)"}, "data", ["month"], { a: "num", b: "num"});
-//console.log(q.toSQL({a: 1, b: 99}))
 
 
 // A query is simply a query template (one of the above classes) and a dictionary of
@@ -963,8 +991,15 @@ var Query = (function(EventEmitter) {
   return Query;
 })(EventEmitter);
 
+
+
+
+
+
+
+
  module.exports = {
-   CubeQueryTemplate: CubeQueryTemplate,
+   GBQueryTemplate: GBQueryTemplate,
    Query: Query
 }
 
@@ -1134,7 +1169,7 @@ var RingBuffer = (function(EventEmitter) {
 
     // since we are overwriting these bytes, make sure any data structures
     // dependent on those bytes know
-    this.emit("dealloc", this.whead.pos, this.whead.moveNew(toWrite).pos);
+    this.emit("dealloc", [this.whead.pos, this.whead.moveNew(toWrite).pos]);
 
     this.whead.move(toWrite);
 
