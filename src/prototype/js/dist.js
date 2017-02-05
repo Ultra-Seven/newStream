@@ -3,7 +3,10 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
-// helper function
+//
+// an internal helper function so that queries can be keyed in a dictionary
+// nothing to do with datastructres' key functions.
+//
 function qToKey(q) {
   return q.template.id + ":" + JSON.stringify(q.data);
 }
@@ -20,16 +23,27 @@ function qToKey(q) {
 //  getAllAbove(prob) --> [ [ object, probability]* ]
 //  toWire()          --> JSON object to send to the server
 //
+//
+// subclass DistributionBase for specific types of distributions
+// The reason for subclasses is that we may want more efficient representations of  to predict mouse 
+// positions in a discretized fashion, rather than on a pixel by pixel basis.
+// If this is the case, then there may be more efficient representations.
+//
+
 var DistributionBase = (function() {
   function DistributionBase() {};
 
   // get the probability of some object, or 0 if not found
-  DistributionBase.prototype.get = function(o) { return 0; };
+  DistributionBase.prototype.get = function(o) { 
+    return 0;
+  };
 
   // @prob minimum probability for returned list
   // @return the list of all objects and their probabilities for all
   // objects whose probability is above @param{prob}
-  DistributionBase.prototype.getAllAbove = function(prob) { return []; };
+  DistributionBase.prototype.getAllAbove = function(prob) { 
+    return []; 
+  };
 
 
   // to a JSON-able representation that we can pass to jquery
@@ -45,12 +59,7 @@ var DistributionBase = (function() {
   return DistributionBase;
 })();
 
-//
-// subclass DistributionBase for specific types of distributions
-// The reason for subclasses is that we may want more efficient representations of  to predict mouse 
-// positions in a discretized fashion, rather than on a pixel by pixel basis.
-// If this is the case, then there may be more efficient representations.
-//
+
 
 var NaiveDistribution = (function(Base) {
   extend(NaiveDistribution, Base);
@@ -92,20 +101,17 @@ var NaiveDistribution = (function(Base) {
 
 
 
+//
 // The requester runs as an infinite loop to regularly send a query distribution to the backend.  
 //
-// The sent distribution is defined as a dictionary:
+// Currently, the distribution is sent as a list of (query, probability) pairs
 //
-//    {
-//      dt: [query template id, params, probability]
-//    }
-//
-// where
-//
-//    dt is thenumber of milliseconds into the future this distribution represents
-//    query template id is the ID assigned to the query template object
-//    params is a dictionary of query parameter -> value
+//    query is an instance of js/query.js:Query 
 //    probability is a float between 0 and 1
+//
+// TODO: implement prediction, in which case we would send a list of triples:
+//       (deltaTime, query, probability)
+//       where deltaTime is the number of ms in the future the distributon is estimated for
 //
 var Requester = (function(EventEmitter) {
   extend(Requester, EventEmitter);
@@ -113,7 +119,7 @@ var Requester = (function(EventEmitter) {
   function Requester(engine, opts) {
     opts = opts || {};
     this.engine = engine;
-    this.minInterval = opts.minInterval || 100;
+    this.minInterval = opts.minInterval || 10;
 
     EventEmitter.call(this);
   };

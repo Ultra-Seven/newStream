@@ -1,6 +1,7 @@
 var proto = require("./table_pb");
 var Table = proto.Table;
 
+// Wrapper around protocol buffer decoder to return a list of js objects instead of the protocol buffer object
 var TableDecoder = (function() {
   var TableDecoder = function() {};
 
@@ -46,5 +47,6 @@ var JSONDecoder = (function(){
 
 
 module.exports = {
-  TableDecoder: TableDecoder
+  TableDecoder: TableDecoder,
+  JSONDecoder: JSONDecoder
 }
