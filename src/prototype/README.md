@@ -44,7 +44,23 @@ Go to webpage: `http://localhost:5000`
 
 # Code Overview
 
+![arch](./arch.png "Architecture")
+
 How queries are represented
 
 Split across client, online servr and offline setup.  E need a global unambiguous reperesntation of a query so we can say
 "yes, this data structure can answer this query".  State of the art techniques are basically string equality!
+
+
+
+
+## Assignments
+
+Assignment 1:
+
+Get it running
+Add a fourth visualization
+
+ASsignment 2:
+
+
