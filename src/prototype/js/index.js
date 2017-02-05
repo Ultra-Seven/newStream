@@ -35,7 +35,13 @@ engine.registerQueryTemplate(q1);
 engine.registerQueryTemplate(q2);
 engine.registerQueryTemplate(q3);
 
-
+function setupViz(qtemplate, opts) {
+  var viz = new Viz.Viz(engine, qtemplate, opts).setup();
+  engine.registerViz(viz);
+  var q = new Query.Query(qtemplate, {});
+  engine.registerQuery(q, viz.render.bind(viz));
+  return viz;
+}
 
 var makeViz1 = function(cb) {
   var data = { 
@@ -52,12 +58,7 @@ var makeViz1 = function(cb) {
         xdomain: data.a, 
         ydomain: data.d
       };
-
-      var viz = new Viz.Viz(engine, q1, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q1, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q1, opts));
   })
 };
 var makeViz2 = function(cb) {
@@ -75,12 +76,7 @@ var makeViz2 = function(cb) {
         xdomain: data.b, 
         ydomain: data.e
       };
-
-      var viz = new Viz.Viz(engine, q2, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q2, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q2, opts));
   })
 };
 
@@ -100,12 +96,7 @@ var makeViz3 = function(cb) {
         xdomain: data.c, 
         ydomain: data.e
       };
-
-      var viz = new Viz.Viz(engine, q3, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q3, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q3, opts));
   })
 };
 

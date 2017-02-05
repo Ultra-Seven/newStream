@@ -165,6 +165,14 @@ var Requester = (function(EventEmitter) {
     };
   };
 
+  // @param dt number of milliseconds into the future
+  // @return a list of [querytemplateid, params, probability]
+  //         that conforms to the Requester wire format
+  var getQueryDistribution = function(dt) {
+    return mapMouseToQueryDistribution(getMouseDistribution(dt));
+    return null;
+  };
+
   //
   // NOT IMPLEMENTED
   // @param dt number of milliseconds into the future
@@ -213,13 +221,6 @@ var Requester = (function(EventEmitter) {
     });
 
   }
-
-  // @param dt number of milliseconds into the future
-  // @return a list of [querytemplateid, params, probability]
-  //         that conforms to the Requester wire format
-  var getQueryDistribution = function(dt) {
-    return null;
-  };
 
 
   return Requester;

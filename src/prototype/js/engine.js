@@ -5,6 +5,9 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
+//
+// The data visualization isualization management system engine
+//
 var Engine = (function(EventEmitter) {
   extend(Engine, EventEmitter);
 
@@ -14,7 +17,6 @@ var Engine = (function(EventEmitter) {
     this.datastructs = {};
     this.ringbuf = new RingBuffer(nbytes);
     this.requester = new Dist.Requester(this);
-
 
     EventEmitter.call(this);
   };
@@ -56,21 +58,24 @@ var Engine = (function(EventEmitter) {
    }
 
   //
-  // a viz wants to actually run a query.
+  // This is called if a visualization wants to run a query in response
+  // to an interaction 
   //
   Engine.prototype.registerQuery = function(q, cb) {
 
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) { 
+      if (ds.tryExec(q, cb)) 
         return; 
-      }
     }
     
     // 2. register with data structures that support this query
+
+    // make sure the callback will only run once!
     cb = _.once(cb);
     var cb2 = function() {
+      // if the query is answered, deregister globally
       for (var dsid in this.datastructs) {
         this.datastructs[dsid].deregister(q, cb2);
       }
@@ -78,8 +83,8 @@ var Engine = (function(EventEmitter) {
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      console.log([q, ds.canAnswer(q)])
-      if (ds.canAnswer(q)) 
+      // is this data structure appropriate?
+      if (ds.canAnswer(q))   
         ds.register(q, cb2);
     }
 
@@ -87,9 +92,6 @@ var Engine = (function(EventEmitter) {
     var dist = Dist.NaiveDistribution.from(q);
     this.requester.send(dist);
 
-    // WU: there may end up being a minor race condition between the client sending
-    // updated distributions and the server sending data based on stale distributions.
-    // it could end up being not-so-efficient
   }
 
   return Engine;

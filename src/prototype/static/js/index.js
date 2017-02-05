@@ -1,12 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-var EventEmitter = require("events");
-
-module.exports = {
-}
-
-
-},{"events":20}],2:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -83,10 +75,11 @@ module.exports = {
 
  
 
-},{"events":20}],3:[function(require,module,exports){
+},{"events":19}],2:[function(require,module,exports){
 var proto = require("./table_pb");
 var Table = proto.Table;
 
+// Wrapper around protocol buffer decoder to return a list of js objects instead of the protocol buffer object
 var TableDecoder = (function() {
   var TableDecoder = function() {};
 
@@ -132,16 +125,20 @@ var JSONDecoder = (function(){
 
 
 module.exports = {
-  TableDecoder: TableDecoder
+  TableDecoder: TableDecoder,
+  JSONDecoder: JSONDecoder
 }
 
-},{"./table_pb":11}],4:[function(require,module,exports){
+},{"./table_pb":10}],3:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
-// helper function
+//
+// an internal helper function so that queries can be keyed in a dictionary
+// nothing to do with datastructres' key functions.
+//
 function qToKey(q) {
   return q.template.id + ":" + JSON.stringify(q.data);
 }
@@ -158,16 +155,27 @@ function qToKey(q) {
 //  getAllAbove(prob) --> [ [ object, probability]* ]
 //  toWire()          --> JSON object to send to the server
 //
+//
+// subclass DistributionBase for specific types of distributions
+// The reason for subclasses is that we may want more efficient representations of  to predict mouse 
+// positions in a discretized fashion, rather than on a pixel by pixel basis.
+// If this is the case, then there may be more efficient representations.
+//
+
 var DistributionBase = (function() {
   function DistributionBase() {};
 
   // get the probability of some object, or 0 if not found
-  DistributionBase.prototype.get = function(o) { return 0; };
+  DistributionBase.prototype.get = function(o) { 
+    return 0;
+  };
 
   // @prob minimum probability for returned list
   // @return the list of all objects and their probabilities for all
   // objects whose probability is above @param{prob}
-  DistributionBase.prototype.getAllAbove = function(prob) { return []; };
+  DistributionBase.prototype.getAllAbove = function(prob) { 
+    return []; 
+  };
 
 
   // to a JSON-able representation that we can pass to jquery
@@ -183,12 +191,7 @@ var DistributionBase = (function() {
   return DistributionBase;
 })();
 
-//
-// subclass DistributionBase for specific types of distributions
-// The reason for subclasses is that we may want more efficient representations of  to predict mouse 
-// positions in a discretized fashion, rather than on a pixel by pixel basis.
-// If this is the case, then there may be more efficient representations.
-//
+
 
 var NaiveDistribution = (function(Base) {
   extend(NaiveDistribution, Base);
@@ -230,20 +233,17 @@ var NaiveDistribution = (function(Base) {
 
 
 
+//
 // The requester runs as an infinite loop to regularly send a query distribution to the backend.  
 //
-// The sent distribution is defined as a dictionary:
+// Currently, the distribution is sent as a list of (query, probability) pairs
 //
-//    {
-//      dt: [query template id, params, probability]
-//    }
-//
-// where
-//
-//    dt is thenumber of milliseconds into the future this distribution represents
-//    query template id is the ID assigned to the query template object
-//    params is a dictionary of query parameter -> value
+//    query is an instance of js/query.js:Query 
 //    probability is a float between 0 and 1
+//
+// TODO: implement prediction, in which case we would send a list of triples:
+//       (deltaTime, query, probability)
+//       where deltaTime is the number of ms in the future the distributon is estimated for
 //
 var Requester = (function(EventEmitter) {
   extend(Requester, EventEmitter);
@@ -251,7 +251,7 @@ var Requester = (function(EventEmitter) {
   function Requester(engine, opts) {
     opts = opts || {};
     this.engine = engine;
-    this.minInterval = opts.minInterval || 100;
+    this.minInterval = opts.minInterval || 10;
 
     EventEmitter.call(this);
   };
@@ -295,6 +295,14 @@ var Requester = (function(EventEmitter) {
       x: el.offset().left, // x=0 is left edge of the page
       y: el.offset().top   // y=0 is top of the page
     };
+  };
+
+  // @param dt number of milliseconds into the future
+  // @return a list of [querytemplateid, params, probability]
+  //         that conforms to the Requester wire format
+  var getQueryDistribution = function(dt) {
+    return mapMouseToQueryDistribution(getMouseDistribution(dt));
+    return null;
   };
 
   //
@@ -346,13 +354,6 @@ var Requester = (function(EventEmitter) {
 
   }
 
-  // @param dt number of milliseconds into the future
-  // @return a list of [querytemplateid, params, probability]
-  //         that conforms to the Requester wire format
-  var getQueryDistribution = function(dt) {
-    return null;
-  };
-
 
   return Requester;
 })(EventEmitter);
@@ -365,7 +366,7 @@ module.exports = {
   NaiveDistribution: NaiveDistribution
 }
 
-},{"events":20}],5:[function(require,module,exports){
+},{"events":19}],4:[function(require,module,exports){
 var EventEmitter = require("events");
 var RingBuffer = require("./ringbuffer").RingBuffer;
 var Dist = require("./dist");
@@ -373,6 +374,9 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
+//
+// The data visualization isualization management system engine
+//
 var Engine = (function(EventEmitter) {
   extend(Engine, EventEmitter);
 
@@ -382,7 +386,6 @@ var Engine = (function(EventEmitter) {
     this.datastructs = {};
     this.ringbuf = new RingBuffer(nbytes);
     this.requester = new Dist.Requester(this);
-
 
     EventEmitter.call(this);
   };
@@ -424,21 +427,24 @@ var Engine = (function(EventEmitter) {
    }
 
   //
-  // a viz wants to actually run a query.
+  // This is called if a visualization wants to run a query in response
+  // to an interaction 
   //
   Engine.prototype.registerQuery = function(q, cb) {
 
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) { 
+      if (ds.tryExec(q, cb)) 
         return; 
-      }
     }
     
     // 2. register with data structures that support this query
+
+    // make sure the callback will only run once!
     cb = _.once(cb);
     var cb2 = function() {
+      // if the query is answered, deregister globally
       for (var dsid in this.datastructs) {
         this.datastructs[dsid].deregister(q, cb2);
       }
@@ -446,8 +452,8 @@ var Engine = (function(EventEmitter) {
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      console.log([q, ds.canAnswer(q)])
-      if (ds.canAnswer(q)) 
+      // is this data structure appropriate?
+      if (ds.canAnswer(q))   
         ds.register(q, cb2);
     }
 
@@ -455,9 +461,6 @@ var Engine = (function(EventEmitter) {
     var dist = Dist.NaiveDistribution.from(q);
     this.requester.send(dist);
 
-    // WU: there may end up being a minor race condition between the client sending
-    // updated distributions and the server sending data based on stale distributions.
-    // it could end up being not-so-efficient
   }
 
   return Engine;
@@ -468,7 +471,7 @@ module.exports = {
 };
 
 
-},{"./dist":4,"./ringbuffer":10,"events":20}],6:[function(require,module,exports){
+},{"./dist":3,"./ringbuffer":9,"events":19}],5:[function(require,module,exports){
 var DataStructure = require("./datastruct").DataStructure;
 var Decoders = require("./decoders");
 var RangeIndex = require("./rangeidx");
@@ -573,7 +576,7 @@ module.exports = {
   GBDataStructure: GBDataStructure
 }
 
-},{"./datastruct":2,"./decoders":3,"./query":8,"./rangeidx":9}],7:[function(require,module,exports){
+},{"./datastruct":1,"./decoders":2,"./query":7,"./rangeidx":8}],6:[function(require,module,exports){
 var async = require("async");
 var Engine = require("./engine").Engine;
 var Util = window.Util = require("./util");
@@ -611,7 +614,13 @@ engine.registerQueryTemplate(q1);
 engine.registerQueryTemplate(q2);
 engine.registerQueryTemplate(q3);
 
-
+function setupViz(qtemplate, opts) {
+  var viz = new Viz.Viz(engine, qtemplate, opts).setup();
+  engine.registerViz(viz);
+  var q = new Query.Query(qtemplate, {});
+  engine.registerQuery(q, viz.render.bind(viz));
+  return viz;
+}
 
 var makeViz1 = function(cb) {
   var data = { 
@@ -628,12 +637,7 @@ var makeViz1 = function(cb) {
         xdomain: data.a, 
         ydomain: data.d
       };
-
-      var viz = new Viz.Viz(engine, q1, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q1, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q1, opts));
   })
 };
 var makeViz2 = function(cb) {
@@ -651,12 +655,7 @@ var makeViz2 = function(cb) {
         xdomain: data.b, 
         ydomain: data.e
       };
-
-      var viz = new Viz.Viz(engine, q2, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q2, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q2, opts));
   })
 };
 
@@ -676,12 +675,7 @@ var makeViz3 = function(cb) {
         xdomain: data.c, 
         ydomain: data.e
       };
-
-      var viz = new Viz.Viz(engine, q3, opts).setup();
-      engine.registerViz(viz);
-      var q = new Query.Query(q3, {});
-      engine.registerQuery(q, viz.render.bind(viz));
-      cb(null, viz)
+      cb(null, setupViz(q3, opts));
   })
 };
 
@@ -722,7 +716,7 @@ Util.stream_from("/data", function(arr) {
 
 
 
-},{"./engine":5,"./gbds":6,"./query":8,"./util":12,"./viz":13,"async":14}],8:[function(require,module,exports){
+},{"./engine":4,"./gbds":5,"./query":7,"./util":11,"./viz":12,"async":13}],7:[function(require,module,exports){
 var parser = require("jssqlparser");
 var EventEmitter = require("events");
 var _ = require("underscore");
@@ -922,7 +916,7 @@ var Query = (function(EventEmitter) {
    Query: Query
 }
 
-},{"events":20,"jssqlparser":17,"underscore":19}],9:[function(require,module,exports){
+},{"events":19,"jssqlparser":16,"underscore":18}],8:[function(require,module,exports){
 var EventEmitter = require("events");
 
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -990,7 +984,7 @@ module.exports = {
   RangeIndex: RangeIndex
 }
 
-},{"events":20}],10:[function(require,module,exports){
+},{"events":19}],9:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1188,7 +1182,7 @@ module.exports = {
   RingBuffer: RingBuffer
 }
 
-},{"events":20}],11:[function(require,module,exports){
+},{"events":19}],10:[function(require,module,exports){
 /**
  * @fileoverview
  * @enhanceable
@@ -1743,7 +1737,7 @@ proto.Table.prototype.clearColsList = function() {
 
 goog.object.extend(exports, proto);
 
-},{"google-protobuf":15}],12:[function(require,module,exports){
+},{"google-protobuf":14}],11:[function(require,module,exports){
 //
 //
 // Useful functions for running the application
@@ -1831,7 +1825,7 @@ module.exports = {
   getAttrStats:getAttrStats
 }
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1918,7 +1912,7 @@ module.exports = {
   Viz: Viz
 }
 
-},{"events":20}],14:[function(require,module,exports){
+},{"events":19}],13:[function(require,module,exports){
 (function (process,global){
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -7211,7 +7205,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 })));
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":21}],15:[function(require,module,exports){
+},{"_process":20}],14:[function(require,module,exports){
 (function (global){
 var $jscomp={scope:{},getGlobal:function(a){return"undefined"!=typeof window&&window===a?a:"undefined"!=typeof global?global:a}};$jscomp.global=$jscomp.getGlobal(this);$jscomp.initSymbol=function(){$jscomp.global.Symbol||($jscomp.global.Symbol=$jscomp.Symbol);$jscomp.initSymbol=function(){}};$jscomp.symbolCounter_=0;$jscomp.Symbol=function(a){return"jscomp_symbol_"+a+$jscomp.symbolCounter_++};
 $jscomp.initSymbolIterator=function(){$jscomp.initSymbol();$jscomp.global.Symbol.iterator||($jscomp.global.Symbol.iterator=$jscomp.global.Symbol("iterator"));$jscomp.initSymbolIterator=function(){}};$jscomp.makeIterator=function(a){$jscomp.initSymbolIterator();$jscomp.initSymbol();$jscomp.initSymbolIterator();var b=a[Symbol.iterator];if(b)return b.call(a);var c=0;return{next:function(){return c<a.length?{done:!1,value:a[c++]}:{done:!0}}}};
@@ -7585,7 +7579,7 @@ jspb.BinaryWriter.prototype.writePackedEnum=function(a,b){if(null!=b&&b.length){
 jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.length){for(var c=this.beginDelimited_(a),d=0;d<b.length;d++)this.encoder_.writeVarintHash64(b[d]);this.endDelimited_(c)}};exports.Map=jspb.Map;exports.Message=jspb.Message;exports.BinaryReader=jspb.BinaryReader;exports.BinaryWriter=jspb.BinaryWriter;exports.ExtensionFieldInfo=jspb.ExtensionFieldInfo;exports.ExtensionFieldBinaryInfo=jspb.ExtensionFieldBinaryInfo;exports.exportSymbol=goog.exportSymbol;exports.inherits=goog.inherits;exports.object={extend:goog.object.extend};exports.typeOf=goog.typeOf;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // Generated by CoffeeScript 1.12.2
 (function() {
   var BetweenExpr, ColExpr, DEBUG, Expr, ExternalTable, From, FuncExpr, FunctionQuery, Group, Having, LetUDF, LetUDFArg, Limit, Node, OrderBy, OrderByClause, ParamExpr, ParamVar, Project, ProjectClause, Queries, Query, QueryTable, SelectCore, SpecialExpr, Table, TableExpr, TableUDF, UnaryExpr, ValExpr, Where, _, schema,
@@ -9148,7 +9142,7 @@ jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.
 
 }).call(this);
 
-},{"underscore":19}],17:[function(require,module,exports){
+},{"underscore":18}],16:[function(require,module,exports){
 // Generated by CoffeeScript 1.12.2
 (function() {
   var _, ast, parse, parser,
@@ -9196,7 +9190,7 @@ jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.
 
 }).call(this);
 
-},{"./ast.js":16,"./sqlfull.js":18,"underscore":19}],18:[function(require,module,exports){
+},{"./ast.js":15,"./sqlfull.js":17,"underscore":18}],17:[function(require,module,exports){
 var ast, _;
 
 _ = _ = require('underscore');
@@ -17420,7 +17414,7 @@ module.exports = (function() {
   };
 })();
 
-},{"./ast.js":16,"underscore":19}],19:[function(require,module,exports){
+},{"./ast.js":15,"underscore":18}],18:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -18970,7 +18964,7 @@ module.exports = (function() {
   }
 }.call(this));
 
-},{}],20:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19274,7 +19268,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -19456,4 +19450,4 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13]);
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);
