@@ -690,15 +690,15 @@ var makeViz3 = function(cb) {
 // link the vizes
 async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
-    v1.on("mouseover", function(viz, el) {
-      var data = d3.select(el).data()[0];
+    v1.on("mouseover", function(viz, el, row) {
+      // create the parameter data for the query
       var attr = v1.qtemplate.select['x']
-      var args = { };
-      args[attr] = data['x'];
+      var data = { };
+      data[attr] = row['x'];
 
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
-        var q = new Query.Query(v2.qtemplate, args);
+        var q = new Query.Query(v2.qtemplate, data);
         engine.registerQuery(q, v2.render.bind(v2));
       });
     });
@@ -709,6 +709,9 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 
 
 
+//
+// Start the data stream!
+//
 Util.stream_from("/data", function(arr) {
   Util.Debug.update(arr);
   engine.ringbuf.write(arr);
@@ -1834,6 +1837,11 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
+//
+// Simple visualization model.  
+// All it does is map a list of rows (js objects) to marks in an SVG element.
+// 
+//
 var Viz = (function(EventEmitter) {
   extend(Viz, EventEmitter);
 
@@ -1856,6 +1864,7 @@ var Viz = (function(EventEmitter) {
     return this;
   };
 
+  // Resize and create the plot background 
   Viz.prototype.setup = function() {
     this.el
       .attr("width", this.w)
@@ -1871,7 +1880,7 @@ var Viz = (function(EventEmitter) {
     return this;
   }
 
-  // data attributes can be directly mapped to mark attributes
+  // data attributes are directly mapped to mark attributes
   // except for x, and y which will be transformed using this.x/yscale
   Viz.prototype.render = function(data) {
     if (data == null) return;
@@ -1888,8 +1897,8 @@ var Viz = (function(EventEmitter) {
         .attr("height", function(d) { return me.yscale(d.y); })
         .style("fill", "white")
         .style("stroke", "black")
-        .on("mouseover", function() { me.emit("mouseover", me, this); })
-        .on("mouseout", function() { me.emit("mouseout", me.this); });
+        .on("mouseover", function() { me.emit("mouseover", me, this, d3.select(this).data()[0]); })
+        .on("mouseout", function() { me.emit("mouseout", me.this, d3.select(this).data()[0]); });
 
         for(var attr in data) {
           if (attr != "x" && attr != "y") 
@@ -1902,34 +1911,8 @@ var Viz = (function(EventEmitter) {
     return this;
   }
 
-  Viz.prototype.markToParams = function(el) {
-    return {x: el.data().x};
-    return {};
-  };
-
   return Viz;
 })(EventEmitter);
-
-
-
-
-
-//var QueryTemplate = function() {
-//  this.id = 0;
-//
-//  function QueryTemplate(qstr) {
-//    this.q = parser.one(qstr);
-//    this.vars = q.descendents("ParamVar");
-//    this.id = ++QueryTemplate.id;
-//  };
-//
-//  QueryTemplate.prototype.run = function(params) {
-//    for (var key in params) {
-//    }
-//  };
-//
-//  return QueryTemplate;
-//}
 
 module.exports = {
   Viz: Viz

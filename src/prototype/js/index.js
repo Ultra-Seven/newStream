@@ -114,15 +114,15 @@ var makeViz3 = function(cb) {
 // link the vizes
 async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
-    v1.on("mouseover", function(viz, el) {
-      var data = d3.select(el).data()[0];
+    v1.on("mouseover", function(viz, el, row) {
+      // create the parameter data for the query
       var attr = v1.qtemplate.select['x']
-      var args = { };
-      args[attr] = data['x'];
+      var data = { };
+      data[attr] = row['x'];
 
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
-        var q = new Query.Query(v2.qtemplate, args);
+        var q = new Query.Query(v2.qtemplate, data);
         engine.registerQuery(q, v2.render.bind(v2));
       });
     });
@@ -133,6 +133,9 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 
 
 
+//
+// Start the data stream!
+//
 Util.stream_from("/data", function(arr) {
   Util.Debug.update(arr);
   engine.ringbuf.write(arr);
