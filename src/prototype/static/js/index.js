@@ -849,7 +849,6 @@ var QueryTemplateBase = (function(EventEmitter) {
 // Highly constrained subset of single-table olap queries
 var GBQueryTemplate = (function(QueryTemplateBase) {
   extend(GBQueryTemplate, QueryTemplateBase);
-  this.name = GBQueryTemplate.name = "gbquery";
 
   // @param select: a mapping from output alias to an expression string
   //         { x: "month", y: "avg(salary)" }
