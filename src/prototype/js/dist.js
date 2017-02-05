@@ -35,7 +35,11 @@ var DistributionBase = (function() {
   // to a JSON-able representation that we can pass to jquery
   // aka a dictionary
   DistributionBase.prototype.toWire = function() { 
-    return this.getAllAbove(0); 
+    var pairs = this.getAllAbove(0);
+    for (var i = 0; i < pairs.length; i++) {
+      pairs[i][0] = pairs[i][0].toWire();
+    }
+    return pairs;
   }
 
   return DistributionBase;
@@ -123,15 +127,14 @@ var Requester = (function(EventEmitter) {
   };
 
   // manually send a distribution to the server
-  Requester.prototype.send = function(dist) {
+  Requester.prototype.send = function(dist, cb) {
     $.ajax({
       type: "POST",
       contentType: "application/json; charset=utf-8",
       url: "/distribution/set",
       data:  JSON.stringify(dist.toWire()),
       success: function (data) {
-        // TODO: could use a debugging statement here
-        console.log(data);
+        console.log(data)
       },
       dataType: "json"
     });

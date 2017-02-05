@@ -1,10 +1,10 @@
 # Setup
 
-## Install things
+## Install and setup
 
-Install nodejs, npm, protocol buffer.  OSx instructions:
+Install nodejs, npm, protocol buffer, postgres.  OSx instructions:
 
-        brew install node npm protobuf
+        brew install node npm protobuf postgresql
 
 Install python packages (probably want to use virtualenv)
 
@@ -19,12 +19,20 @@ Install global node module:
         npm install -g browserify
 
 
+Setup a postgres database
+
+        createdb test
+
 
 ## Compiling and Running
 
 Compile protocol buffers, package javascript files in `js/` into a single deployable file:
 
         make
+
+Setup offline data structures
+    
+        python setup.py 
 
 Launch server
 
@@ -36,4 +44,7 @@ Go to webpage: `http://localhost:5000`
 
 # Code Overview
 
+How queries are represented
 
+Split across client, online servr and offline setup.  E need a global unambiguous reperesntation of a query so we can say
+"yes, this data structure can answer this query".  State of the art techniques are basically string equality!

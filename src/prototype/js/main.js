@@ -1,7 +1,33 @@
-
-
 //
-// using fetch
+//
+// Useful functions for running the application
+//
+//
+
+
+// opts:  {
+//   table: <table name>,
+//   attrs: {
+//      <attr name>: <data type>
+//   }
+// }
+//
+// where <data type> is "discrete" or "continuous"
+//
+var getAttrStats = function(opts, cb) {
+  $.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    url: "/attr/stats",
+    data:  JSON.stringify(opts),
+    success: cb,
+    dataType: "json"
+  });
+
+}
+
+
+// access the infinite byte stream via a fetch() call
 var stream_from = function(url, cb, final_cb) {
   fetch(url).then(function(resp) {
     if (!resp.body) return;
@@ -54,5 +80,6 @@ Debug = new Debug();
 
 module.exports = {
   stream_from: stream_from,
-  Debug: Debug
+  Debug: Debug,
+  getAttrStats:getAttrStats
 }

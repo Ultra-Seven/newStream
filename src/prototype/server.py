@@ -4,27 +4,64 @@ import json
 import flask
 import time
 import numpy as np
+from collections import defaultdict
 from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
-from ds import *
-
+from sqlalchemy import create_engine
 from flask import Flask, render_template, Response, request, stream_with_context
 from flask_socketio import SocketIO, send, emit
+
+from ds import *
+from manager import *
+
 
 app = Flask(__name__)
 flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
 flask.queries = {}
+flask.db = create_engine("postgresql://localhost/test")
+flask.manager = Manager()
 
 @app.route("/")
 def index():
   return render_template("index.html")
 
 
+@app.route("/attr/stats", methods=["post", "get"])
+def table_stats():
+  """
+  opts: {
+    table: <str>
+    attrs: {
+        <attrname>: <data type> ("continuous" | "discrete")
+    }
+  }
+  """
+  discq = "SELECT DISTINCT %s FROM %s ORDER BY %s" 
 
-  
+  opts = json.loads(request.data)
+  table = opts['table']
+  contattrs = []
+  ret = {}
+  for attr, typ in opts.get("attrs", {}).items():
+    if typ == "discrete":
+      q = discq % (attr, table, attr)
+      ret[attr] = zip(*flask.db.execute(q).fetchall())[0]
+    else:
+      contattrs.append(attr)
+
+  if contattrs:
+    s = ["min(%s), max(%s)" % (a, a) for a in contattrs]
+    s = ", ".join(s)
+    q = "SELECT %s FROM %s" % (s, table)
+    row = flask.db.execute(q).fetchone()
+    for i, a in enumerate(contattrs):
+      minv, maxv = row[i*2], row[i*2+1]
+      ret[a] = [minv, maxv]
+
+  return Response(json.dumps(ret))
 
 @app.route("/setval")
 def setval():
@@ -34,15 +71,35 @@ def setval():
 
 @app.route("/register/querytemplate", methods=["post"])
 def register_qtemplate():
-  data = json.loads(request.data)
-  flask.queries[data["qid"]] = data
-  if data.get("name") == "cubequery":
-    print "got a cube query template"
+  template = json.loads(request.data)
+  flask.queries[template["qid"]] = template
+  qid = template['qid']
+  if flask.manager.has_data_structure(qid): 
+    return Response("ok", mimetype="application/wu")
+
+  print template
+  for ds_klass in ds_klasses:
+    if template.get('name') == ds_klass.name:
+      ds = ds_klass(None, template)
+      ds.id = template['qid']
+      flask.manager.add_data_structure(ds)
+      print "got a cube query template"
   return Response("ok", mimetype="application/wu")
 
 @app.route("/distribution/set", methods=["post"])
 def dist_set():
+  """
+  A distribution is a list of [query, probability]
+  where query is a dictionary:  {
+    template: <output of js template's .toWire()>
+    data: { paramname: val }
+  }
+  """
   flask.dist = json.loads(request.data)
+  for pair in flask.dist:
+    q = pair[0]
+    t = q['template']
+    print "dist/set: ", t['qid'], flask.queries.get(t['qid'], None)
   return Response("ok", mimetype="application/wu")
 
 
@@ -62,13 +119,8 @@ def data():
   # 2. pick top prob and return it
   # 3. clear the distribution
   # 
-  manager = Manager()
-  # manager.add_data_structure()
-  #return Response(manager(), mimetype="text/event-stream")
 
-  q = "SELECT a - a%:a, avg(d)::int FROM data WHERE b = :b GROUP BY a - a%:a"
-  pp = ProgressivePrecompute(None, [q])
-  #s = pp.lookup_bytes(text(q), dict(a=1, b=0))
+  return Response(flask.manager(), mimetype="test/event-stream")
   s = encode_table(["a", "b"], zip(range(10), range(10)))
   header = struct.pack("2I", len(s), 0)
 
@@ -82,43 +134,6 @@ def data():
   return Response(f(),
                   mimetype="text/event-stream")
 
-
-class Manager(object):
-  def __init__(self):
-    self.data_structs = []
-    self.block_size = 50
-
-  def add_data_structure(self, ds):
-    self.data_structs.append(ds)
-
-  def __call__(self):
-    while 1:
-      time.sleep(0.001)
-      if flask.dist == None: continue
-
-      (query, prob) = tuple(max(flask.dist, key=lambda pair: pair[1]))
-      qid = query['qid']
-      flask.dist = None
-      if prob == 0: continue
-
-      # magically turn query into the appropriate data structure key...
-      ds, iterable = self.get_iterable(query, prob)
-      if iterable is None: continue
-      for block in iterable:
-        # write the header: length of the block and the data structure's encoding id
-        yield struct.pack("2I", len(block), ds.id)
-        yield block
-
-
-  def get_iterable(self, query, prob):
-    """
-    returns the data structure and an a result iterable, or (None, None) if query can't be answered
-    """
-    costs = [(ds, ds.cost_est(q)) for ds in self.data_structs]
-    costs = filter(lambda ds, c: c is not None, costs)
-    if not costs: return None, None
-    ds, min_cost = min(costs, key=lambda ds, c: c)
-    return ds, ds.get_iter(query, self.blocksize)
 
 
 def round_robin_manager(dist):
@@ -171,4 +186,10 @@ def round_robin_manager(dist):
 
 
 if __name__ == '__main__':
+  import psycopg2
+  DEC2FLOAT = psycopg2.extensions.new_type(
+    psycopg2.extensions.DECIMAL.values,
+    'DEC2FLOAT',
+    lambda value, curs: float(value) if value is not None else None)
+  psycopg2.extensions.register_type(DEC2FLOAT)
   app.run(host="localhost", port=5000, debug=1, threaded=1)#

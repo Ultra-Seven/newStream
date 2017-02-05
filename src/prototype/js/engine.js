@@ -15,12 +15,14 @@ var Engine = (function(EventEmitter) {
     this.ringbuf = new RingBuffer(nMB);
     this.requester = new Dist.Requester(this);
 
+
     EventEmitter.call(this);
   };
 
   Engine.prototype.registerDataStruct = function(ds) {
     this.ringbuf.register(encoding, ds);
     this.ringbuf.on("dealloc", ds.dealloc.bind(ds));
+    this.datastructs[ds.encoding] = ds;
   };
 
   Engine.prototype.registerQueryTemplate = function(template, cb) {
@@ -60,19 +62,25 @@ var Engine = (function(EventEmitter) {
 
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
-      var ds = this.datastructs[tid];
-      if (ds.tryExec(q, cb)) return;
+      var ds = this.datastructs[dsid];
+      if (ds.tryExec(q, cb)) { return; }
     }
     
     // 2. register with data structures that support this query
-    for (var dsid in this.datastructs) {
-      var ds = this.datastructs[tid];
-      if (ds.canAnswer(q)) 
-        ds.register(q, function() {
-          // TODO: deregister all other registrations of this query
 
-          cb.apply(arguments);
-        });
+    cb = _.once(cb);
+    var me = this;
+    var cb2 = function() {
+      for (var dsid in me.datastructs) {
+        var ds = me.datastructs[dsid];
+        ds.deregister(q, cb2);
+      }
+      cb.apply(cb, arguments);
+    }
+    for (var dsid in this.datastructs) {
+      var ds = this.datastructs[dsid];
+      if (ds.canAnswer(q)) 
+        ds.register(q, cb2);
     }
 
     // 3. send an explicit query distirubiton

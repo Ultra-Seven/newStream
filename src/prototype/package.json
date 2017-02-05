@@ -26,12 +26,14 @@
     "browserify": "14.0.0",
     "uglify-js": "2.4.0",
     "jssqlparser": "0.0.9",
-    "google-protobuf": "3.2.0-rc.2"
+    "google-protobuf": "3.2.0-rc.2",
+    "async": "2.1.4"
   },
   "dependencies": {
     "underscore": "1.8.3",
     "jssqlparser": "0.0.9",
-    "google-protobuf": "3.2.0-rc.2"
+    "google-protobuf": "3.2.0-rc.2",
+    "async": "2.1.4"
   },
  
   "scripts": {

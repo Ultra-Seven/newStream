@@ -20,7 +20,7 @@ var QueryTemplateBase = (function(EventEmitter) {
   // @return a list of parameter name and type [ {name:, type: }]
   //         type can be "num", "str"
   //
-  QueryTemplateBase.prototype.getParams = function() {return [];}
+  QueryTemplateBase.prototype.getParamNames = function() {return [];}
 
   // Return a query string, or null if params are invalid in some way
   QueryTemplateBase.prototype.toSQL = function(params) {return null;}
@@ -46,7 +46,7 @@ var QueryTemplate = (function(QueryTemplateBase) {
     QueryTemplateBase.call(this);
   }
 
-  QueryTemplate.prototype.getParams = function() {
+  QueryTemplate.prototype.getParamNames = function() {
     var o = {};
     _.each(this.parsed.descendents("ParamVar"), function(pvar) {
       // XXX: assumes everything is a number
@@ -77,7 +77,7 @@ var QueryTemplate = (function(QueryTemplateBase) {
 // Highly constrained subset of single-table olap queries
 var CubeQueryTemplate = (function(QueryTemplateBase) {
   extend(CubeQueryTemplate, QueryTemplateBase);
-  CubeQueryTemplate.name = "cubequery";
+  var name = CubeQueryTemplate.name = "cubequery";
 
   // @param select: a mapping from output alias to an expression string
   //         { x: "month", y: "avg(salary)" }
@@ -98,10 +98,11 @@ var CubeQueryTemplate = (function(QueryTemplateBase) {
     this.from = from;
     this.groupby = groupby;
     this.params = params || {};
+    this.name = "cubequery"
     QueryTemplateBase.call(this);
   }
 
-  CubeQueryTemplate.prototype.getParams = function() { return this.params; }
+  CubeQueryTemplate.prototype.getParamNames = function() { return this.params; }
 
   CubeQueryTemplate.prototype.toSQL = function(params) {
     // which of the arguments are allowed by this.params?
@@ -131,9 +132,10 @@ var CubeQueryTemplate = (function(QueryTemplateBase) {
   CubeQueryTemplate.prototype.toWire = function() {
     return {
       qid: this.id,
-      name: CubeQueryTemplate.name,
+      name: name,
       select: this.select,
       from: this.from,
+      fr: this.from,
       groupby: this.groupby,
       params: this.params
     };

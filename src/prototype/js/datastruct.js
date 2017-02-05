@@ -1,7 +1,14 @@
+var EventEmitter = require("events");
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
 
-var DataStructure = (function() {
+
+var DataStructure = (function(EventEmitter) {
+  extend(DataStructure, EventEmitter);
 
   function DataStructure() {
+    this.registry = {};
+    EventEmitter.call(this);
   };
 
   //
@@ -9,7 +16,7 @@ var DataStructure = (function() {
   // For example, data cube data structures may not support arbitrary queries
   //
   // @return true if could answer, false otherwise
-  DataStructure.prototype.canAnswer = function(q, cb) {
+  DataStructure.prototype.canAnswer = function(q) {
     return false;
   };
 
@@ -28,8 +35,24 @@ var DataStructure = (function() {
 
   DataStructure.prototype.free = function(sidx, eidx) { };
 
+  DataStructure.prototype.queryToKey = function(q) {
+    var keys =_.keys(q.data);
+    keys.sort();
+    var pairs = keys.map(function(k) { return [k, q.data[k]]; });
+    return q.template.id + ":" + JSON.stringify(pairs);
+  }
+
+  DataStructure.prototype.register = function(q, cb) {
+    console.log(["register ", q.template.id, this.queryToKey(q), q])
+    return this.on(this.queryToKey(q), cb);
+  }
+
+  DataStructure.prototype.deregister = function(q, cb) {
+    return this.removeListener(this.queryToKey(q), cb);
+  };
+
   return DataStructure;
-})();
+})(EventEmitter);
 
 module.exports = {
   DataStructure: DataStructure

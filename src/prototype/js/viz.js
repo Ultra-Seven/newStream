@@ -37,36 +37,35 @@ var Viz = (function(EventEmitter) {
        .attr("y", 0)
        .style("fill", "white");
     this.markg = this.g.append("g");
-    this.marks = this.markg.selectAll("rect");
     return this;
   }
 
   // data attributes can be directly mapped to mark attributes
   // except for x, and y which will be transformed using this.x/yscale
   Viz.prototype.render = function(data) {
+    if (data == null) return;
     var me = this;
-    var bound = this.marks.data(data);
+    var bound = this.markg.selectAll(".mark").data(data);
+    bound.exit().remove();
 
-    var setAttrs = function(els) {
+    function attach(els) {
       els
         .classed("mark", true)
-        .attr("x", function(d) { return me.xscale(d.x); })
         .attr("width", me.xscale.rangeBand())
+        .attr("x", function(d) { return me.xscale(d.x); })
         .attr("y", function(d) { return me.h - me.yscale(d.y); })
         .attr("height", function(d) { return me.yscale(d.y); })
         .on("mouseover", function() { me.emit("mouseover", me, this); })
         .on("mouseout", function() { me.emit("mouseout", me.this); });
 
-      for(var attr in data) {
-        if (attr != "x" && attr != "y") 
-          els.attr(attr, function(d) { return d[attr]; });
-      }
-    };
+        for(var attr in data) {
+          if (attr != "x" && attr != "y") 
+            els.attr(attr, function(d) { return d[attr]; });
+        }
+    }
 
-
-    setAttrs(bound.enter().append("rect"));
-    setAttrs(bound);
-    bound.exit().remove();
+    attach(bound);
+    attach(bound.enter().append("rect"));
     return this;
   }
 
@@ -82,24 +81,23 @@ var Viz = (function(EventEmitter) {
 
 
 
-var QueryTemplate = function() {
-  this.id = 0;
-
-  function QueryTemplate(qstr) {
-    this.q = parser.one(qstr);
-    this.vars = q.descendents("ParamVar");
-    this.id = ++QueryTemplate.id;
-  };
-
-  QueryTemplate.prototype.run = function(params) {
-    for (var key in params) {
-    }
-  };
-
-  return QueryTemplate;
-}
+//var QueryTemplate = function() {
+//  this.id = 0;
+//
+//  function QueryTemplate(qstr) {
+//    this.q = parser.one(qstr);
+//    this.vars = q.descendents("ParamVar");
+//    this.id = ++QueryTemplate.id;
+//  };
+//
+//  QueryTemplate.prototype.run = function(params) {
+//    for (var key in params) {
+//    }
+//  };
+//
+//  return QueryTemplate;
+//}
 
 module.exports = {
-  Viz: Viz,
-  QueryTemplate: QueryTemplate
+  Viz: Viz
 }

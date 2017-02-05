@@ -118,7 +118,8 @@ var RingBuffer = (function(EventEmitter) {
       this.rhead.move(tmp.nBytesRead);
 
       if (enc in this.decoders) {
-        this.decoders[enc].addBlock(byteRange, block);
+        this.emit("block", byteRange[0], byteRange[1], enc);
+        this.decoders[enc].addBlock(byteRange, block.buffer);
       }
     }
   };
@@ -158,7 +159,7 @@ var RingBuffer = (function(EventEmitter) {
     if (!this.allowedToRead(8)) {
         return null;
     }
-    var buf = new Uint32Array(this.read(this.rhead.pos, 8, true)); 
+    var buf = new Uint32Array(this.read(this.rhead.pos, 8, true).buffer); 
     var len = buf[0];
     var enc = buf[1];
     var offset = 8; // in terms of 8 bit array
