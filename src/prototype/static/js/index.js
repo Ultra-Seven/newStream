@@ -918,14 +918,21 @@ var Query = (function(EventEmitter) {
 
 },{"events":19,"jssqlparser":16,"underscore":18}],8:[function(require,module,exports){
 var EventEmitter = require("events");
-
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
+// Simple interval index so we can find the blocks of data
+// that have been deallocated by the ring buffer
+//
+// Look ups simply scan the entries..
+//
+// TODO: make it faster
+//
 var RangeIndex = (function(EventEmitter) {
+  extend(RangeIndex, EventEmitter);
 
-  var RangeIndex = function() {
+  function RangeIndex() {
     EventEmitter.call(this);
 
     this.idx = {};
@@ -936,10 +943,6 @@ var RangeIndex = (function(EventEmitter) {
       range: range,
       data: data
     };
-    var nkeys = 0;
-    for (var key in this.idx) { nkeys++; }
-
-    //console.log("add " + range.join(", ") + "\t" + nkeys);
   }
 
   RangeIndex.prototype.get = function(range) {
@@ -951,8 +954,9 @@ var RangeIndex = (function(EventEmitter) {
     return null;
   };
 
+  // @param r1: deallocated range
+  // @param r2: candidate range to compare against
   var overlaps = function(r1, r2) {
-    //console.log(JSON.stringify([r1, r2]));
     return ((r1[0] < r2[0] && r2[0] < r1[1]) || 
             (r1[0] < r2[1] && r2[1] < r1[1]))
   }
@@ -976,7 +980,6 @@ var RangeIndex = (function(EventEmitter) {
     return rm;
   };
 
-  RangeIndex.prototype.__proto__ = EventEmitter.prototype;
   return RangeIndex;
 })(EventEmitter);
 
@@ -990,48 +993,6 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
     hasProp = {}.hasOwnProperty;
 
 
-var Head = (function() {
-  function Head(buflen, pos, iter) {
-    this.buflen = buflen;
-    this.pos = pos || 0;    // position in array
-    this.iter = iter || 0;  // # times looped array
-  }
-  Head.prototype.move = function(len) {
-    if (this.pos + len >= this.buflen) {
-      this.iter += 1;
-    }
-    this.pos = (this.pos + len) % this.buflen;
-  }
-  Head.prototype.moveNew = function(len) {
-    var buflen = this.buflen,
-        pos = this.pos,
-        iter = this.iter;
-    if (pos + len >= buflen) 
-      iter += 1;
-    pos = (pos + len) % buflen;
-    return new Head(buflen, pos, iter);
-  }
-  Head.prototype.isLarger = function(o) {
-    return (this.iter > o.iter) || (this.pos > o.pos && this.iter == o.iter);
-  }
-  // number of bytes this can write before overtaking o
-  Head.prototype.bytesCanWrite = function(o) {
-    if (this.iter == o.iter) {
-      if (this.pos >= o.pos) 
-        return (this.buflen - this.pos) + o.pos;
-    }
-    if (this.iter == o.iter + 1) {
-      if (o.pos >= this.pos)
-        return o.pos - this.pos;
-    }
-    return null;
-  }
-  Head.prototype.toString = function() {
-    return [this.pos, ":", this.iter].join("")
-  };
-  return Head;
-})();
-
 
 //
 // The ring buffer is a single block of memory represented as an arraybuffer
@@ -1040,7 +1001,7 @@ var Head = (function() {
 //
 // Data structures can register to be informed of blocks of bytes that are relevant to them.
 //
-// TODO: use WebWorker?
+// TODO: use WebWorker?  not sure if it's worth it or not..
 //
 var RingBuffer = (function(EventEmitter) {
   extend(RingBuffer, EventEmitter);
@@ -1105,7 +1066,7 @@ var RingBuffer = (function(EventEmitter) {
 
       if (enc in this.decoders) {
         this.emit("block", byteRange[0], byteRange[1], enc);
-        this.decoders[enc].addBlock(byteRange, block.buffer);
+        this.decoders[enc].addBlock(byteRange, block);
       }
     }
   };
@@ -1127,13 +1088,9 @@ var RingBuffer = (function(EventEmitter) {
       ret.set(this.uint.slice(0, eidx), (len - eidx));
     }
 
-    return ret;
+    return ret.buffer;
   };
 
-  RingBuffer.prototype.allowedToRead = function(len, rhead) {
-    rhead = rhead || this.rhead;
-    return !rhead.moveNew(len).isLarger(this.whead);
-  };
 
   // try to read the next contigious block of data.  Block header contains two
   // 32 bit integers representing the length of the body of the block followed by 
@@ -1145,7 +1102,7 @@ var RingBuffer = (function(EventEmitter) {
     if (!this.allowedToRead(8)) {
         return null;
     }
-    var buf = new Uint32Array(this.read(this.rhead.pos, 8, true).buffer); 
+    var buf = new Uint32Array(this.read(this.rhead.pos, 8, true)); 
     var len = buf[0];
     var enc = buf[1];
     var offset = 8; // in terms of 8 bit array
@@ -1155,9 +1112,6 @@ var RingBuffer = (function(EventEmitter) {
       //console.log(["can't read: ", curRhead.pos, len, this.whead.pos]);
       return null;
     }
-
-    //console.log(["reading: ", curRhead.toString(), len, enc])
-    
     // if (enc is not recognized) throw Error
 
     return {
@@ -1168,14 +1122,64 @@ var RingBuffer = (function(EventEmitter) {
     }
   }
 
+  RingBuffer.prototype.allowedToRead = function(len, rhead) {
+    rhead = rhead || this.rhead;
+    return !rhead.moveNew(len).isLarger(this.whead);
+  };
+
   // use this to register a new decoder
   RingBuffer.prototype.register = function(encoderId, decoder) {
     this.decoders[encoderId] = decoder;
   };
 
+
   return RingBuffer;
 })(EventEmitter);
 
+
+// Helper class to track the position of the read and write heads
+// of the ring buffer
+var Head = (function() {
+  function Head(buflen, pos, iter) {
+    this.buflen = buflen;
+    this.pos = pos || 0;    // position in array
+    this.iter = iter || 0;  // # times looped array
+  }
+  Head.prototype.move = function(len) {
+    if (this.pos + len >= this.buflen) {
+      this.iter += 1;
+    }
+    this.pos = (this.pos + len) % this.buflen;
+  }
+  Head.prototype.moveNew = function(len) {
+    var buflen = this.buflen,
+        pos = this.pos,
+        iter = this.iter;
+    if (pos + len >= buflen) 
+      iter += 1;
+    pos = (pos + len) % buflen;
+    return new Head(buflen, pos, iter);
+  }
+  Head.prototype.isLarger = function(o) {
+    return (this.iter > o.iter) || (this.pos > o.pos && this.iter == o.iter);
+  }
+  // number of bytes this can write before overtaking o
+  Head.prototype.bytesCanWrite = function(o) {
+    if (this.iter == o.iter) {
+      if (this.pos >= o.pos) 
+        return (this.buflen - this.pos) + o.pos;
+    }
+    if (this.iter == o.iter + 1) {
+      if (o.pos >= this.pos)
+        return o.pos - this.pos;
+    }
+    return null;
+  }
+  Head.prototype.toString = function() {
+    return [this.pos, ":", this.iter].join("")
+  };
+  return Head;
+})();
 
 
 module.exports = {
@@ -1745,6 +1749,8 @@ goog.object.extend(exports, proto);
 //
 
 
+// Get domain informaiton for x and y axes
+//
 // opts:  {
 //   table: <table name>,
 //   attrs: {
@@ -1785,8 +1791,6 @@ var stream_from = function(url, cb, final_cb) {
   });
 };
 
-
-function binarySum(a,b) { return a + b;}
 
 var Debug = (function Debug() {
   var start = Date.now();

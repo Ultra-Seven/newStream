@@ -1,12 +1,19 @@
 var EventEmitter = require("events");
-
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
 
+// Simple interval index so we can find the blocks of data
+// that have been deallocated by the ring buffer
+//
+// Look ups simply scan the entries..
+//
+// TODO: make it faster
+//
 var RangeIndex = (function(EventEmitter) {
+  extend(RangeIndex, EventEmitter);
 
-  var RangeIndex = function() {
+  function RangeIndex() {
     EventEmitter.call(this);
 
     this.idx = {};
@@ -17,10 +24,6 @@ var RangeIndex = (function(EventEmitter) {
       range: range,
       data: data
     };
-    var nkeys = 0;
-    for (var key in this.idx) { nkeys++; }
-
-    //console.log("add " + range.join(", ") + "\t" + nkeys);
   }
 
   RangeIndex.prototype.get = function(range) {
@@ -32,8 +35,9 @@ var RangeIndex = (function(EventEmitter) {
     return null;
   };
 
+  // @param r1: deallocated range
+  // @param r2: candidate range to compare against
   var overlaps = function(r1, r2) {
-    //console.log(JSON.stringify([r1, r2]));
     return ((r1[0] < r2[0] && r2[0] < r1[1]) || 
             (r1[0] < r2[1] && r2[1] < r1[1]))
   }
@@ -57,7 +61,6 @@ var RangeIndex = (function(EventEmitter) {
     return rm;
   };
 
-  RangeIndex.prototype.__proto__ = EventEmitter.prototype;
   return RangeIndex;
 })(EventEmitter);
 

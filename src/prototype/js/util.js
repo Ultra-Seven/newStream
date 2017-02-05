@@ -5,6 +5,8 @@
 //
 
 
+// Get domain informaiton for x and y axes
+//
 // opts:  {
 //   table: <table name>,
 //   attrs: {
@@ -45,8 +47,6 @@ var stream_from = function(url, cb, final_cb) {
   });
 };
 
-
-function binarySum(a,b) { return a + b;}
 
 var Debug = (function Debug() {
   var start = Date.now();
