@@ -77,6 +77,8 @@ var GBDataStructure = (function(DataStructure) {
   };
 
   GBDataStructure.prototype.canAnswer = function(q) {
+    // It's possible that this data structure could answer
+    // other types of queries..
     return q.template.name == "gbquery";
   };
 

@@ -1,7 +1,7 @@
 var async = require("async");
 var Engine = require("./engine").Engine;
-var Main = window.Main = require("./main");
-var GBDataStructure = require("./cubemgr").GBDataStructure;
+var Util = window.Util = require("./util");
+var GBDataStructure = require("./gbds").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
@@ -45,7 +45,7 @@ var makeViz1 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz1", 
@@ -68,7 +68,7 @@ var makeViz2 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz2", 
@@ -93,7 +93,7 @@ var makeViz3 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz3", 
@@ -133,10 +133,10 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 
 
 
-Main.stream_from("/data", function(arr) {
-  Main.Debug.update(arr);
+Util.stream_from("/data", function(arr) {
+  Util.Debug.update(arr);
   engine.ringbuf.write(arr);
-}, Main.Debug.debug.bind(Main.Debug));
+}, Util.Debug.debug.bind(Util.Debug));
 
 
 

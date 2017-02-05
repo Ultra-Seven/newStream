@@ -38,7 +38,10 @@ var QueryTemplateBase = (function(EventEmitter) {
 
 
 
+//
 // Highly constrained subset of single-table olap queries
+//
+// JS version of the query templates supported by py/ds.py:GBDataStruct
 var GBQueryTemplate = (function(QueryTemplateBase) {
   extend(GBQueryTemplate, QueryTemplateBase);
 
@@ -95,7 +98,7 @@ var GBQueryTemplate = (function(QueryTemplateBase) {
   GBQueryTemplate.prototype.toWire = function() {
     return {
       qid: this.id,
-      name: name,
+      name: this.name,
       select: this.select,
       from: this.from,
       fr: this.from,

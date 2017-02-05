@@ -7,109 +7,6 @@ module.exports = {
 
 
 },{"events":20}],2:[function(require,module,exports){
-var DataStructure = require("./datastruct").DataStructure;
-var Decoders = require("./decoders");
-var RangeIndex = require("./rangeidx");
-var GBQueryTemplate = require("./query").GBQueryTemplate;
-var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
-
-// Client version of ds.py:GBDataStructure
-var GBDataStructure = (function(DataStructure) {
-  extend(GBDataStructure, DataStructure);
-
-  var encoding = 1;
-  this.encoding = encoding;
-
-  function GBDataStructure() {
-    this.decoder = new Decoders.TableDecoder();
-    this.rangeIdx = new RangeIndex.RangeIndex();
-    this.textDecoder = new TextDecoder("utf-8");
-
-    // maps <some key that represents a query> to the actual data
-    // the key could just be the json encoded parameters
-    // or a combination of that and other metadata
-    //
-    // in this case, the key is:
-    //   template.id + ":" + queryToKey()
-    this.idx = {};  // key -> data
-
-    this.encoding = encoding;
-
-    DataStructure.call(this);
-  };
-
-  // @param block arraybuffer
-  GBDataStructure.prototype.readHeader = function(block) {
-    var header = new Uint32Array(block.slice(0, 8));
-    var keylen = header[0];
-    var id = header[1];
-    var serverSideKey = this.textDecoder.decode(block.slice(8, 8+keylen));
-    var key = id + ":" + serverSideKey;
-    return {
-      key: key,
-      id: id,
-      nBytesRead: 8 + keylen
-    }
-  };
-
-  // @param range  [startidx, endidx] of block in ringbuffer
-  // @param block  ArrayBuffer object
-  GBDataStructure.prototype.addBlock = function(byteRange, block) {
-    var header = this.readHeader(block);
-    var key = header.key;
-    var table = null;
-    try {
-      table = this.decoder.decode(block.slice(header.nBytesRead));
-    } catch (e) {
-      console.log(e);
-      return;
-    }
-    var data = {
-      key: key,
-      block: block,
-      table: table
-    };
-    this.rangeIdx.add(byteRange, data);
-    this.idx[key] = data;
-
-    //console.log(["cubmgr.emit", key, table])
-    this.emit(key, table);
-  };
-
-  GBDataStructure.prototype.dealloc = function(byteRange) {
-    var rms = this.rangeIdx.rm(byteRange);
-    for (var i = 0; i < rms.length; i++) {
-      delete this.idx[rms[i].data.key]
-    }
-  };
-
-  GBDataStructure.prototype.canAnswer = function(q) {
-    return q.template.name == "gbquery";
-  };
-
-  GBDataStructure.prototype.tryExec = function(q, cb) {
-    if (!this.canAnswer(q)) 
-      return null;
-    var key = this.queryToKey(q);
-    if (key in this.idx) {
-      if (cb) cb(this.idx[key].table);
-      return this.idx[key].table;
-    }
-
-    return null;
-  };
-
-  return GBDataStructure;
-})(DataStructure);
-
-
-module.exports = {
-  GBDataStructure: GBDataStructure
-}
-
-},{"./datastruct":3,"./decoders":4,"./query":9,"./rangeidx":10}],3:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -186,7 +83,7 @@ module.exports = {
 
  
 
-},{"events":20}],4:[function(require,module,exports){
+},{"events":20}],3:[function(require,module,exports){
 var proto = require("./table_pb");
 var Table = proto.Table;
 
@@ -238,7 +135,7 @@ module.exports = {
   TableDecoder: TableDecoder
 }
 
-},{"./table_pb":12}],5:[function(require,module,exports){
+},{"./table_pb":11}],4:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -468,7 +365,7 @@ module.exports = {
   NaiveDistribution: NaiveDistribution
 }
 
-},{"events":20}],6:[function(require,module,exports){
+},{"events":20}],5:[function(require,module,exports){
 var EventEmitter = require("events");
 var RingBuffer = require("./ringbuffer").RingBuffer;
 var Dist = require("./dist");
@@ -571,11 +468,116 @@ module.exports = {
 };
 
 
-},{"./dist":5,"./ringbuffer":11,"events":20}],7:[function(require,module,exports){
+},{"./dist":4,"./ringbuffer":10,"events":20}],6:[function(require,module,exports){
+var DataStructure = require("./datastruct").DataStructure;
+var Decoders = require("./decoders");
+var RangeIndex = require("./rangeidx");
+var GBQueryTemplate = require("./query").GBQueryTemplate;
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+
+// Client version of ds.py:GBDataStructure
+var GBDataStructure = (function(DataStructure) {
+  extend(GBDataStructure, DataStructure);
+
+  var encoding = 1;
+  this.encoding = encoding;
+
+  function GBDataStructure() {
+    this.decoder = new Decoders.TableDecoder();
+    this.rangeIdx = new RangeIndex.RangeIndex();
+    this.textDecoder = new TextDecoder("utf-8");
+
+    // maps <some key that represents a query> to the actual data
+    // the key could just be the json encoded parameters
+    // or a combination of that and other metadata
+    //
+    // in this case, the key is:
+    //   template.id + ":" + queryToKey()
+    this.idx = {};  // key -> data
+
+    this.encoding = encoding;
+
+    DataStructure.call(this);
+  };
+
+  // @param block arraybuffer
+  GBDataStructure.prototype.readHeader = function(block) {
+    var header = new Uint32Array(block.slice(0, 8));
+    var keylen = header[0];
+    var id = header[1];
+    var serverSideKey = this.textDecoder.decode(block.slice(8, 8+keylen));
+    var key = id + ":" + serverSideKey;
+    return {
+      key: key,
+      id: id,
+      nBytesRead: 8 + keylen
+    }
+  };
+
+  // @param range  [startidx, endidx] of block in ringbuffer
+  // @param block  ArrayBuffer object
+  GBDataStructure.prototype.addBlock = function(byteRange, block) {
+    var header = this.readHeader(block);
+    var key = header.key;
+    var table = null;
+    try {
+      table = this.decoder.decode(block.slice(header.nBytesRead));
+    } catch (e) {
+      console.log(e);
+      return;
+    }
+    var data = {
+      key: key,
+      block: block,
+      table: table
+    };
+    this.rangeIdx.add(byteRange, data);
+    this.idx[key] = data;
+
+    //console.log(["cubmgr.emit", key, table])
+    this.emit(key, table);
+  };
+
+  GBDataStructure.prototype.dealloc = function(byteRange) {
+    var rms = this.rangeIdx.rm(byteRange);
+    for (var i = 0; i < rms.length; i++) {
+      delete this.idx[rms[i].data.key]
+    }
+  };
+
+  GBDataStructure.prototype.canAnswer = function(q) {
+    // It's possible that this data structure could answer
+    // other types of queries..
+    return q.template.name == "gbquery";
+  };
+
+  GBDataStructure.prototype.tryExec = function(q, cb) {
+    if (!this.canAnswer(q)) 
+      return null;
+    var key = this.queryToKey(q);
+    if (key in this.idx) {
+      if (cb) cb(this.idx[key].table);
+      return this.idx[key].table;
+    }
+
+    return null;
+  };
+
+  return GBDataStructure;
+})(DataStructure);
+
+
+module.exports = {
+  GBDataStructure: GBDataStructure
+}
+
+},{"./datastruct":2,"./decoders":3,"./query":8,"./rangeidx":9}],7:[function(require,module,exports){
 var async = require("async");
 var Engine = require("./engine").Engine;
-var Main = window.Main = require("./main");
-var GBDataStructure = require("./cubemgr").GBDataStructure;
+var Util = window.Util = require("./util");
+var GBDataStructure = require("./gbds").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
@@ -619,7 +621,7 @@ var makeViz1 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz1", 
@@ -642,7 +644,7 @@ var makeViz2 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz2", 
@@ -667,7 +669,7 @@ var makeViz3 = function(cb) {
     }
   };
 
-  Main.getAttrStats(data,
+  Util.getAttrStats(data,
     function(data) {
       var opts = {
         id: "#viz3", 
@@ -707,105 +709,17 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 
 
 
-Main.stream_from("/data", function(arr) {
-  Main.Debug.update(arr);
+Util.stream_from("/data", function(arr) {
+  Util.Debug.update(arr);
   engine.ringbuf.write(arr);
-}, Main.Debug.debug.bind(Main.Debug));
+}, Util.Debug.debug.bind(Util.Debug));
 
 
 
 
 
 
-},{"./cubemgr":2,"./engine":6,"./main":8,"./query":9,"./viz":13,"async":14}],8:[function(require,module,exports){
-//
-//
-// Useful functions for running the application
-//
-//
-
-
-// opts:  {
-//   table: <table name>,
-//   attrs: {
-//      <attr name>: <data type>
-//   }
-// }
-//
-// where <data type> is "discrete" or "continuous"
-//
-var getAttrStats = function(opts, cb) {
-  $.ajax({
-    type: "POST",
-    contentType: "application/json; charset=utf-8",
-    url: "/attr/stats",
-    data:  JSON.stringify(opts),
-    success: cb,
-    dataType: "json"
-  });
-
-}
-
-
-// access the infinite byte stream via a fetch() call
-var stream_from = function(url, cb, final_cb) {
-  fetch(url).then(function(resp) {
-    if (!resp.body) return;
-    var reader = resp.body.getReader();
-    function loop() {
-      return reader.read().then(function(res) {
-        if (res.done) return "done!";
-        if (cb) cb(res.value);
-        return setTimeout(loop);
-      });
-    }
-    return loop();
-  }).then(function(data) {
-    if (final_cb) final_cb(data);
-  });
-};
-
-
-function binarySum(a,b) { return a + b;}
-
-var Debug = (function Debug() {
-  var start = Date.now();
-  var counts = [];
-  var i = 1;
-
-  function Debug() { };
-  Debug.prototype.debug = function(arr) {
-    var cost = Date.now() - start;
-    var total = d3.sum(counts);
-    var avg = d3.mean(counts);
-    var stats = [total/cost/1000 + "mb/s", cost + "ms", total + "bytes", "avg:"+avg+"bytes"];
-
-    console.log(stats.join("\t"));
-    start = Date.now();
-    counts = [];
-  };
-
-  Debug.prototype.update = function(arr) {
-    counts.push(arr.length);
-
-    if (counts.length > 1000 || (Date.now() - start) > 1000 * 2) {
-      this.debug();
-    }
-  };
-  return Debug;
-})();
-Debug = new Debug();
-
-
-
-
-module.exports = {
-  stream_from: stream_from,
-  Debug: Debug,
-  getAttrStats:getAttrStats
-}
-
-},{}],9:[function(require,module,exports){
+},{"./engine":5,"./gbds":6,"./query":8,"./util":12,"./viz":13,"async":14}],8:[function(require,module,exports){
 var parser = require("jssqlparser");
 var EventEmitter = require("events");
 var _ = require("underscore");
@@ -846,7 +760,10 @@ var QueryTemplateBase = (function(EventEmitter) {
 
 
 
+//
 // Highly constrained subset of single-table olap queries
+//
+// JS version of the query templates supported by py/ds.py:GBDataStruct
 var GBQueryTemplate = (function(QueryTemplateBase) {
   extend(GBQueryTemplate, QueryTemplateBase);
 
@@ -903,7 +820,7 @@ var GBQueryTemplate = (function(QueryTemplateBase) {
   GBQueryTemplate.prototype.toWire = function() {
     return {
       qid: this.id,
-      name: name,
+      name: this.name,
       select: this.select,
       from: this.from,
       fr: this.from,
@@ -1002,7 +919,7 @@ var Query = (function(EventEmitter) {
    Query: Query
 }
 
-},{"events":20,"jssqlparser":17,"underscore":19}],10:[function(require,module,exports){
+},{"events":20,"jssqlparser":17,"underscore":19}],9:[function(require,module,exports){
 var EventEmitter = require("events");
 
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -1070,7 +987,7 @@ module.exports = {
   RangeIndex: RangeIndex
 }
 
-},{"events":20}],11:[function(require,module,exports){
+},{"events":20}],10:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1268,7 +1185,7 @@ module.exports = {
   RingBuffer: RingBuffer
 }
 
-},{"events":20}],12:[function(require,module,exports){
+},{"events":20}],11:[function(require,module,exports){
 /**
  * @fileoverview
  * @enhanceable
@@ -1823,7 +1740,95 @@ proto.Table.prototype.clearColsList = function() {
 
 goog.object.extend(exports, proto);
 
-},{"google-protobuf":15}],13:[function(require,module,exports){
+},{"google-protobuf":15}],12:[function(require,module,exports){
+//
+//
+// Useful functions for running the application
+//
+//
+
+
+// opts:  {
+//   table: <table name>,
+//   attrs: {
+//      <attr name>: <data type>
+//   }
+// }
+//
+// where <data type> is "discrete" or "continuous"
+//
+var getAttrStats = function(opts, cb) {
+  $.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    url: "/attr/stats",
+    data:  JSON.stringify(opts),
+    success: cb,
+    dataType: "json"
+  });
+
+}
+
+
+// access the infinite byte stream via a fetch() call
+var stream_from = function(url, cb, final_cb) {
+  fetch(url).then(function(resp) {
+    if (!resp.body) return;
+    var reader = resp.body.getReader();
+    function loop() {
+      return reader.read().then(function(res) {
+        if (res.done) return "done!";
+        if (cb) cb(res.value);
+        return setTimeout(loop);
+      });
+    }
+    return loop();
+  }).then(function(data) {
+    if (final_cb) final_cb(data);
+  });
+};
+
+
+function binarySum(a,b) { return a + b;}
+
+var Debug = (function Debug() {
+  var start = Date.now();
+  var counts = [];
+  var i = 1;
+
+  function Debug() { };
+  Debug.prototype.debug = function(arr) {
+    var cost = Date.now() - start;
+    var total = d3.sum(counts);
+    var avg = d3.mean(counts);
+    var stats = [total/cost/1000 + "mb/s", cost + "ms", total + "bytes", "avg:"+avg+"bytes"];
+
+    console.log(stats.join("\t"));
+    start = Date.now();
+    counts = [];
+  };
+
+  Debug.prototype.update = function(arr) {
+    counts.push(arr.length);
+
+    if (counts.length > 1000 || (Date.now() - start) > 1000 * 2) {
+      this.debug();
+    }
+  };
+  return Debug;
+})();
+Debug = new Debug();
+
+
+
+
+module.exports = {
+  stream_from: stream_from,
+  Debug: Debug,
+  getAttrStats:getAttrStats
+}
+
+},{}],13:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
