@@ -71,14 +71,14 @@ var CubeManager = (function(DataStructure) {
     this.rangeIdx.add(range, data);
     this.idx[key] = data;
 
-    console.log(["cubmgr.emit", key, table])
+    //console.log(["cubmgr.emit", key, table])
     this.emit(key, table);
   };
 
   CubeManager.prototype.dealloc = function(sidx, eidx) {
     var rms = this.rangeIdx.rm([sidx, eidx]);
     for (var i = 0; i < rms.length; i++) {
-      delete this.idx[rms[i].key]
+      delete this.idx[rms[i].data.key]
     }
   };
 
@@ -150,7 +150,7 @@ var DataStructure = (function(EventEmitter) {
   }
 
   DataStructure.prototype.register = function(q, cb) {
-    console.log(["register ", q.template.id, this.queryToKey(q), q])
+    //console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 
@@ -460,11 +460,11 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
 var Engine = (function(EventEmitter) {
   extend(Engine, EventEmitter);
 
-  function Engine(nMB) {
+  function Engine(nbytes) {
     this.queryTemplates = {};
     this.vizes = {};
     this.datastructs = {};
-    this.ringbuf = new RingBuffer(nMB);
+    this.ringbuf = new RingBuffer(nbytes);
     this.requester = new Dist.Requester(this);
 
 
@@ -562,9 +562,9 @@ var Viz = require("./viz");
 
 
 
-
+var bytespermb = 1048576;
 var cubemgr = new CubeManager();
-var engine = window.engine = new Engine(0.00041);
+var engine = window.engine = new Engine(450);
 engine.registerDataStruct(cubemgr);
 
 
@@ -678,7 +678,6 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
         var q = new Query.Query(v2.qtemplate, args);
-        console.log(q)
         engine.registerQuery(q, v2.render.bind(v2));
       });
     });
@@ -758,8 +757,9 @@ var Debug = (function Debug() {
   function Debug() { };
   Debug.prototype.debug = function(arr) {
     var cost = Date.now() - start;
-    var total = counts.reduce(binarySum, 0)
-    var stats = [total/cost/1000 + "mb/s", cost, total];
+    var total = d3.sum(counts);
+    var avg = d3.mean(counts);
+    var stats = [total/cost/1000 + "mb/s", cost + "ms", total + "bytes", "avg:"+avg+"bytes"];
 
     console.log(stats.join("\t"));
     start = Date.now();
@@ -1097,12 +1097,11 @@ var Head = (function() {
 var RingBuffer = (function(EventEmitter) {
   extend(RingBuffer, EventEmitter);
 
-  var bytespermb = 1048576;
 
-  function RingBuffer(sizeInMB) {
+  function RingBuffer(nbytes) {
     this.decoders = {};
     this.listeners = {};
-    this.buflen = Math.floor(bytespermb * sizeInMB);
+    this.buflen = Math.floor(nbytes); 
     this.buffer = new ArrayBuffer(this.buflen);
 
     // We need to copy in terms of 8 bit integers otherwise
@@ -1848,6 +1847,8 @@ var Viz = (function(EventEmitter) {
         .attr("x", function(d) { return me.xscale(d.x); })
         .attr("y", function(d) { return me.h - me.yscale(d.y); })
         .attr("height", function(d) { return me.yscale(d.y); })
+        .style("fill", "white")
+        .style("stroke", "black")
         .on("mouseover", function() { me.emit("mouseover", me, this); })
         .on("mouseout", function() { me.emit("mouseout", me.this); });
 

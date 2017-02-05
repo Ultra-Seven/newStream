@@ -7,9 +7,9 @@ var Viz = require("./viz");
 
 
 
-
+var bytespermb = 1048576;
 var cubemgr = new CubeManager();
-var engine = window.engine = new Engine(0.00041);
+var engine = window.engine = new Engine(450);
 engine.registerDataStruct(cubemgr);
 
 
@@ -123,7 +123,6 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
         var q = new Query.Query(v2.qtemplate, args);
-        console.log(q)
         engine.registerQuery(q, v2.render.bind(v2));
       });
     });

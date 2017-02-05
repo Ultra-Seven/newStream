@@ -58,12 +58,11 @@ var Head = (function() {
 var RingBuffer = (function(EventEmitter) {
   extend(RingBuffer, EventEmitter);
 
-  var bytespermb = 1048576;
 
-  function RingBuffer(sizeInMB) {
+  function RingBuffer(nbytes) {
     this.decoders = {};
     this.listeners = {};
-    this.buflen = Math.floor(bytespermb * sizeInMB);
+    this.buflen = Math.floor(nbytes); 
     this.buffer = new ArrayBuffer(this.buflen);
 
     // We need to copy in terms of 8 bit integers otherwise

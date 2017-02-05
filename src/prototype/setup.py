@@ -14,9 +14,9 @@ def gen_csv_file(outf, dims, measures, scale=100):
   for dim_vals in product(*iters):
     groups = dict(zip(names, dim_vals))
 
+    means = [random.randint(0, 90) for a in measures]
     for i in xrange(scale):
-      mean = random.randint(0, 90)
-      m_vals = [random.randint(0, 20) - 10 + mean for attr in measures]
+      m_vals = [random.randint(0, 20) - 10 + mean for mean, attr in zip(means, measures)]
       row = list(dim_vals)
       row.extend(m_vals)
       outf.write(",".join(map(str, row)))

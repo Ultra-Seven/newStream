@@ -55,6 +55,8 @@ var Viz = (function(EventEmitter) {
         .attr("x", function(d) { return me.xscale(d.x); })
         .attr("y", function(d) { return me.h - me.yscale(d.y); })
         .attr("height", function(d) { return me.yscale(d.y); })
+        .style("fill", "white")
+        .style("stroke", "black")
         .on("mouseover", function() { me.emit("mouseover", me, this); })
         .on("mouseout", function() { me.emit("mouseout", me.this); });
 

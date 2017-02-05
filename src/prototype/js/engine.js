@@ -8,11 +8,11 @@ var extend = function(child, parent) { for (var key in parent) { if (hasProp.cal
 var Engine = (function(EventEmitter) {
   extend(Engine, EventEmitter);
 
-  function Engine(nMB) {
+  function Engine(nbytes) {
     this.queryTemplates = {};
     this.vizes = {};
     this.datastructs = {};
-    this.ringbuf = new RingBuffer(nMB);
+    this.ringbuf = new RingBuffer(nbytes);
     this.requester = new Dist.Requester(this);
 
 

@@ -62,14 +62,14 @@ var CubeManager = (function(DataStructure) {
     this.rangeIdx.add(range, data);
     this.idx[key] = data;
 
-    console.log(["cubmgr.emit", key, table])
+    //console.log(["cubmgr.emit", key, table])
     this.emit(key, table);
   };
 
   CubeManager.prototype.dealloc = function(sidx, eidx) {
     var rms = this.rangeIdx.rm([sidx, eidx]);
     for (var i = 0; i < rms.length; i++) {
-      delete this.idx[rms[i].key]
+      delete this.idx[rms[i].data.key]
     }
   };
 

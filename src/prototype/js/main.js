@@ -56,8 +56,9 @@ var Debug = (function Debug() {
   function Debug() { };
   Debug.prototype.debug = function(arr) {
     var cost = Date.now() - start;
-    var total = counts.reduce(binarySum, 0)
-    var stats = [total/cost/1000 + "mb/s", cost, total];
+    var total = d3.sum(counts);
+    var avg = d3.mean(counts);
+    var stats = [total/cost/1000 + "mb/s", cost + "ms", total + "bytes", "avg:"+avg+"bytes"];
 
     console.log(stats.join("\t"));
     start = Date.now();

@@ -43,7 +43,7 @@ var DataStructure = (function(EventEmitter) {
   }
 
   DataStructure.prototype.register = function(q, cb) {
-    console.log(["register ", q.template.id, this.queryToKey(q), q])
+    //console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 
