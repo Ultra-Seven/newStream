@@ -2,13 +2,26 @@
 
 ## Install and setup
 
+Note these instructions are for **python 2.7** in virtualenv, and Mac OSX.  
+We assume you have [pip](https://pypi.python.org/pypi/pip), [virtualenv](https://virtualenv.pypa.io/en/stable/), 
+and [brew](http://brew.sh/) installed.
+
+### Possible problems up front
+
+[pip may complain about the package "six"](https://github.com/pypa/pip/issues/3165)
+
+        pip install --ignore-installed six  <your package>
+
+
+### The easy stuff
+
 Install nodejs, npm, protocol buffer, postgres.  OSx instructions:
 
-        brew install node npm protobuf postgresql
+        brew install node npm  postgresql
 
 Install python packages (probably want to use virtualenv)
 
-        pip install flask numpy scipy bsddb3 psycopg2 sqlalchemy
+        pip install flask click numpy scipy sqlalchemy 
 
 Install node modules:
 
@@ -19,10 +32,36 @@ Install global node module:
         npm install -g browserify
 
 
-Setup a postgres database
+### The tricky stuff
+
+The following are kind of a pain to setup on OSX
+
+Protocol buffers
+
+        # run this outside of tmux/virtualenv
+        brew install protobuf
+
+        # install python libraries
+        pip install protobuf
+
+BerkeleyDB
+
+* BerkeleyDB 6.0 is unfortunately AGPL.  I don't anticipate this codebase deployed as is, but if you have issues with it, feel free to install an earlier version.
+
+        brew install berkeley-db
+
+        # replace "6.2.23" with the version brew installed
+        YES_I_HAVE_THE_RIGHT_TO_USE_THIS_BERKELEY_DB_VERSION=1 BERKELEYDB_DIR=$(brew --cellar)/berkeley-db/6.2.23 pip install bsddb3
+
+Postgresql
+
+        brew install postgresql
+        pip install psycopg2
+
+        # initialize a database directory
+        initdb --help
 
         createdb test
-
 
 ## Compiling and Running
 

@@ -62,8 +62,8 @@ def setup_spec(db, spec):
   Given a visualization spec that mirrors the setup in the client (static/js/index.js),
   generate all the relevant data structures to answer the queries
   """
-  if spec['name'] == "cubequery":
-    ds = CubeDataStruct(db, spec)
+  if spec['name'] == "gbquery":
+    ds = GBDataStruct(db, spec)
 
     # figure out the valid values for the parameters
     param_vals = dict()
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dict(
       id="#viz1",
       template=dict(
-        name="cubequery",
+        name="gbquery",
         select=dict(
           x="a",
           y="avg(d)::int"
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     dict(
       id="#viz2",
       template=dict(
-        name="cubequery",
+        name="gbquery",
         select=dict(
           x="b",
           y="avg(e)::int"
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     dict(
       id="#viz3",
       template=dict(
-        name="cubequery",
+        name="gbquery",
         select=dict(
           x="c",
           y="avg(e)::int"

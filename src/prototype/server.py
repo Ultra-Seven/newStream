@@ -10,7 +10,6 @@ from Queue import Queue
 from StringIO import StringIO
 from sqlalchemy import create_engine
 from flask import Flask, render_template, Response, request, stream_with_context
-from flask_socketio import SocketIO, send, emit
 
 from py.ds import *
 from py.manager import *
