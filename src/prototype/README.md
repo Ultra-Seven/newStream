@@ -58,9 +58,14 @@ Postgresql
         brew install postgresql
         pip install psycopg2
 
-        # initialize a database directory
-        initdb --help
+        # initialize a database directory (pick your favorite directory)
+        mkdir ~/pgdata/
+        initdb ~/pgdata/
+        
+        # start postgres
+        pg_ctl -D ~/pgdata start
 
+        # create a database
         createdb test
 
 ## Compiling and Running
@@ -69,9 +74,9 @@ Compile protocol buffers, package javascript files in `js/` into a single deploy
 
         make
 
-Setup offline data structures
+Setup offline data structures (will create .cache files in the current directory)
     
-        python setup.py 
+        python py/setup.py 
 
 Launch server
 

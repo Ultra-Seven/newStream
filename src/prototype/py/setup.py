@@ -149,7 +149,7 @@ if __name__ == "__main__":
   ## Uncomment to recompute offline data structures
   setup_specs(db, viz_setup)
 
-  ds = CubeDataStruct(db, viz_setup[1]["template"])
+  ds = GBDataStruct(db, viz_setup[1]["template"])
   print ds(dict(c=1))
 
 
