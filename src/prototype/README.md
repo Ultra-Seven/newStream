@@ -12,6 +12,9 @@ and [brew](http://brew.sh/) installed.
 
         pip install --ignore-installed six  <your package>
 
+[connecting to postgresql may have password issues](http://dba.stackexchange.com/questions/14740/how-to-use-psql-with-no-password-prompt)
+
+* See the link for multiple possible solutions.
 
 ### The easy stuff
 
@@ -67,6 +70,7 @@ Postgresql
 
         # create a database
         createdb test
+
 
 ## Compiling and Running
 
