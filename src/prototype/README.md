@@ -144,11 +144,11 @@ There are a few key concepts that are important to understand how they work.
 
 ## Assignments
 
-Assignment 1:
+Warmup Assignment 1:
 
-Get it running
-Add a fourth visualization
+1. Get it running
+2. Add a fourth visualization to the client and get it working
+3. (Optional Bonus): add support for scatter plots
 
-ASsignment 2:
 
 
