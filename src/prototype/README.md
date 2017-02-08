@@ -150,7 +150,7 @@ There are a few key concepts that are important to understand how they work.
 
 ### Warmup Assignment 1:
 
-Due 2/14 midnight
+Due 2/13 midnight
 
 1. Get it running
 2. Add a fourth visualization to the client and get it working
