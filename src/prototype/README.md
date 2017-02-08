@@ -144,11 +144,17 @@ There are a few key concepts that are important to understand how they work.
 
 ## Assignments
 
-Warmup Assignment 1:
+### Warmup Assignment 1:
 
 1. Get it running
 2. Add a fourth visualization to the client and get it working
 3. (Optional Bonus): add support for scatter plots
+
+Sumbitting
+
+* use [giphy](https://giphy.com/apps/giphycapture), [recordit](http://recordit.co/), quicktime or some other way to create a video of GIF of the viz working
+* rename the file to `<YOURUNI>_<YOUR NAME>`
+* [Submit to this link](https://www.dropbox.com/request/h9fYM27EPJGybrUQlm5B)
 
 
 
