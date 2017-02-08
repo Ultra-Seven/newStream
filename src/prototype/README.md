@@ -150,7 +150,7 @@ Due 2/14 midnight
 
 1. Get it running
 2. Add a fourth visualization to the client and get it working
-3. (Optional Bonus): add support for scatter plots
+3. (Optional Bonus): edit [./js/viz.js](./js/viz.js) to add support for scatter plots
 
 Submitting
 
