@@ -16,6 +16,10 @@ and [brew](http://brew.sh/) installed.
 
 * See the link for multiple possible solutions.
 
+Flask's threaded may not stop all `server.py` processes using `CTL-C`.  This is the nuclear option: 
+
+        ps -A | grep python | awk '{print $1}' | xargs kill 
+
 ### The easy stuff
 
 Install nodejs, npm, protocol buffer, postgres.  OSx instructions:
