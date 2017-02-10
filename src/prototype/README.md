@@ -4,6 +4,7 @@
 
 Note these instructions are for **python 2.7** in virtualenv, and Mac OSX.  
 We assume you have [pip](https://pypi.python.org/pypi/pip), [virtualenv](https://virtualenv.pypa.io/en/stable/), 
+xcode,
 and [brew](http://brew.sh/) installed.
 
 ### Possible problems up front
