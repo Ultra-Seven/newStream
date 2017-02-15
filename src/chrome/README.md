@@ -9,7 +9,12 @@ Related papers
 * [Kalman Filter technique](https://scholar.google.com/scholar?hl=en&q=User+target+intention+recognition+from+cursor+position+using+Kalman+filter&btnG=&as_sdt=1%2C33&as_sdtp=)
 
 
-# Instructions
+# Mouse Traces
+
+You will want to collect mouse trace data (it is fine to share data with classmates to get a larger training set).
+To help you, we have written a chrome extension and python server to collect mouse trace data for you.
+
+## Setup Instructions
 
 Install the chrome extension
 
@@ -17,7 +22,7 @@ Install the chrome extension
   just go to your extensions chrome://extensions/, click "Developer mode", 
   "Load unpacked extension" button, and then point it to your extension folder.
 
-Run the server:
+Run the https flask server:
 
         cd server/
         python server.py
@@ -27,11 +32,10 @@ Accept our bogus self-signed certificate
 
 * go to `https://localhost:5000` and click "proceed anyways". 
 
-
 Go to a webpage and click around --- the server should print the mouse data.
 
 
-# How to collect traces
+## How to collect traces
 
 1. Enable the chrome extension in Chrome
 2. Run the python server
@@ -40,7 +44,7 @@ Go to a webpage and click around --- the server should print the mouse data.
 5. Read the berkeleydb database for your collected data!
 
 
-# Data formats
+## Data formats
 
 Everything is sent from the browser to the server as string-encoded JSON objects, and stored in the berkeley database as hashtable values.  
 The berkeleydb keys are just integers in the insertion order.  
