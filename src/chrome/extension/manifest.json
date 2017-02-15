@@ -1,0 +1,16 @@
+{
+  "name": "Mouse Logger",
+  "version": "0.1",
+  "description": "Loggs mouse atd DOM element data, sends to a server.",
+  "permissions": [
+      "http://localhost/",
+      "https://localhost/"
+        ],
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://*/*"],
+      "js": ["d3.min.js", "jquery.js", "content.js"]
+    }
+  ],
+  "manifest_version": 2
+}
