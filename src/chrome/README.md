@@ -1,7 +1,7 @@
 In this assignment, you will collect mouse data, create a good mouse prediction algorithm (perhaps by collecting better mouse data),
 and propose a way to evaluate the quality of the algorithm.
 
-Due: 2/28 9PM
+Due: 3/3 11:59PM EST 
 
 Related papers
 
