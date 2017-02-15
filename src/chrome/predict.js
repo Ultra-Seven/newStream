@@ -1,3 +1,7 @@
+// you may want to copy dist.js over from the prototype code!
+var Dist = require("./dist.js")
+
+
 // This should be a selfcontained file.  Any data should be embedded in this file.
 
 var Predictor = (function() {

@@ -81,13 +81,33 @@ The JSON objects have a special attribute "type" that is either "page" or "mouse
 
 # Your Task:
 
-1. Fill in [predict.js:Predictor](./predict.js) and implement a javascript mouse prediction function, which, the following information, predicts the mouse location and action 
-  deltaTime milliseconds in the future:
-  * list of boxes representing the "interactable" elements on the page (in the same format as above), 
-  * a partial mouse trace, and 
-  * deltaTime
-1. Propose a metric for evaluating the accuracy of your predictions and implement in [predict.js:Evaluator](./predict.js)
-1. List any visualization URLs that would be good final prediction test cases later in the semester
+Read all of the instructions first!  
+
+You will implement a mouse predictor.
+A predictor, at a high level, takes as input a value t that represents the number of milliseconds into the future, and
+returns a distribution of the mouse positions and actions at that time.
+We have implemented a somewhat smart mouse predictor in [predict.js](./predict.js), take a look at it.  
+You will endeaver to implement something that out performs it.  To do so, there are two phases for this assignment.
+
+1. **What does BETTER mean?** 
+  * Propose and implement a metric for evaluating the accuracy of your predictions and implement in [predict.js:Evaluator](./predict.js).
+  * You can assume the predictor returns a [Distribution](../prototype/js/dist.js) object that implements `getTopK()` and `getAllAbove()`.
+1. **Actually Predict** 
+  * Fill in [predict.js:Predictor](./predict.js) and implement a javascript mouse prediction function, which, 
+     given the following information, returns a [mouse distribution](../prototype/js/dist.js) that adheres to the
+     MouseDistribution signature.
+  * Inputs:
+    * list of boxes representing the "interactable" elements on the page (in the same format as above), 
+    * a partial mouse trace, and 
+    * deltaTime
+  * Output
+    * A distribution object over mouse [x, y, action] arrays.  This means that the Distribution object
+      maps [x, y, action] arrys to a probability.  This may be expensive since there are lots of pixels, 
+      so you don't need to _implement_ it like this.  For instance, you might instead store probabilites for x, y ranges,
+      or only store the single [x, y, action] with probability 100 and everything else has probability 0.
+    * Implement `getTopK()` and `getAllAbove()`  for the distribution.  You can call these functions for your evaluation.
+
+List any visualization URLs that would be good final prediction test cases later in the semester
 
 
 
