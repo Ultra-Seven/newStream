@@ -1,3 +1,14 @@
+In this assignment, you will collect mouse data, create a good mouse prediction algorithm (perhaps by collecting better mouse data),
+and propose a way to evaluate the quality of the algorithm.
+
+Due: 2/28 9PM
+
+Related papers
+
+* [KTM](http://depts.washington.edu/madlab/proj/ktm/) is the state of the art, and works _ok_.  They have a good list of references.
+* [Kalman Filter technique](https://scholar.google.com/scholar?hl=en&q=User+target+intention+recognition+from+cursor+position+using+Kalman+filter&btnG=&as_sdt=1%2C33&as_sdtp=)
+
+
 # Instructions
 
 Install the chrome extension
