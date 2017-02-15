@@ -62,3 +62,18 @@ The JSON objects have a special attribute "type" that is either "page" or "mouse
            u'type': u'mouse', 
            u'id': u'1487144820511:917'}
 
+
+
+# Your Task:
+
+1. Fill in [predict.js:Predictor](./predict.js) and implement a javascript mouse prediction function, which, the following information, predicts the mouse location and action 
+  deltaTime milliseconds in the future:
+  * list of boxes representing the "interactable" elements on the page (in the same format as above), 
+  * a partial mouse trace, and 
+  * deltaTime
+1. Propose a metric for evaluating the accuracy of your predictions and implement in [predict.js:Evaluator](./predict.js)
+1. List any visualization URLs that would be good final prediction test cases later in the semester
+
+
+
+
