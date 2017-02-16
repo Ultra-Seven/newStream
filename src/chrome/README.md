@@ -132,14 +132,15 @@ given the following information, returns a [Distribution](./server/js/dist.js) o
 
 * Inputs:
   * list of boxes representing the "interactable" elements on the page (in the same format as above), 
-  * a partial mouse trace, and 
+  * a partial mouse trace as a list of [x, y, t, action] tuples, , where action can be `m`, `d`, `u`. 
   * deltaTime
 * Output
-  * A distribution object over mouse [x, y, action] arrays, where action can be `m`, `d`, `u`.  
+  * A distribution object over mouse [x, y, action] arrays
     This means that the Distribution object maps [x, y, action] arrys to a probability.  
-    This may be expensive since there are lots of pixels, so you don't need to _implement_ it like this.  
-    For instance, you might instead store probabilites for x, y ranges,
-    or only store the single [x, y, action] with probability 100 and everything else has probability 0.
+    Doing this naively may be expensive since there are lots of pixels.
+    You might instead discretize the pixel space and store probabilites for x, y ranges,
+    or only store the single [x, y, action] with probability 100 and everything else has probability 0,
+    or something else.  
   * Implement `getTopK()` and `getAllAbove()`  for the distribution.  
     You would probably want them for the evalutaion function in the first phase.
 

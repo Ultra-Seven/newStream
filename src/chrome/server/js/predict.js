@@ -12,7 +12,10 @@ var Predictor = (function() {
 
   // TODO: override this function
   //
-  // @trace list of [x, y, t] triplets.  t might not be normalized to start at 0!
+  // @trace list of [x, y, t, action] tuples.
+  //        t might not be normalized to start at 0!
+  //        action is "m", "d", or "u"
+  //
   // @return a Distribution object whose predictions are arrays of 
   //            
   //            [x position, y position, action]
