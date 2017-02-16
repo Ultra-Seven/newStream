@@ -1,7 +1,12 @@
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 var Dist = require("./dist.js")
+var ktmPred = require("./ktm.js")
 
+// @position: [x, y, action]
+function mouseToKey(position) {
+  return position.join(":");
+}
 
 // This should be a selfcontained file.  Any data you need should be embedded in this file.
 
@@ -23,8 +28,7 @@ var Predictor = (function() {
   //         where action is "m", "d", or "u"
   //
   Predictor.prototype.predict = function(trace, deltaTime) {
-    
-    return new Dist.NaiveDistribution();
+    return new Dist.NaiveDistribution(mouseToKey);
   }
 
   return Predictor;
@@ -35,12 +39,19 @@ var Predictor = (function() {
 var BaselinePredictor = (function(Predictor) {
   extend(BaselinePredictor, Predictor);
 
-  function BaselinePredictor(boxes) {
+  // @cb callback to execute once KTM has loaded the template trace file
+  function BaselinePredictor(boxes, cb) {
+    this.ktm = new ktmPred.KTM(cb);
     Predictor.apply(this, arguments);
   };
-  
 
-  // TODO: Tejas: fill in code here for the baseline
+  BaselinePredictor.prototype.predict = function(trace, deltaTime) {
+    var pt = this.ktm.predictPosition(trace, deltaTime);
+    var pred = [pt[0], pt[1], "m"];
+    var dist = Dist.NaiveDistribution.from(pred, mouseToKey);
+    dist.set(pred, 1);
+    return dist;
+  };
 
   return BaselinePredictor;
 })(Predictor);

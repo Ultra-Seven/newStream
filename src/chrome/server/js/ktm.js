@@ -1,5 +1,5 @@
 /**
- * MPredict.js v1.1.5
+ * ktm.js v1.1.5
  * https://github.com/cudbg/mpredict.js
  * MIT licensed
  *
@@ -7,18 +7,8 @@
  */
 
 
-(function (root, factory) {
-    if (typeof exports === 'object') {
-        // CommonJS
-        factory(exports);
-    } else if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
-        define(['exports'], factory);
-    } else {
-        // Browser globals
-        factory(root);
-    }
-} (this, function (exports) {
+
+var KTM = (function () {
     //Default config/variables
     var VERSION = '1.1.5';
     var _templates;
@@ -27,7 +17,7 @@
         sampleInterval: 10,
         pauseThreshold: 50,
         K: 5,
-        pathToTemplates: './mpredict-templates.json',
+        pathToTemplates: '/static/data/mpredict-templates.json',
         targetElement: 'document'
     };
 
@@ -65,54 +55,6 @@
         var vLen = _calcDist(v[0], v[1], 0, 0);
         var r = _dotProduct(v2p, v) / (vLen * vLen);
         return [r * v[0], r * v[1]];
-    }
-
-    /**
-     *  main class
-     *
-     * @class MPredict
-     */
-    var mPredict = {};
-
-    /**
-     * Add a point to current trace
-     *
-     * @api private
-     * @method _addPoint
-     */
-    function _addPoint(point, trace) {
-
-        if (trace.length > 0 && (point[2] < trace[trace.length-1][2]
-            || point[2] > trace[trace.length-1][2] + _options.pauseThreshold)) {
-            trace = [];
-        }
-        if (trace.length > 0) {
-            var dist0 = _calcDist(trace[0][0], trace[0][1], trace[trace.length-1][0], trace[trace.length-1][1]);
-            var dist1 = _calcDist(trace[0][0], trace[0][1], point[0], point[1]);
-            if (dist0 > dist1) {
-                trace = [trace[trace.length-1]];
-            }
-        }
-
-        if (trace.length === 0 || _options.sampleInterval === 0) {
-            trace.push(point);
-        }
-        else {
-            var l = trace.length;
-            var timeDiff = point[2] - trace[l-1][2], rate = _options.sampleInterval / timeDiff;
-            var x = trace[l-1][0], y = trace[l-1][1];
-            while (timeDiff >= _options.sampleInterval) {
-                trace.push([
-                    trace[l-1][0] + rate * (point[0] - x),
-                    trace[l-1][1] + rate * (point[1] - y),
-                    trace[l-1][2] + _options.sampleInterval
-                ]);
-                timeDiff -= _options.sampleInterval;
-                l++;
-            }
-        }
-
-        return trace;
     }
 
     /**
@@ -442,10 +384,7 @@
         var vap = {'trace': [], 'vp':[], 'ap': [], 'vap': []};
         var tLen = trace.length;
         vap['trace'] = trace;
-        if (tLen < 2) {
-            return vap;
-        }
-        else {
+        if (tLen >= 2) {
             if (constraint && constraint.length === 2) {
                 if (tLen === 2) {
                     var v;
@@ -457,9 +396,7 @@
                     vap['vp'] = [Math.sqrt(projectedV[0] * projectedV[0] + projectedV[1] * projectedV[1])];
                     vap['ap'] = [0.0];
                     vap['vap'] = vap['vp']
-                    return vap;
-                }
-                else {
+                } else {
                     for (var i = 2; i < trace.length; i++) {
                         var v = _calcVelocity([trace[i - 2], trace[i - 1], trace[i]], constraint);
                         var a = _calcAngle([trace[i - 2], trace[i - 1], trace[i]]);
@@ -467,11 +404,8 @@
                         vap['ap'].push(a);
                     }
                     vap['vap'] = _combineVA(vap['vp'], vap['ap']);
-                    return vap;
                 }
-
-            }
-            else {
+            } else {
                 if (tLen === 2) {
                     var v;
                     v = [
@@ -481,9 +415,7 @@
                     vap['vp'] = [Math.sqrt(v[0] * v[0] + v[1] * v[1])];
                     vap['ap'] = [0.0];
                     vap['vap'] = vap['vp']
-                    return vap;
-                }
-                else {
+                } else {
                     for (var i = 2; i < trace.length; i++) {
                         var v = _calcVelocity([trace[i - 2], trace[i - 1], trace[i]]);
                         var a = _calcAngle([trace[i - 2], trace[i - 1], trace[i]]);
@@ -491,10 +423,10 @@
                         vap['ap'].push(a);
                     }
                     vap['vap'] = _combineVA(vap['vp'], vap['ap']);
-                    return vap;
                 }
             }
         }
+        return vap
     }
 
     /**
@@ -555,6 +487,7 @@
             }
         });
 
+
         var matched = [];
         for (var i = 0; i < _options.K; i++) {
             matched.push(_templates[matchingVAP[i]]);
@@ -566,37 +499,17 @@
             return _predictPoint(currentVAP, matched, delta);
         }
     }
-    /**
-     * Start listening to the target DOM element
-     *
-     * @api private
-     * @method _startRecording
-     */
-    function _startRecording() {
-        var targetEle = document;
-        if (_options.targetElement !== 'document') {
-            targetEle = document.querySelector(_options.targetElement);
-        }
-        console.log(targetEle);
-        targetEle.addEventListener('mousemove', function (e) {
-            _curTrace = _addPoint.call(this, [e.pageX, e.pageY, Math.floor(Date.now())], _curTrace);
-        });
-        targetEle.addEventListener('mousedown', function () {
-            _curTrace = [];
-        });
-        targetEle.addEventListener('mouseup', function () {
-            _curTrace = [];
-        });
-    }
 
     // Load the library of templates
     var loadLocalFile = function (path, done) {
+      console.log("loading file " + path);
         var xmlhttp = new XMLHttpRequest();
         xmlhttp.open('GET', path, true);
         xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == 4) {
                 if(xmlhttp.status == 200) {
-                    done(JSON.parse(xmlhttp.responseText))
+                  console.log("file loaded! " + xmlhttp.responseText.length);
+                  done(JSON.parse(xmlhttp.responseText))
                 }
             }
         };
@@ -604,51 +517,40 @@
     };
 
     /**
-     * Current MPredict version
+     *  main class
      *
-     * @property version
-     * @type String
+     * @class KTM
      */
-    mPredict.version = VERSION;
-
-    //mPredict.predictElement = function() {
-    //    return this;
-    //};
-
-    mPredict.predictPosition = function(trace, deltaTime, option) {
-        return _predictPosition(trace, deltaTime / _options.sampleInterval, option);
+    var KTM = function(cb) {
+      var me = this;
+      loadLocalFile(_options.pathToTemplates, function(res) {
+        me.templates = _templates = res;
+        if (cb) cb(me);
+      });
     };
 
-    mPredict.sampleTrace = function(trace) {
-        return _sampleTrace.call(this, trace)
+    KTM.version = VERSION;
+
+    KTM.prototype.ready = function() {
+      return (_templates !== undefined);
     };
 
-    mPredict.getCurrentTrace = function() {
+    KTM.prototype.predictPosition = function(trace, deltaTime, option) {
+      return _predictPosition(trace, deltaTime / _options.sampleInterval, option);
+    };
+
+    KTM.prototype.sampleTrace = function(trace) {
+      return _sampleTrace.call(this, trace)
+    };
+
+    KTM.prototype.getCurrentTrace = function() {
         return _curTrace;
     };
 
-    mPredict.start = function(options) {
-        for (var attrname in options) {
-            _options[attrname] = options[attrname];
-        }
+    return KTM;
+})();
 
-        loadLocalFile(_options.pathToTemplates, function(res) {
-            _templates = res;
-            return res;
-        });
 
-        function checkLoaded() {
-            if (_templates == undefined) {
-                // checks whether templates are loaded from the file every 100ms
-                window.setTimeout(checkLoaded, 100);
-            }
-            else {
-                _startRecording.call(this);
-            }
-        }
-        checkLoaded();
-    };
-
-    exports.mPredict = mPredict;
-    return mPredict;
-}));
+module.exports = {
+  KTM: KTM 
+};
