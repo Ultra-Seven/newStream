@@ -95,9 +95,15 @@ Read all of the instructions first!
 You will implement a mouse predictor in the [server/js](./server/js) folder.
 A predictor, at a high level, takes as input a value `t` that represents the number of milliseconds into the future, and
 returns a distribution of the mouse positions and actions at that time.
-We have implemented a somewhat smart mouse predictor in [predict.js](./server/js/predict.js), take a look at it.  
-You will endeaver to implement something that out performs it.  To do so, there are two phases for this assignment.
+We have implemented a baseline mouse predictor based on KTM in [predict.js](./server/js/predict.js), take a look at it.  
+You will endeaver to implement something that out performs it.  
 
+To help you develop and test, we have included:
+
+* a baseline predictor called BaselinePredictor
+* a [demo page](./server/templates/index.html) that lets you move your mouse around and visualize your predictions.
+* [dist.js](./server/js/dist.js) 
+* a [Makefile](./server/Makefile)
 
 Setup and running
 
@@ -118,11 +124,6 @@ Propose and implement a metric for evaluating the accuracy of your predictions a
 
 * You can assume the predictor returns a [Distribution](./server/js/dist.js) object that implements `getTopK()` and `getAllAbove()`.
   You will write those in phase two.
-* To help you develop and test, we have included:
-  * a baseline predictor
-  * a [demo page](./server/templates/index.html) that lets you move your mouse around and visualize your predictions.
-  * [dist.js](./server/js/dist.js) 
-  * a Makefile
 
 ### Actually Predict!   Due: 3/5 11:59PM EST 
 
