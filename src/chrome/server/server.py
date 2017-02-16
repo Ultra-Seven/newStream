@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-  return Response("hi")
+  return render_template("index.html")
 
 @app.route("/mouse", methods=["post", "get"])
 def mouse():

@@ -1,0 +1,36 @@
+{
+  "name": "vizstreamingarchhw2",
+  "version": "0.0.1",
+  "description": "Prototype of streaming architecture for large scale viz.",
+  "keywords": [
+  ],
+  "author": {
+    "name": "eugene wu"
+  },
+  "contributors": [
+    {
+      "name": "Eugene Wu",
+      "url": "http://www.eugenewu.net"
+    }
+  ],
+  "maintainers": [
+  ],
+  "homepage": "",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/cudbg/stream.git"
+  },
+  "devDependencies": {
+    "underscore": "1.8.3",
+    "browserify": "14.0.0",
+    "uglify-js": "2.4.0",
+  },
+  "dependencies": {
+    "underscore": "1.8.3",
+  },
+ 
+  "scripts": {
+    "test": "./node_modules/.bin/vows"
+  }
+}

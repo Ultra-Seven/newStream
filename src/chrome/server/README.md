@@ -1,0 +1,1 @@
+This code is to run the mouse trace logging server for data collection and contains the source files for hw2
