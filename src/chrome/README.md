@@ -125,6 +125,11 @@ Propose and implement a metric for evaluating the accuracy of your predictions a
 * You can assume the predictor returns a [Distribution](./server/js/dist.js) object that implements `getTopK()` and `getAllAbove()`.
   You will write those in phase two.
 
+Submitting
+
+* upload your `evaluator.js` file to [this dropbox link](https://www.dropbox.com/request/WDYKwcpqicxBaNUx8ZR9)
+
+
 ### Actually Predict!   Due: 3/5 11:59PM EST 
 
 Fill in [predict.js:Predictor](./server/js/predict.js) and implement a javascript mouse prediction function, which, 
@@ -145,7 +150,9 @@ given the following information, returns a [Distribution](./server/js/dist.js) o
     You would probably want them for the evalutaion function in the first phase.
 
 
-## Submitting
+Submitting
+
+* TBD
 
 
 
