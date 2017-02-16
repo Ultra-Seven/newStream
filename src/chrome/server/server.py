@@ -33,5 +33,5 @@ if __name__ == '__main__':
   # http://www.akadia.com/services/ssh_test_certificate.html
   # Name: Internet Widgets Pty Ltd
   # passphrase: columbiaviz
-  context = ('server.crt', 'server.key') 
+  context = ('./certs/server.crt', './certs/server.key') 
   app.run(host="localhost", port=5000, debug=0, threaded=0, ssl_context=context)#

@@ -10,7 +10,7 @@ Teams:
 Due Dates: 
 
 * Evaluation functions: 2/22 12PM (noon)
-* Prediction algorithm: 3/3 11:59PM EST 
+* Prediction algorithm: 3/5 11:59PM EST 
 
 Related papers
 
@@ -98,6 +98,14 @@ returns a distribution of the mouse positions and actions at that time.
 We have implemented a somewhat smart mouse predictor in [predict.js](./server/js/predict.js), take a look at it.  
 You will endeaver to implement something that out performs it.  To do so, there are two phases for this assignment.
 
+
+Setup and running
+
+        cd server
+        npm install .
+        make
+        python server.py
+
 Optional
 
 * As you work on this assignment, look for and save URLs of visualizations that you would like to use to gather viz specific mouse traces and to test our predictors on!
@@ -110,13 +118,13 @@ Propose and implement a metric for evaluating the accuracy of your predictions a
 
 * You can assume the predictor returns a [Distribution](./server/js/dist.js) object that implements `getTopK()` and `getAllAbove()`.
   You will write those in phase two.
-* To help you develop and test, we have 
-  * included a baseline predictor
-  * included a demo page that visualizes your ditributions
-  * copied [dist.js](./server/js/dist.js) into the [js](./server/js) folder, 
-  * included a Makefile
+* To help you develop and test, we have included:
+  * a baseline predictor
+  * a [demo page](./server/templates/index.html) that lets you move your mouse around and visualize your predictions.
+  * [dist.js](./server/js/dist.js) 
+  * a Makefile
 
-### Actually Predict!   Due: 3/3 11:59PM EST 
+### Actually Predict!   Due: 3/5 11:59PM EST 
 
 Fill in [predict.js:Predictor](./server/js/predict.js) and implement a javascript mouse prediction function, which, 
 given the following information, returns a [Distribution](./server/js/dist.js) object.  

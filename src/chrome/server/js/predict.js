@@ -1,4 +1,4 @@
-var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[ke
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 var Dist = require("./dist.js")
 
@@ -7,7 +7,7 @@ var Dist = require("./dist.js")
 
 var Predictor = (function() {
   function Predictor(boxes) {
-    this.boxes
+    this.boxes = boxes;
   };
 
   // TODO: override this function
@@ -28,6 +28,7 @@ var Predictor = (function() {
 })();
 
 
+// Baseline prediction that is based on KTM that we provide
 var BaselinePredictor = (function(Predictor) {
   extend(BaselinePredictor, Predictor);
 
@@ -42,7 +43,25 @@ var BaselinePredictor = (function(Predictor) {
 })(Predictor);
 
 
+
+
+var YourPredictor = (function(Predictor) {
+  extend(YourPredictor, Predictor);
+
+  function YourPredictor(boxes) {
+    Predictor.apply(this, arguments);
+  };
+  
+
+  // TODO: fill in with your code
+
+  return YourPredictor;
+})(Predictor);
+
+
+
 module.exports = {
   Predictor: Predictor,
-  BaselinePredictor: BaselinePredictor
+  BaselinePredictor: BaselinePredictor,
+  YourPredictor: YourPredictor
 }
