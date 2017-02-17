@@ -92,25 +92,28 @@ The JSON objects have a special attribute "type" that is either "page" or "mouse
 
 Read all of the instructions first!  
 
-You will implement a mouse predictor in the [server/js](./server/js) folder.
-A predictor, at a high level, takes as input a value `t` that represents the number of milliseconds into the future, and
+You will implement a mouse predictor called `YourPredictor` in [predict.js](./server/js/predict.js).  The code is in `./server/js`.
+A predictor, at a high level, takes as input a value `timeDelta` that represents the number of milliseconds into the future, and
 returns a distribution of the mouse positions and actions at that time.
-We have implemented a baseline mouse predictor based on KTM in [predict.js](./server/js/predict.js), take a look at it.  
+We have implemented a `BaselinePredictor` class based on KTM in [predict.js](./server/js/predict.js).
 You will endeaver to implement something that out performs it.  
 
 To help you develop and test, we have included:
 
-* a baseline predictor called BaselinePredictor
-* a [demo page](./server/templates/index.html) that lets you move your mouse around and visualize your predictions.
+* [BaselinePredictor](./server/js/predict.js) that uses a precomputed [KTM model](./server/js/ktm.js)
+* [demo page](./server/templates/index.html) that lets you move your mouse around and visualize your predictions.
+  * As you implement `YourPredictor` in the second phase of the project, you can recompile the js files and reload the page to see it live.
 * [dist.js](./server/js/dist.js) 
-* a [Makefile](./server/Makefile)
+* [Makefile](./server/Makefile)
 
-Setup and running
+Setup and running the demo
 
         cd server
         npm install .
         make
         python server.py
+        # enter password: columbiaviz
+        # go to https://localhost:5000
 
 Optional
 
@@ -120,10 +123,11 @@ Optional
 
 ### What does BETTER mean? Due: 2/22 12PM (noon)
 
-Propose and implement a metric for evaluating the accuracy of your predictions and implement in [predict.js:Evaluator](./server/js/predict.js).
+Propose and implement a metric for evaluating the accuracy of your predictions.  Implement it by filling in the `TODO` blocks in [evaluator.js](./server/js/evaluator.js).
 
 * You can assume the predictor returns a [Distribution](./server/js/dist.js) object that implements `getTopK()` and `getAllAbove()`.
   You will write those in phase two.
+* You can use the `BaselinePredictor` to test your evaluator -- note that the baseline predictor is not very good.
 
 Submitting
 
