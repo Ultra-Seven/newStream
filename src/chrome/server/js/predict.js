@@ -12,7 +12,7 @@ function mouseToKey(position) {
 
 var Predictor = (function() {
   function Predictor(boxes) {
-    this.boxes = boxes;
+    this.boxes = boxes || [];
   };
 
   // TODO: override this function
@@ -40,8 +40,8 @@ var BaselinePredictor = (function(Predictor) {
   extend(BaselinePredictor, Predictor);
 
   // @cb callback to execute once KTM has loaded the template trace file
-  function BaselinePredictor(boxes, cb) {
-    this.ktm = new ktmPred.KTM(cb);
+  function BaselinePredictor(boxes) {
+    this.ktm = new ktmPred.KTM();
     Predictor.apply(this, arguments);
   };
 
