@@ -121,6 +121,33 @@ Optional
   Save them by replying with the URL on this assignment's piazza post.
 
 
+### Step 0
+
+You have all been given write access to the repository.  It will make all of our lives easier if
+there is a central repository for the class.   
+I recommend that each team creates a branch for their team and commits/pushes to that branch.
+**DO NOT COMMIT TO MASTER!**
+
+        git checkout -b <name of your new branch>
+        
+        # git commit/add as normal
+
+        git push --set-upstream origin <name of your new branch>
+
+If the staff pushes bug fixes to the code, you can then merge it into your code easily
+
+        # 1. switch to your branch
+        git checkout <name of your new branch>
+
+        # 2. pull from github and merge
+        git pull
+        git merge master 
+
+How do you check which branch you're in?  [Add the current branch to your prompt](https://coderwall.com/p/fasnya/add-git-branch-name-to-bash-prompt) or:
+
+        git status
+
+
 ### What does BETTER mean? Due: 2/22 12PM (noon)
 
 Propose and implement a metric for evaluating the accuracy of your predictions.  Implement it by filling in the `TODO` blocks in [evaluator.js](./server/js/evaluator.js).
