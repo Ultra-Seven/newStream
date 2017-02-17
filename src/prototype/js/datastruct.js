@@ -13,6 +13,7 @@ var DataStructure = (function(EventEmitter) {
   function DataStructure() {
     this.registry = {};
     EventEmitter.call(this);
+    this.setMaxListeners(20);
   };
 
   // if data structure supports this type of query. 
@@ -56,7 +57,8 @@ var DataStructure = (function(EventEmitter) {
   // @param q instance of js/query.js:Query
   // @param cb callback when q's results are available
   DataStructure.prototype.register = function(q, cb) {
-    console.log(["register ", q.template.id, this.queryToKey(q), q])
+    if (Util.DEBUG)
+      console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 

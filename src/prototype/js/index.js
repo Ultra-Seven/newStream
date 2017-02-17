@@ -5,6 +5,7 @@ var GBDataStructure = require("./gbds").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
+Util.DEBUG = false;
 
 
 var bytespermb = 1048576;
@@ -128,7 +129,8 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 // Start the data stream!
 //
 Util.stream_from("/data", function(arr) {
-  Util.Debug.update(arr);
+  if (Util.DEBUG)
+    Util.Debug.update(arr);
   engine.ringbuf.write(arr);
 }, Util.Debug.debug.bind(Util.Debug));
 

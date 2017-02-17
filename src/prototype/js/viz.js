@@ -52,7 +52,6 @@ var Viz = (function(EventEmitter) {
     if (data == null) return;
     var me = this;
     var bound = this.markg.selectAll(".mark").data(data);
-    bound.exit().remove();
 
     function attach(els) {
       els
@@ -63,17 +62,24 @@ var Viz = (function(EventEmitter) {
         .attr("height", function(d) { return me.yscale(d.y); })
         .style("fill", "white")
         .style("stroke", "black")
-        .on("mouseover", function() { me.emit("mouseover", me, this, d3.select(this).data()[0]); })
-        .on("mouseout", function() { me.emit("mouseout", me.this, d3.select(this).data()[0]); });
 
-        for(var attr in data) {
-          if (attr != "x" && attr != "y") 
-            els.attr(attr, function(d) { return d[attr]; });
-        }
+      for(var attr in data) {
+        if (attr != "x" && attr != "y") 
+          els.attr(attr, function(d) { return d[attr]; });
+      }
+      return els;
     }
 
     attach(bound);
-    attach(bound.enter().append("rect"));
+    attach(bound.enter().append("rect"))
+      .on("mouseover", function() { 
+        me.emit("mouseover", me, this, d3.select(this).data()[0]); 
+      })
+      .on("mouseout", function() { 
+        me.emit("mouseout", me.this, d3.select(this).data()[0]); 
+      });
+    bound.exit().remove();
+
     return this;
   }
 

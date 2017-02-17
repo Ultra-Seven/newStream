@@ -10,34 +10,47 @@ class Manager(object):
   def __init__(self):
     self.data_structs = {}
     self.block_size = 50
+    self.prev_dist_update_time = None
 
   def add_data_structure(self, ds):
     self.data_structs[ds.id] = ds
-    print "added data structure id %d" % ds.id
+    if flask.DEBUG:
+      print "added data structure id %d" % ds.id
 
   def has_data_structure(self, qid):
     return qid in self.data_structs
 
   def __call__(self):
+    """
+    Infinite loop that reads the current query distribution and decides what bytes to send over the stream.
+    Currently, it just takes the highest probability query and blindly sends it (if there is data)
+    """
     while 1:
       time.sleep(0.001)
-      if not flask.dist: continue
+      if not flask.dist: 
+        continue
+      if self.prev_dist_update_time == flask.dist_update_time:
+        continue
 
       (query, prob) = tuple(max(flask.dist, key=lambda pair: pair[1]))
-      flask.dist = None
-      if prob == 0: continue
+      self.prev_dist_update_time = flask.dist_update_time
+      if prob == 0: 
+        continue
 
       ds, iterable = self.get_iterable(query, prob)
       if iterable is None: continue
       for block in iterable:
         # write the header: length of the block and the data structure's encoding id
-        print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
+        if flask.DEBUG:
+          print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
         yield struct.pack("2I", len(block), ds.encoding)
         yield block
 
 
   def get_iterable(self, query, prob):
     """
+    Picks the best data structure to answer this query and returns an iterator of byte blocks.
+
     We currently make a strong assumption that each query request is accompanied by
     a query template id that directly matches <= 1 data structure id
     on the server.

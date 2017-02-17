@@ -14,6 +14,7 @@ var DataStructure = (function(EventEmitter) {
   function DataStructure() {
     this.registry = {};
     EventEmitter.call(this);
+    this.setMaxListeners(20);
   };
 
   // if data structure supports this type of query. 
@@ -57,7 +58,8 @@ var DataStructure = (function(EventEmitter) {
   // @param q instance of js/query.js:Query
   // @param cb callback when q's results are available
   DataStructure.prototype.register = function(q, cb) {
-    console.log(["register ", q.template.id, this.queryToKey(q), q])
+    if (Util.DEBUG)
+      console.log(["register ", q.template.id, this.queryToKey(q), q])
     return this.on(this.queryToKey(q), cb);
   }
 
@@ -75,7 +77,7 @@ module.exports = {
 
  
 
-},{"events":19}],2:[function(require,module,exports){
+},{"events":20}],2:[function(require,module,exports){
 var proto = require("./table_pb");
 var Table = proto.Table;
 
@@ -129,7 +131,7 @@ module.exports = {
   JSONDecoder: JSONDecoder
 }
 
-},{"./table_pb":10}],3:[function(require,module,exports){
+},{"./table_pb":11}],3:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -177,6 +179,11 @@ var DistributionBase = (function() {
     return []; 
   };
 
+  // @k  the maximum number of objects to return
+  // @return the top k objects by probability
+  DistributionBase.prototype.getTopK = function(k) { 
+    return []; 
+  };
 
   // to a JSON-able representation that we can pass to jquery
   // aka a dictionary
@@ -193,29 +200,35 @@ var DistributionBase = (function() {
 
 
 
+//
+// Simplest distribution object
+//
 var NaiveDistribution = (function(Base) {
   extend(NaiveDistribution, Base);
 
-  NaiveDistribution.from = function(q) {
-    var d = new NaiveDistribution();
+  NaiveDistribution.from = function(q, keyFunc) {
+    var d = new NaiveDistribution(keyFunc);
     d.set(q, 1);
     return d;
   };
 
 
-  function NaiveDistribution() {
+  // @keyFunc is a function that takes a "query" as input and returns a string used as a key in the hash table
+  //          by default it will use qToKey defined at the top of this file, but you can define your own
+  function NaiveDistribution(keyFunc) {
+    this.keyFunc = keyFunc || qToKey;
     this.dist = {};
     // call parent constructor 
     Base.call(this);
   }
 
   NaiveDistribution.prototype.set = function(q, prob) {
-    this.dist[qToKey(q)] = [q, prob]; 
+    this.dist[this.keyFunc(q)] = [q, prob]; 
   };
 
   NaiveDistribution.prototype.get = function(q) {
     if (q == null || q === undefined) return 0;
-    var key = qToKey(q);
+    var key = this.keyFunc(q);
     if (key in this.dist) return this.dist[key][1];
     return 0;
   };
@@ -227,149 +240,33 @@ var NaiveDistribution = (function(Base) {
     });
   };
 
+  NaiveDistribution.prototype.getTopK = function(k) {
+    return _.rest(_.sortBy(_.values(this.dist), 
+                           function(pair) { return pair[1]; }),
+                  -k);
+  };
+
+
   return NaiveDistribution;
 })(DistributionBase);
 
 
 
 
-//
-// The requester runs as an infinite loop to regularly send a query distribution to the backend.  
-//
-// Currently, the distribution is sent as a list of (query, probability) pairs
-//
-//    query is an instance of js/query.js:Query 
-//    probability is a float between 0 and 1
-//
-// TODO: implement prediction, in which case we would send a list of triples:
-//       (deltaTime, query, probability)
-//       where deltaTime is the number of ms in the future the distributon is estimated for
-//
-var Requester = (function(EventEmitter) {
-  extend(Requester, EventEmitter);
 
-  function Requester(engine, opts) {
-    opts = opts || {};
-    this.engine = engine;
-    this.minInterval = opts.minInterval || 10;
-
-    EventEmitter.call(this);
-  };
-
-  // Run the requester forever
-  Requester.prototype.run = function() {
-    var distribution = this.getQueryDistribution();
-    if (distribution != null) 
-      this.send(distribution);
-    setTimeout(this.run().bind(this), this.minInterval);
-  };
-
-  // manually send a distribution to the server
-  Requester.prototype.send = function(dist, cb) {
-    $.ajax({
-      type: "POST",
-      contentType: "application/json; charset=utf-8",
-      url: "/distribution/set",
-      data:  JSON.stringify(dist.toWire()),
-      success: function (data) {
-        console.log(data)
-      },
-      dataType: "json"
-    });
-  }
-
-  ////////////////////////////////////////////////////////
-  //
-  //  Everything below is an unimplemented skeleton
-  //  for actually generating a real query distribution
-  //
-  ////////////////////////////////////////////////////////
-
-  // @param el a DOM element
-  // @return bounding box of the element
-  var getBoundingBox = function(el) {
-    el = $(el);
-    return {
-      w: el.width(),
-      h: el.height(),
-      x: el.offset().left, // x=0 is left edge of the page
-      y: el.offset().top   // y=0 is top of the page
-    };
-  };
-
-  // @param dt number of milliseconds into the future
-  // @return a list of [querytemplateid, params, probability]
-  //         that conforms to the Requester wire format
-  var getQueryDistribution = function(dt) {
-    return mapMouseToQueryDistribution(getMouseDistribution(dt));
-    return null;
-  };
-
-  //
-  // NOT IMPLEMENTED
-  // @param dt number of milliseconds into the future
-  // @return distribution of mouse positions
-  //
-  var getMouseDistribution = function(dt) {
-    return new Distribution();
-  }
-
-  //
-  // NOT IMPLEMENTED
-  // Maps the mouse distribution to a distribution of queries, 
-  // since we know the positions of all interactible DOM elements
-  //
-  // @mouseDist distribuiton of mouse positions (unimplementd)
-  // @return query distribution
-  var mapMouseToQueryDistribution = function(mouseDist) {
-
-    // 1. get interactable DOM elements
-    var els = $("button, .mark");
-
-    // 2. be able to map a DOM element to the query+params that it would
-    //    trigger if the user interacts with it
-    var magicalGetQueryParams = function(el) {
-      // not implemented
-      return null;
-    }
-
-    // 3. be able to compute the probability of interacting with a DOM element
-    //    super stupid way:
-    var markProbability = function(el) {
-      var bound = getBoundingBox(el);
-      var probs = [];
-      for (var dx = 0; dx < bound.w; dx++) {
-        for (var dy = 0; dy < bound.w; dy++) {
-          probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
-        }
-      }
-      return d3.mean(probs);
-    };
-
-    // 4. use the above to construct a query distribution
-    els.each(function(el) {
-      var query = magicalGetQueryParams(el);
-      // add it to a query distribution
-    });
-
-  }
-
-
-  return Requester;
-})(EventEmitter);
 
 
 
 module.exports = {
-  Requester: Requester,
   DistributionBase: DistributionBase,
   NaiveDistribution: NaiveDistribution
 }
 
-},{"events":19}],4:[function(require,module,exports){
+},{"events":20}],4:[function(require,module,exports){
 var EventEmitter = require("events");
 var RingBuffer = require("./ringbuffer").RingBuffer;
 var Dist = require("./dist");
+var Requester = require("./requester").Requester;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -385,7 +282,7 @@ var Engine = (function(EventEmitter) {
     this.vizes = {};
     this.datastructs = {};
     this.ringbuf = new RingBuffer(nbytes);
-    this.requester = new Dist.Requester(this);
+    this.requester = new Requester(this, {minInterval: 100});
 
     EventEmitter.call(this);
   };
@@ -471,10 +368,11 @@ module.exports = {
 };
 
 
-},{"./dist":3,"./ringbuffer":9,"events":19}],5:[function(require,module,exports){
+},{"./dist":3,"./requester":9,"./ringbuffer":10,"events":20}],5:[function(require,module,exports){
 var DataStructure = require("./datastruct").DataStructure;
 var Decoders = require("./decoders");
 var RangeIndex = require("./rangeidx");
+var Util = require("./util");
 var GBQueryTemplate = require("./query").GBQueryTemplate;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -502,6 +400,9 @@ var GBDataStructure = (function(DataStructure) {
 
     this.encoding = encoding;
 
+    this.addBlockTime = 0;
+    this.addBlockNum = 0;
+
     DataStructure.call(this);
   };
 
@@ -519,9 +420,16 @@ var GBDataStructure = (function(DataStructure) {
     }
   };
 
+  // Adds the block to this data structure.
+  //
+  // Costs
+  //  Deserialization and indexing is about 0.05 milliseconds for the average block.
+  //  Most of the cost is in this.emit, which does the rendering
+  //
   // @param range  [startidx, endidx] of block in ringbuffer
   // @param block  ArrayBuffer object
   GBDataStructure.prototype.addBlock = function(byteRange, block) {
+    var now = Date.now();
     var header = this.readHeader(block);
     var key = header.key;
     var table = null;
@@ -531,6 +439,7 @@ var GBDataStructure = (function(DataStructure) {
       console.log(e);
       return;
     }
+
     var data = {
       key: key,
       block: block,
@@ -539,8 +448,19 @@ var GBDataStructure = (function(DataStructure) {
     this.rangeIdx.add(byteRange, data);
     this.idx[key] = data;
 
-    //console.log(["cubmgr.emit", key, table])
+    if (Util.DEBUG) {
+      this.addBlockTime += (Date.now() - now);
+      this.addBlockNum += 1;
+      if (this.addBlockNum % 50 == 0) {
+        console.log(["addblock", this.addBlockNum, this.addBlockTime / this.addBlockNum]);
+        this.addBlockTime = 0;
+        this.addBlockNum = 0;
+      }
+    }
+
     this.emit(key, table);
+
+
   };
 
   GBDataStructure.prototype.dealloc = function(byteRange) {
@@ -576,7 +496,7 @@ module.exports = {
   GBDataStructure: GBDataStructure
 }
 
-},{"./datastruct":1,"./decoders":2,"./query":7,"./rangeidx":8}],6:[function(require,module,exports){
+},{"./datastruct":1,"./decoders":2,"./query":7,"./rangeidx":8,"./util":12}],6:[function(require,module,exports){
 var async = require("async");
 var Engine = require("./engine").Engine;
 var Util = window.Util = require("./util");
@@ -584,6 +504,7 @@ var GBDataStructure = require("./gbds").GBDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
+Util.DEBUG = false;
 
 
 var bytespermb = 1048576;
@@ -707,7 +628,8 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 // Start the data stream!
 //
 Util.stream_from("/data", function(arr) {
-  Util.Debug.update(arr);
+  if (Util.DEBUG)
+    Util.Debug.update(arr);
   engine.ringbuf.write(arr);
 }, Util.Debug.debug.bind(Util.Debug));
 
@@ -716,7 +638,7 @@ Util.stream_from("/data", function(arr) {
 
 
 
-},{"./engine":4,"./gbds":5,"./query":7,"./util":11,"./viz":12,"async":13}],7:[function(require,module,exports){
+},{"./engine":4,"./gbds":5,"./query":7,"./util":12,"./viz":13,"async":14}],7:[function(require,module,exports){
 var parser = require("jssqlparser");
 var EventEmitter = require("events");
 var _ = require("underscore");
@@ -916,7 +838,7 @@ var Query = (function(EventEmitter) {
    Query: Query
 }
 
-},{"events":19,"jssqlparser":16,"underscore":18}],8:[function(require,module,exports){
+},{"events":20,"jssqlparser":17,"underscore":19}],8:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -987,7 +909,152 @@ module.exports = {
   RangeIndex: RangeIndex
 }
 
-},{"events":19}],9:[function(require,module,exports){
+},{"events":20}],9:[function(require,module,exports){
+var EventEmitter = require("events");
+var Util = require("./util");
+var Dist = require("./dist");
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+
+//
+// The requester runs as an infinite loop to regularly send a query distribution to the backend.  
+//
+// Currently, the distribution is sent as a list of (query, probability) pairs
+//
+//    query is an instance of js/query.js:Query 
+//    probability is a float between 0 and 1
+//
+// TODO: implement prediction, in which case we would send a list of triples:
+//       (deltaTime, query, probability)
+//       where deltaTime is the number of ms in the future the distributon is estimated for
+//
+var Requester = (function(EventEmitter) {
+  extend(Requester, EventEmitter);
+
+  function Requester(engine, opts) {
+    opts = opts || {};
+    this.engine = engine;
+    this.minInterval = opts.minInterval || 10;
+
+    EventEmitter.call(this);
+  };
+
+  // Run the requester forever
+  Requester.prototype.run = function() {
+    var distribution = this.getQueryDistribution();
+    if (distribution != null) 
+      this.send(distribution);
+    setTimeout(this.run().bind(this), this.minInterval);
+  };
+
+  // manually send a distribution to the server
+  Requester.prototype.send = function(dist, cb) {
+    $.ajax({
+      type: "POST",
+      contentType: "application/json; charset=utf-8",
+      url: "/distribution/set",
+      data:  JSON.stringify(dist.toWire()),
+      success: function (data) {
+        if (Util.DEBUG)
+          console.log(["sendDist got response", data])
+      },
+      dataType: "json"
+    });
+  }
+
+  ////////////////////////////////////////////////////////
+  //
+  //  Everything below is an unimplemented skeleton
+  //  for actually generating a real query distribution
+  //
+  ////////////////////////////////////////////////////////
+
+  // @param el a DOM element
+  // @return bounding box of the element
+  var getBoundingBox = function(el) {
+    el = $(el);
+    return {
+      w: el.width(),
+      h: el.height(),
+      x: el.offset().left, // x=0 is left edge of the page
+      y: el.offset().top   // y=0 is top of the page
+    };
+  };
+
+  // @param dt number of milliseconds into the future
+  // @return a list of [querytemplateid, params, probability]
+  //         that conforms to the Requester wire format
+  var getQueryDistribution = function(dt) {
+    // TODO: Uncomment me when the function is implemented
+    return null;
+    return mapMouseToQueryDistribution(getMouseDistribution(dt));
+  };
+
+  // TODO: implement this
+  // Returns a list of DOM elements that the user can interact with
+  var getInteractableElements = function() {
+    throw Error("Implement Me");
+  };
+
+  //
+  // TODO: implement this
+  // @param dt number of milliseconds into the future
+  // @return distribution of mouse positions
+  //
+  var getMouseDistribution = function(dt) {
+    throw Error("Implement Me");
+  }
+
+  //
+  // TODO: implement this
+  // Maps the mouse distribution to a distribution of queries, 
+  // since we know the positions of all interactible DOM elements
+  //
+  // @mouseDist distribuiton of mouse positions (unimplementd)
+  // @return query distribution
+  var mapMouseToQueryDistribution = function(mouseDist) {
+
+    // 1. get interactable DOM elements
+    var els = getInteractableElements();
+
+    // 2. be able to map a DOM element to the query+params that it would
+    //    trigger if the user interacts with it
+    var magicalGetQueryParams = function(el) {
+      throw Error("Implement Me");
+    }
+
+    // 3. be able to compute the probability of interacting with a DOM element
+    //    super stupid way:
+    var markProbability = function(el) {
+      var bound = getBoundingBox(el);
+      var probs = [];
+      for (var dx = 0; dx < bound.w; dx++) {
+        for (var dy = 0; dy < bound.h; dy++) {
+          probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
+        }
+      }
+      return d3.mean(probs);
+    };
+
+    // 4. use the above to construct a query distribution
+    els.each(function(el) {
+      var query = magicalGetQueryParams(el);
+      // add it to a query distribution
+      throw Error("Implement Me");
+    });
+
+  }
+
+
+  return Requester;
+})(EventEmitter);
+
+module.exports = {
+  Requester: Requester
+}
+
+},{"./dist":3,"./util":12,"events":20}],10:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1186,7 +1253,7 @@ module.exports = {
   RingBuffer: RingBuffer
 }
 
-},{"events":19}],10:[function(require,module,exports){
+},{"events":20}],11:[function(require,module,exports){
 /**
  * @fileoverview
  * @enhanceable
@@ -1741,7 +1808,7 @@ proto.Table.prototype.clearColsList = function() {
 
 goog.object.extend(exports, proto);
 
-},{"google-protobuf":14}],11:[function(require,module,exports){
+},{"google-protobuf":15}],12:[function(require,module,exports){
 //
 //
 // Useful functions for running the application
@@ -1821,15 +1888,14 @@ var Debug = (function Debug() {
 Debug = new Debug();
 
 
-
-
 module.exports = {
   stream_from: stream_from,
   Debug: Debug,
-  getAttrStats:getAttrStats
+  getAttrStats:getAttrStats,
+  DEBUG: true
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var EventEmitter = require("events");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1884,7 +1950,6 @@ var Viz = (function(EventEmitter) {
     if (data == null) return;
     var me = this;
     var bound = this.markg.selectAll(".mark").data(data);
-    bound.exit().remove();
 
     function attach(els) {
       els
@@ -1895,17 +1960,24 @@ var Viz = (function(EventEmitter) {
         .attr("height", function(d) { return me.yscale(d.y); })
         .style("fill", "white")
         .style("stroke", "black")
-        .on("mouseover", function() { me.emit("mouseover", me, this, d3.select(this).data()[0]); })
-        .on("mouseout", function() { me.emit("mouseout", me.this, d3.select(this).data()[0]); });
 
-        for(var attr in data) {
-          if (attr != "x" && attr != "y") 
-            els.attr(attr, function(d) { return d[attr]; });
-        }
+      for(var attr in data) {
+        if (attr != "x" && attr != "y") 
+          els.attr(attr, function(d) { return d[attr]; });
+      }
+      return els;
     }
 
     attach(bound);
-    attach(bound.enter().append("rect"));
+    attach(bound.enter().append("rect"))
+      .on("mouseover", function() { 
+        me.emit("mouseover", me, this, d3.select(this).data()[0]); 
+      })
+      .on("mouseout", function() { 
+        me.emit("mouseout", me.this, d3.select(this).data()[0]); 
+      });
+    bound.exit().remove();
+
     return this;
   }
 
@@ -1916,7 +1988,7 @@ module.exports = {
   Viz: Viz
 }
 
-},{"events":19}],13:[function(require,module,exports){
+},{"events":20}],14:[function(require,module,exports){
 (function (process,global){
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -7209,7 +7281,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 })));
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":20}],14:[function(require,module,exports){
+},{"_process":21}],15:[function(require,module,exports){
 (function (global){
 var $jscomp={scope:{},getGlobal:function(a){return"undefined"!=typeof window&&window===a?a:"undefined"!=typeof global?global:a}};$jscomp.global=$jscomp.getGlobal(this);$jscomp.initSymbol=function(){$jscomp.global.Symbol||($jscomp.global.Symbol=$jscomp.Symbol);$jscomp.initSymbol=function(){}};$jscomp.symbolCounter_=0;$jscomp.Symbol=function(a){return"jscomp_symbol_"+a+$jscomp.symbolCounter_++};
 $jscomp.initSymbolIterator=function(){$jscomp.initSymbol();$jscomp.global.Symbol.iterator||($jscomp.global.Symbol.iterator=$jscomp.global.Symbol("iterator"));$jscomp.initSymbolIterator=function(){}};$jscomp.makeIterator=function(a){$jscomp.initSymbolIterator();$jscomp.initSymbol();$jscomp.initSymbolIterator();var b=a[Symbol.iterator];if(b)return b.call(a);var c=0;return{next:function(){return c<a.length?{done:!1,value:a[c++]}:{done:!0}}}};
@@ -7583,7 +7655,7 @@ jspb.BinaryWriter.prototype.writePackedEnum=function(a,b){if(null!=b&&b.length){
 jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.length){for(var c=this.beginDelimited_(a),d=0;d<b.length;d++)this.encoder_.writeVarintHash64(b[d]);this.endDelimited_(c)}};exports.Map=jspb.Map;exports.Message=jspb.Message;exports.BinaryReader=jspb.BinaryReader;exports.BinaryWriter=jspb.BinaryWriter;exports.ExtensionFieldInfo=jspb.ExtensionFieldInfo;exports.ExtensionFieldBinaryInfo=jspb.ExtensionFieldBinaryInfo;exports.exportSymbol=goog.exportSymbol;exports.inherits=goog.inherits;exports.object={extend:goog.object.extend};exports.typeOf=goog.typeOf;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Generated by CoffeeScript 1.12.2
 (function() {
   var BetweenExpr, ColExpr, DEBUG, Expr, ExternalTable, From, FuncExpr, FunctionQuery, Group, Having, LetUDF, LetUDFArg, Limit, Node, OrderBy, OrderByClause, ParamExpr, ParamVar, Project, ProjectClause, Queries, Query, QueryTable, SelectCore, SpecialExpr, Table, TableExpr, TableUDF, UnaryExpr, ValExpr, Where, _, schema,
@@ -9146,7 +9218,7 @@ jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.
 
 }).call(this);
 
-},{"underscore":18}],16:[function(require,module,exports){
+},{"underscore":19}],17:[function(require,module,exports){
 // Generated by CoffeeScript 1.12.2
 (function() {
   var _, ast, parse, parser,
@@ -9194,7 +9266,7 @@ jspb.BinaryWriter.prototype.writePackedVarintHash64=function(a,b){if(null!=b&&b.
 
 }).call(this);
 
-},{"./ast.js":15,"./sqlfull.js":17,"underscore":18}],17:[function(require,module,exports){
+},{"./ast.js":16,"./sqlfull.js":18,"underscore":19}],18:[function(require,module,exports){
 var ast, _;
 
 _ = _ = require('underscore');
@@ -17418,7 +17490,7 @@ module.exports = (function() {
   };
 })();
 
-},{"./ast.js":15,"underscore":18}],18:[function(require,module,exports){
+},{"./ast.js":16,"underscore":19}],19:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -18968,7 +19040,7 @@ module.exports = (function() {
   }
 }.call(this));
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19272,7 +19344,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -19454,4 +19526,4 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13]);

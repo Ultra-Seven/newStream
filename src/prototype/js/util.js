@@ -77,10 +77,9 @@ var Debug = (function Debug() {
 Debug = new Debug();
 
 
-
-
 module.exports = {
   stream_from: stream_from,
   Debug: Debug,
-  getAttrStats:getAttrStats
+  getAttrStats:getAttrStats,
+  DEBUG: true
 }

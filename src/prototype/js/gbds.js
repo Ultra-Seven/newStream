@@ -1,6 +1,7 @@
 var DataStructure = require("./datastruct").DataStructure;
 var Decoders = require("./decoders");
 var RangeIndex = require("./rangeidx");
+var Util = require("./util");
 var GBQueryTemplate = require("./query").GBQueryTemplate;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -28,6 +29,9 @@ var GBDataStructure = (function(DataStructure) {
 
     this.encoding = encoding;
 
+    this.addBlockTime = 0;
+    this.addBlockNum = 0;
+
     DataStructure.call(this);
   };
 
@@ -45,9 +49,16 @@ var GBDataStructure = (function(DataStructure) {
     }
   };
 
+  // Adds the block to this data structure.
+  //
+  // Costs
+  //  Deserialization and indexing is about 0.05 milliseconds for the average block.
+  //  Most of the cost is in this.emit, which does the rendering
+  //
   // @param range  [startidx, endidx] of block in ringbuffer
   // @param block  ArrayBuffer object
   GBDataStructure.prototype.addBlock = function(byteRange, block) {
+    var now = Date.now();
     var header = this.readHeader(block);
     var key = header.key;
     var table = null;
@@ -57,6 +68,7 @@ var GBDataStructure = (function(DataStructure) {
       console.log(e);
       return;
     }
+
     var data = {
       key: key,
       block: block,
@@ -65,8 +77,19 @@ var GBDataStructure = (function(DataStructure) {
     this.rangeIdx.add(byteRange, data);
     this.idx[key] = data;
 
-    //console.log(["cubmgr.emit", key, table])
+    if (Util.DEBUG) {
+      this.addBlockTime += (Date.now() - now);
+      this.addBlockNum += 1;
+      if (this.addBlockNum % 50 == 0) {
+        console.log(["addblock", this.addBlockNum, this.addBlockTime / this.addBlockNum]);
+        this.addBlockTime = 0;
+        this.addBlockNum = 0;
+      }
+    }
+
     this.emit(key, table);
+
+
   };
 
   GBDataStructure.prototype.dealloc = function(byteRange) {

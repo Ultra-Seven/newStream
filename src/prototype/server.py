@@ -20,6 +20,7 @@ app = Flask(__name__)
 #
 # Global variables
 #
+flask.DEBUG = False
 flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
@@ -97,6 +98,8 @@ def dist_set():
   """
   flask.dist = json.loads(request.data)
   flask.dist_update_time = time.time()
+  if flask.DEBUG:
+    print "got query distribution"
   return Response("ok", mimetype="application/wu")
 
 

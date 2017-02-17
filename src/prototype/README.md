@@ -149,6 +149,8 @@ There are a few key concepts that are important to understand how they work.
 
 ## Assignments
 
+<a name="assignment1" />
+
 ### Warmup Assignment 1:
 
 Due 2/13 midnight
@@ -164,4 +166,31 @@ Submitting
 * [Submit to this link](https://www.dropbox.com/request/h9fYM27EPJGybrUQlm5B)
 
 
+<a name="assignment3" />
 
+### Assignment 3:
+
+You have now implemented a good mouse predictor -- in this assignment you will integrate it into the main stream system so that it starts sending _query_ (instead of mouse) distributions.
+
+Pull updated code from master:
+
+          git pull
+          git checkout <your branch name>
+          git merge master
+
+Integrate your predictor code into the stream prototype codebase.  Most of the code you will edit is in [requester.js](./js/requester.js).  We have implemented a basic skeleton for mapping mouse prediction distributions into query prediction distributions, however most of the logic will be written by you:  
+
+1. Add your predictor from assignment 2 into this code base (may be easiest to create a new module/file for your predictor.)
+2. Edit `getMouseDistribution()` in [requester.js](./js/requester.js) to return a mouse distribution.
+3. Edit and fill in `mapMouseToQueryDistribution()` to map your mouse distribution into a query distribution.  Some things you may want to consider:
+  * What information do you need to store in order to know what DOM elements correspond to a given x, y coordinate?
+  * What information do you need to know the query requests that interacting with a DOM element will trigger?  
+  * How do you compute the probabilities accurately enough?
+4. Once you have completed these tasks, uncomment the `return null` line in `getQueryDistribution()`.  You should see the server receiving query distributions at _very short intervals.   Pass in a smaller `minInterval` parameter to the `Requester` constructor to control this interval.
+5. You may not see any changes (or even worse changes) in the interactivity of the demo visualization.  This is because the server is stupid about taking advantage of these distributions and immediately sends data for the highest probability query.  That will be the next assignment.
+
+
+Submission
+
+* Just push to your branch on github.
+* (optional) reply to the assignment post on piazza what you thought of the assignment, codebase, or the architecture.

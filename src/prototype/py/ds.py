@@ -110,7 +110,6 @@ class Precompute(DS):
     block = self.lookup_bytes(self.key(data))
     if block:
       key = self.key(data)
-      print "write out key: ", key, self.id
       buf = StringIO()
       buf.write(struct.pack("2I", len(key), self.id))
       buf.write(struct.pack("%ds" % len(key), key))

@@ -1,6 +1,7 @@
 var EventEmitter = require("events");
 var RingBuffer = require("./ringbuffer").RingBuffer;
 var Dist = require("./dist");
+var Requester = require("./requester").Requester;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -16,7 +17,7 @@ var Engine = (function(EventEmitter) {
     this.vizes = {};
     this.datastructs = {};
     this.ringbuf = new RingBuffer(nbytes);
-    this.requester = new Dist.Requester(this);
+    this.requester = new Requester(this, {minInterval: 100});
 
     EventEmitter.call(this);
   };
