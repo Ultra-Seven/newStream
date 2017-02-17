@@ -123,10 +123,7 @@ Optional
 
 ### Step 0
 
-You have all been given write access to the repository.  It will make all of our lives easier if
-there is a central repository for the class.   
-I recommend that each team creates a branch for their team and commits/pushes to that branch.
-**DO NOT COMMIT TO MASTER!**
+You have all been given write access to the repository.  It will make all of our lives easier if there is a central repository for the class.   I recommend that each team creates a branch for their team and commits/pushes to that branch.  **DO NOT COMMIT TO MASTER** -- we have set permissions that make this hard to do, but just be careful :)
 
         git checkout -b <name of your new branch>
         
