@@ -45,6 +45,11 @@ var DistributionBase = (function() {
     return []; 
   };
 
+  // @k  the maximum number of objects to return
+  // @return the top k objects by probability
+  DistributionBase.prototype.getTopK = function(k) { 
+    return []; 
+  };
 
   // to a JSON-able representation that we can pass to jquery
   // aka a dictionary
@@ -61,29 +66,35 @@ var DistributionBase = (function() {
 
 
 
+//
+// Simplest distribution object
+//
 var NaiveDistribution = (function(Base) {
   extend(NaiveDistribution, Base);
 
-  NaiveDistribution.from = function(q) {
-    var d = new NaiveDistribution();
+  NaiveDistribution.from = function(q, keyFunc) {
+    var d = new NaiveDistribution(keyFunc);
     d.set(q, 1);
     return d;
   };
 
 
-  function NaiveDistribution() {
+  // @keyFunc is a function that takes a "query" as input and returns a string used as a key in the hash table
+  //          by default it will use qToKey defined at the top of this file, but you can define your own
+  function NaiveDistribution(keyFunc) {
+    this.keyFunc = keyFunc || qToKey;
     this.dist = {};
     // call parent constructor 
     Base.call(this);
   }
 
   NaiveDistribution.prototype.set = function(q, prob) {
-    this.dist[qToKey(q)] = [q, prob]; 
+    this.dist[this.keyFunc(q)] = [q, prob]; 
   };
 
   NaiveDistribution.prototype.get = function(q) {
     if (q == null || q === undefined) return 0;
-    var key = qToKey(q);
+    var key = this.keyFunc(q);
     if (key in this.dist) return this.dist[key][1];
     return 0;
   };
@@ -95,8 +106,18 @@ var NaiveDistribution = (function(Base) {
     });
   };
 
+  NaiveDistribution.prototype.getTopK = function(k) {
+    return _.rest(_.sortBy(_.values(this.dist), 
+                           function(pair) { return pair[1]; }),
+                  -k);
+  };
+
+
   return NaiveDistribution;
 })(DistributionBase);
+
+
+
 
 
 
@@ -207,7 +228,7 @@ var Requester = (function(EventEmitter) {
       var bound = getBoundingBox(el);
       var probs = [];
       for (var dx = 0; dx < bound.w; dx++) {
-        for (var dy = 0; dy < bound.w; dy++) {
+        for (var dy = 0; dy < bound.h; dy++) {
           probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
         }
       }
