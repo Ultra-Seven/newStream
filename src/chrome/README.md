@@ -55,7 +55,7 @@ Go to a webpage and click around --- the server should print the mouse data.
 
 ## Data formats
 
-Everything is sent from the browser to the server as string-encoded JSON objects, and stored in the berkeley database as hashtable values.  
+Everything is sent from the browser to the server as string-encoded JSON objects, and stored in the berkeley database `mouse.bdb` as hashtable values.  
 The berkeleydb keys are just integers in the insertion order.  
 You can use `json.loads(<value>)` to turn a string value into a json object.
 
@@ -153,9 +153,11 @@ Propose and implement a metric for evaluating the accuracy of your predictions. 
   You will write those in phase two.
 * You can use the `BaselinePredictor` to test your evaluator -- note that the baseline predictor is not very good.
 
-Submitting
+Submission
 
-* upload your `evaluator.js` file to [this dropbox link](https://www.dropbox.com/request/WDYKwcpqicxBaNUx8ZR9)
+* add your mouse trace database `mouse.bdb` to your branch
+* Just push to your branch on github.
+* (optional) reply to the assignment post on piazza what you thought of the assignment, codebase, or the architecture.
 
 
 ### Actually Predict!   Due: 3/5 11:59PM EST 
