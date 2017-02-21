@@ -136,16 +136,15 @@ var Logger = (function() {
     this.flush();
   }
   Logger.prototype.d3move = function(e) {
-    console.log("hi");
-    var m = d3.mouse(this);
+    var m = d3.mouse(e);
     this.pushXYT({ pageX: m[0], pageY: m[1]}, "m");
   }
   Logger.prototype.d3down = function(e) {
-    var m = d3.mouse(this);
+    var m = d3.mouse(e);
     this.pushXYT({ pageX: m[0], pageY: m[1]}, "d");
   }
   Logger.prototype.d3up = function(e) {
-    var m = d3.mouse(this);
+    var m = d3.mouse(e);
     this.pushXYT({ pageX: m[0], pageY: m[1]}, "u");
     this.flush();
   }
@@ -168,7 +167,7 @@ $(function() {
 
   console.log(d3.selectAll("svg"))
   d3.selectAll("svg").selectAll("g")
-    .on("mousemove", logger.d3move.bind(logger)) 
-    .on("mousedown", logger.d3down.bind(logger)) 
-    .on("mouseup", logger.d3up.bind(logger)) ;
+    .on("mousemove", function(e) { logger.d3move(this); })
+    .on("mousedown", function(e) { logger.d3down(this); })
+    .on("mouseup", function(e) { logger.d3up(this); })
 });
