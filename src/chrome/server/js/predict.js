@@ -11,6 +11,8 @@ function mouseToKey(position) {
 // This should be a selfcontained file.  Any data you need should be embedded in this file.
 
 var Predictor = (function() {
+
+  // @boxes List of bounding boxes for the clickable elements on the page
   function Predictor(boxes) {
     this.boxes = boxes || [];
   };
@@ -36,12 +38,14 @@ var Predictor = (function() {
 
 
 // Baseline prediction that is based on KTM that we provide
+//
 var BaselinePredictor = (function(Predictor) {
   extend(BaselinePredictor, Predictor);
 
-  // @cb callback to execute once KTM has loaded the template trace file
-  function BaselinePredictor(boxes) {
-    this.ktm = new ktmPred.KTM();
+  // @boxes List of bounding boxes for the clickable elements on the page
+  // @templates list of precomputed KTM templates (default is loaded from /static/data/ktmdata.json)
+  function BaselinePredictor(boxes, templates) {
+    this.ktm = new ktmPred.KTM(templates);
     Predictor.apply(this, arguments);
   };
 

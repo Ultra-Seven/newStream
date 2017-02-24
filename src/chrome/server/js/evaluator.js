@@ -1,6 +1,7 @@
 // you may want to copy dist.js over from the prototype code!
 var Dist = require("./dist.js")
 var Pred = require("./predict.js")
+var fs = require("fs");
 
 
 var Evaluator = (function() {
@@ -24,9 +25,12 @@ var Evaluator = (function() {
 })();
 
 
+console.log("Assuming you are running in src/chrome/server/");
+var ktmdata = JSON.parse(fs.readFileSync("./static/data/ktmdata.json"));
+
 var traces = [];  // TODO: give it your mouse traces
-var yourPred = Pred.YourPredictor();
-var baseline = Pred.BaselinePredictor();
+var yourPred = Pred.YourPredictor([]);
+var baseline = Pred.BaselinePredictor([], ktmdata);
 var eval = new Evaluator(traces);
 console.log("Your Score: " + eval.eval(yourPred));
 console.log("Base Score: " + eval.eval(baseline));

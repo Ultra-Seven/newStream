@@ -24,7 +24,8 @@
   "devDependencies": {
     "underscore": "1.8.3",
     "browserify": "14.0.0",
-    "uglify-js": "2.4.0"
+    "uglify-js": "2.4.0",
+    "async": "2.1.5"
   },
   "dependencies": {
     "underscore": "1.8.3"

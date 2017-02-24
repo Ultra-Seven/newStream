@@ -1,3 +1,4 @@
+var async = require("async");
 var Pred = require("./predict");
 var Logger = require("./logger").Logger;
 
@@ -37,8 +38,8 @@ $(function() {
   logger.bind(document);
 
   var boxes = [];
-  var yourPred = new Pred.YourPredictor(boxes);
-  var baselinePred = new Pred.BaselinePredictor(boxes);
+  var yourPred = null;
+  var baselinePred = null;
 
   function printTrace() {
     var trace = logger.trace;
@@ -46,7 +47,21 @@ $(function() {
     renderPrediction(trace, yourPred, "red");
     setTimeout(printTrace, 30);
   }
-  printTrace();
+
+  async.parallel([
+      function(cb) {
+        yourPred = new Pred.YourPredictor(boxes);
+        cb(null, yourPred);
+      },
+      function(cb) {
+        $.getJSON("/static/data/ktmdata.json", function(templates) {
+          baselinePred = new Pred.BaselinePredictor(boxes, templates);
+          cb(null, baselinePred);
+        });
+      }
+  ], function(err, results) {
+    printTrace();
+  });
 });
 
 
