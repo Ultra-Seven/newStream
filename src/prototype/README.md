@@ -170,7 +170,10 @@ Submitting
 
 ### Assignment 3:
 
+Due: 3/17 midnight
+
 You have now implemented a good mouse predictor -- in this assignment you will integrate it into the main stream system so that it starts sending _query_ (instead of mouse) distributions.
+
 
 Pull updated code from master:
 
@@ -180,17 +183,31 @@ Pull updated code from master:
 
 Integrate your predictor code into the stream prototype codebase.  Most of the code you will edit is in [requester.js](./js/requester.js).  We have implemented a basic skeleton for mapping mouse prediction distributions into query prediction distributions, however most of the logic will be written by you:  
 
-1. Add your predictor from assignment 2 into this code base (may be easiest to create a new module/file for your predictor.)
-2. Edit `getMouseDistribution()` in [requester.js](./js/requester.js) to return a mouse distribution.
-3. Edit and fill in `mapMouseToQueryDistribution()` to map your mouse distribution into a query distribution.  Some things you may want to consider:
+1. Check that you are on your team's branch and not master.
+2. Add your predictor from assignment 2 into this code base (may be easiest to create a new module/file for your predictor.)
+3. Edit `getMouseDistribution()` in [requester.js](./js/requester.js) to return a mouse distribution.
+4. Edit and fill in `mapMouseToQueryDistribution()` to map your mouse distribution into a query distribution.  Some things you may want to consider:
   * What information do you need to store in order to know what DOM elements correspond to a given x, y coordinate?
   * What information do you need to know the query requests that interacting with a DOM element will trigger?  
   * How do you compute the probabilities accurately enough?
-4. Once you have completed these tasks, uncomment the `return null` line in `getQueryDistribution()`.  You should see the server receiving query distributions at _very short intervals.   Pass in a smaller `minInterval` parameter to the `Requester` constructor to control this interval.
-5. You may not see any changes (or even worse changes) in the interactivity of the demo visualization.  This is because the server is stupid about taking advantage of these distributions and immediately sends data for the highest probability query.  That will be the next assignment.
+5. Once you have completed these tasks, uncomment the `return null` line in `getQueryDistribution()`.  You should see the server receiving query distributions at short intervals.   Pass in a smaller `minInterval` parameter to the `Requester` constructor in [engine.js](./js/engine.js) to control this interval.
+6. We will provide a demo page that will visualize the interactions that you predict, and also show numbers that measure your code's perfomance overhead.
+
+You may not see any performance changes (or even worse performance) in the interactivity of the demo because predicting more accurate distributions incurs overhead but the server doesn't do anything smart to take advantage of this information.  (At some point we may want to figure out an efficient representation of prediction distributions!)  You will make the server smart in the next assignment.
 
 
 Submission
 
 * Just push to your branch on github.
 * (optional) reply to the assignment post on piazza what you thought of the assignment, codebase, or the architecture.
+
+
+
+
+<a name="assignment4" />
+
+### Assignment 4:
+
+Due: 4/2 midnight
+
+You will now modify the server to take advantage of the query distributions.  Most of the code will be in [py/manager.py](./py/manager.py).  This file is initialized with a set of data structures and queries them 

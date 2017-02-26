@@ -79,8 +79,18 @@ var Requester = (function(EventEmitter) {
     return mapMouseToQueryDistribution(getMouseDistribution(dt));
   };
 
-  // TODO: implement this
   // Returns a list of DOM elements that the user can interact with
+  //
+  // TODO: implement me!
+  //
+  //       querying the DOM is expensive -- you may eventually want to cache the results.
+  //       if you do so, you may want some way to detect if the cache is stale.
+  //
+  //       Hint: MutationObserver is an efficient way to detect DOM changes incrementally without having to
+  //             manually traverse the DOM tree yourself.
+  //
+  //             https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+  //
   var getInteractableElements = function() {
     throw Error("Implement Me");
   };
