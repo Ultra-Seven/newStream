@@ -1,0 +1,62 @@
+\input{header}
+\begin{document}
+
+\title{\sys: A Prefetching Viz System That Works}
+
+ 
+% \numberofauthors{1}
+%  \author{
+%   \alignauthor Eugene Wu\\
+%     \affaddr{Computer Science}\\
+%     \affaddr{Columbia University}\\
+%     \email{ewu@cs.columbia.edu}\\
+% }
+
+
+
+
+\maketitle
+
+\begin{abstract}
+    \looseness -1
+\ewu{main arguments:}
+
+It is important to make visual data exploration interactive, meaning that the system visually responds to user inputs within $100$ milliseconds.
+Although the db and viz communities are seeking to do this through faster query, networking and rendering techniques,
+prediction has been argued as a promising approach---if we are able to predict what the user will request, then the results can be pre-computed so that they are ready.
+This can speed up user exploration as well as the visualization's initial loading time---the ``loading dataset'' progress bar is commonplace.
+Such approaches rely on accurate predictive models, and existing approaches tend to limit the set of allowed user operations (e.g., to panning and zooming operations) so that the prediction space is small enough that high quality models are possible.  
+Thus, the number of allowed interactions is typically significantly smaller (e.g., 1-5) as compared to the allowed interactions in real visualization systems.
+Unfortunately, it's unlikely that such models will work if allow dozens of possible interactions.
+
+We use a simple model to understand the design space and find \xxx{something interesting including a design sweet spot}.
+Based on the model we design a new system, \sys, that exploits this sweet spot by using three tricks:
+1) high quality prediction independent of the number of allowed operations.
+2) a streaming oriented system where, in contrast to a request-response model of communication, the client periodically sends distributions
+of future operations based on our high quality predictor, and the server continuously sends a stream of data to the client's circular buffer.
+3) explicitly leverage progressive encodings to \xxx{something smart}.
+In our experiments on XXX, we find that the unique combination of all three tricks are necessary, and
+can improve responsiveness by XXX at the $95^{th}$ percentile, and YYY maximum response time.
+\end{abstract}
+
+\input{content/intro}
+\input{content/model}
+\input{content/experiments}
+\input{content/related}
+\input{content/discussion}
+
+\balance
+{
+\footnotesize
+\bibliographystyle{abbrv}
+\bibliography{main}
+}
+
+mtechreport{\input{content/appendix.tex}}
+
+
+
+
+
+
+\end{document}

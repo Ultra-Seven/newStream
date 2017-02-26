@@ -1,0 +1,29 @@
+
+\section{Model-based Analysis}
+
+
+Let $t$ be the number of milliseconds in the future when the user will make a request.
+Let the variables $l_{net,cache,user}$ represent the latency to fetch and render the request from the server,
+the latency to render data if it is found in the client cache, and the perceived latency of the user, respectively.
+Let $\alpha$ be the accuracy of the prediction model.
+
+Walk through typical numbers for these variables and where they come frome.
+
+$$l_{user} = (l_{cache} + max(0, l_{net} - t)\times \alpha + l_{net}\times(1-\alpha) $$
+
+Rearranging the terms, we can derive the minimum prediction accuracy in order to maintain $l_{user}$.
+
+$$\alpha = \frac{l_{net} - l_{user}}{l_{net} - l_{cache}}$$
+
+If we set the desired user latency to $100$ milliseconds, then \ewu{Figure XXX} plots the model accuraty as the network latency (x-axis) and \ewu{another factor} (lines).
+
+\stitle{Vary Prefetch Concurrency}
+
+\stitle{Vary Perceived Latency Threshold}
+
+\stitle{Network Latency Variance}
+
+\stitle{Progressive Loading}
+
+\subsection{Summary of Findings}
+

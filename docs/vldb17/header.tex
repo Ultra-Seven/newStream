@@ -1,0 +1,152 @@
+
+\documentclass{vldb}
+\usepackage{balance}  
+\usepackage{graphicx} 
+\usepackage[hyphens]{url}      
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{cancel}
+\usepackage{listings}
+\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\setlength{\abovecaptionskip}{10pt plus 3pt minus 2pt}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[ruled,vlined,algonl,boxed]{algorithm2e}
+\usepackage{algorithmic}
+\usepackage{wrapfig}
+\usepackage{enumitem}
+\usepackage{xspace}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage[T1]{fontenc}
+\usepackage{fancyvrb}
+\usepackage[bottom]{footmisc}
+
+
+
+\usepackage[nocompress]{cite}
+\usepackage{microtype}
+\usepackage[section]{placeins}
+
+\makeatletter
+\def\url@leostyle{
+  \@ifundefined{selectfont}{\def\UrlFont{\sf}}{\def\UrlFont{\small\bf\ttfamily}}}
+\makeatother
+\urlstyle{leo}
+
+\makeatletter
+\def\@copyrightspace{\relax}
+\makeatother
+
+\def\pprw{8.5in}
+\def\pprh{11in}
+\special{papersize=\pprw,\pprh}
+\setlength{\paperwidth}{\pprw}
+\setlength{\paperheight}{\pprh}
+\setlength{\pdfpagewidth}{\pprw}
+\setlength{\pdfpageheight}{\pprh}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{corollary}[definition]{Corollary}
+\newtheorem{claim}[definition]{Claim}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{heuristic}[definition]{Heuristic}
+\newtheorem{example}[definition]{Example}
+\newtheorem{dimension}{Dimension}
+\newcounter{prob}
+\newtheorem{problem}[prob]{Problem}
+\newtheorem{conjecture}[definition]{Conjecture}
+\newtheorem{reduction}[definition]{Reduction}
+\newtheorem{property}[definition]{Property}
+\newtheorem{axiom}[definition]{Axiom}
+
+
+
+
+
+
+
+
+
+
+
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+  colorlinks=false,
+  linkcolor=darkred,
+  citecolor=darkgreen,
+  urlcolor=darkblue
+}
+
+
+
+\widowpenalty=10000
+\clubpenalty=10000
+
+
+\definecolor{light-gray}{gray}{0.95}
+\definecolor{mid-gray}{gray}{0.85}
+\definecolor{darkred}{rgb}{0.7,0.25,0.25}
+\definecolor{darkgreen}{rgb}{0.15,0.55,0.15}
+\definecolor{darkblue}{rgb}{0.1,0.1,0.5}
+\definecolor{blue}{rgb}{0.19,0.58,1}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\orange}[1]{\textcolor{orange}{#1}}
+\newcommand{\darkred}[1]{\textcolor{darkred}{#1}}
+\newcommand{\darkgreen}[1]{\textcolor{darkgreen}{#1}}
+\newcommand{\darkblue}[1]{\textcolor{darkblue}{#1}}
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+
+
+
+\widowpenalty 10000
+\clubpenalty 10000
+
+
+\newcommand{\ind}{\hspace{\algorithmicindent}}
+
+\newcommand{\deprecate}[1]{\noindent{\color{light-gray}{#1}}}
+
+
+
+\pagenumbering{arabic}
+
+\makeatletter
+\def\maketag@@@#1{\hbox{\m@th\normalfont\normalsize#1}}
+\DeclareRobustCommand*\textsubscript[1]{
+          \@textsubscript{\selectfont#1}}
+        \def\@textsubscript#1{
+          {\m@th\ensuremath{_{\mbox{\fontsize\sf@size\z@#1}}}}}
+\makeatother
+
+\newcommand{\papertext}[1]{#1}
+\newcommand{\techreport}[1]{#1}
+
+
+\newcommand{\alex}[1]{\noindent{\color{darkgreen}{[Alexandra: #1]}}}
+\newcommand{\xlw}[1]{\noindent{\color{blue}{Xiaolan: #1}}}
+\newcommand{\ewu}[1]{\noindent{\color{red}{EWu: #1}}}
+
+\newcommand{\xxx}[1]{{\fontsize{13pt}{13pt}\selectfont\textcolor{red}{#1}}}
+\newcommand{\codesize}{\fontsize{7}{8}}
+\newcommand{\stitle}[1]{\vspace{0.5em}\noindent\textbf{#1}}
+\newcommand{\calF}[0]{$\cal{F}$}
+
+\newcommand{\sys}{VISTREAM\xspace}
+\newcommand{\heurstic}{\textsc{HEURISTIC}\xspace}
+
+\setlength\floatsep{0.8\baselineskip plus 3pt minus 2pt}
+\setlength\textfloatsep{0.9\baselineskip plus 3pt minus 2pt}
+\setlength\intextsep{1\baselineskip plus 3pt minus 2 pt}
+
