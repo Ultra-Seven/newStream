@@ -17,7 +17,11 @@ Currently it only runs on the BaselinePredictor.
 
 ### What you should do
 
-Update your `evaluator.js` files in your branch so that it only contains the class definition---remove all test code!  
+Update your `evaluator.js` files in your branch so that 
+
+1. it only contains the class definition (remove all test code!)
+2. doesn't contain console.log statements (or at least disable them).  
+   If you want debugging print statements, add a constructor flag and default it to "no print statements"
 
 # Setup and run
 

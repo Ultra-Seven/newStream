@@ -28,5 +28,7 @@ var ktmdata = loadJSON("./data/ktmdata.json");
 var baseline = new BaselinePredictor([], ktmdata);
 
 // we will import your prediction objects to evaluate here
+console.log(["Predictor", "Evaluator", "Score"].join("\t"));
+console.log("-------------------------------------------------");
 evaluate("Baseline", baseline, eval);
 
