@@ -22,6 +22,7 @@ Update your `evaluator.js` files in your branch so that
 1. it only contains the class definition (remove all test code!)
 2. doesn't contain console.log statements (or at least disable them).  
    If you want debugging print statements, add a constructor flag and default it to "no print statements"
+3. The current harness only uses the first 20 traces.  to test on all traces, remove the `_.head()` call in [js/test-evaluator.js](./js/test-evaluator.js)
 
 # Setup and run
 
