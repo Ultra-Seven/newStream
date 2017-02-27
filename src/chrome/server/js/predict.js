@@ -50,7 +50,13 @@ var BaselinePredictor = (function(Predictor) {
   };
 
   BaselinePredictor.prototype.predict = function(trace, deltaTime) {
-    var pt = this.ktm.predictPosition(trace, deltaTime);
+    var pt = null;
+    if (trace.length <= 2) { 
+      if (trace.length == 0) return null;
+      pt = trace[trace.length - 1];
+    } else {
+      pt = this.ktm.predictPosition(trace, deltaTime);
+    }
     var pred = [pt[0], pt[1], "m"];
     var dist = Dist.NaiveDistribution.from(pred, mouseToKey);
     dist.set(pred, 1);
