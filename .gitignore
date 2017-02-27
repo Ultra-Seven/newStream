@@ -1,6 +1,7 @@
 main.pdf
 latex.out/
 node_modules/
+**/static/js/index.js
 
 #
 # Byte-compiled / optimized / DLL files
