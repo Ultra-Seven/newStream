@@ -26,6 +26,13 @@ Update your `evaluator.js` files in your branch so that
 
 # Setup and run
 
+Checkout the code
+
+        git pull
+        cd <repo>/src/chrome/evaluate/
+
+Setup
+
         npm install .
         make
 
