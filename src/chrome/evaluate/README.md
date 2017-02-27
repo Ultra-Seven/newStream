@@ -11,7 +11,7 @@ It combines all of your evaluation scripts.
   * your `*.bdb` file is copied as `data/<your branch name>.bdb`
 2. We extract all mouse traces from the `*.bdb` files into  a single large json trace object stored in `data/alltraces.json`
 
-We have a [custom evaluator](./evaluator.js) that imports the `Evaluator` object from each of your files.
+We have a [custom evaluator](./js/evaluator.js) that imports the `Evaluator` object from each of your files.
 Finally, the test harness [js/test-evaluator.js](./js/test-evaluator.js) and will print out the scores.
 Currently it only runs on the BaselinePredictor.
 
