@@ -10,7 +10,7 @@ def copy_from_branches(branches):
   for branch in branches:
     os.system("git checkout %s" % branch)
     os.system("cp ../server/js/evaluator.js ./js/evaluator_%s.js" % branch)
-    os.system("cp ../server/js/predictor.js ./js/predictor_%s.js" % branch)
+    os.system("cp ../server/js/predict.js ./js/predict_%s.js" % branch)
     try:
       os.system("cp ../server/mouse.bdb ./data/%s.bdb" % branch)
     except:
