@@ -5,7 +5,7 @@ It combines all of your evaluation scripts.
 
 [collectscripts.py](./collectscripts.py) sets up the directory by
 
-1. going through each git branch and copying your evaluator.js, predict.js and \*.bdb file into this repository.
+1. going through each git branch and copying your evaluator.js, predict.js and \*.bdb file into this repository.  **Make sure you have commited all relevant files before running, or are running this in a fresh repository!**
   * your `evaluator.js` is copied as `js/evaluator_<your branch name>.js`
   * your `predict.js` is copied as `js/predict_<your branch name>.js`
   * your `*.bdb` file is copied as `data/<your branch name>.bdb`
