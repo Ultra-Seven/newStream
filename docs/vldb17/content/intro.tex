@@ -4,10 +4,39 @@
 
 \label{s:intro}
 
+A number of design principles are emerging in terms of system architectures
+for visual data exploration.
 
-% In spite of the growing importance of big data, sensors, and automated data collection, manual data entry continues to be a primary source of high-value data across organizations of all sizes, industries, and applications: sales representatives manage lead and sales data through SaaS applications~\cite{salesforce}; human resources, accounting, and finance departments manage employee and corporate information through terminal or internal browser-based applications~\cite{sap}; driver data is updated and managed by representatives throughout local DMV departments~\cite{dmv,dmvsystem}; consumer banking and investment data is managed through web or mobile-based applications~\cite{betterment,chase}. In all of these examples, the database is updated by translating form-based human inputs into INSERT, DELETE or UPDATE query parameters that run over the backend database---in essence, these are instances of OLTP applications that translate human input into stored procedure parameters. Unfortunately, numerous studies~\cite{kandel2012,krishnan2016hilda,Barchard20111834}, reports~\cite{citibank,Yates10,Grady13,Robeznieks05} and citizen journalists~\cite{iquantnyc} have consistently found evidence that human-generated data is both error-prone, and can significantly corrupt downstream data analyses~\cite{iquantnycnypd}. Thus, even if systems assume that data import pipelines are error-free, queries of human-driven applications continue to be a significant source of data errors, and there is a pressing need for solutions to diagnose and repair these errors. Consider the following representative toy example that we will use throughout this paper:
+Classic1: in database (tioga, data splash)
 
-In this paper, we present \sys, which does some stuff.   
+Classic2: vis does everything.  If viz is super powerful, then it works, however data is large so may be infeasible.
+
+Classic3: client server.  assumption that working set fits in the client.  elegant.  however speed is not its strong suit.
+Despite recent work on declarative ned-to-end specification and a unified execution framework, rather than separate client and server systems, the fundamental hardware architecture of a thin client (e.g., browser, laptop) and resource rich server (e.g., database server, cloud) is a reality.
+
+Techniques: faster DB.  
+approximation pushed by vis and database folks -- key is progressive and measuring good enough.
+
+However a bottleneck is the request-response model of interaction.    Despite fast, or even precomputed results, computing delays, networking hiccups, data transfer, client costs, and other factors can all affect the response times.
+
+Prefetching has been the primary technique, because it can pipeline user decision making with request handling.  However the results from prior work has suggested an inherent trade-off between the numbero of available interactions in the interface and the effectiveness of prefetching.
+
+Is a prefetching-oriented architecture feasible for rich interactive interfaces?  What are the design considerations to make such an approach realistic?  And what might such an architecture look like?
+
+To answer this question, we used a simple model-based analysis of end-to-end latency to understand the prediction accuracies that are necessary under different concurrent request, approximation, and request latency regimes.  We find that, under concurrency=5, partial result of 25\%, and an aggressive target perceived latency threshold of 100, the prediction model needs 
+
+Based on these observations, we have designed \sys, a streaming-based architecture that generalizes the request-response model to support rich interactive visual exploration interfaces.  The primary idea is to model user interactions as a series of probability distributions over possible visualization requests at a future time steps.  Under this model, a given request is simply an impulse distribution centered around the user's interaction, however by sending a distribution.  This is similar to the notion of a QueryIntent~\cite{ebenstein2016fluxquery} however used in this context not to predict what the user will do but for prefetching.
+
+
+We combine this with a streaming push-based architecture where.
+
+Progressive encoding enables.
+
+Our current system assume precomputed data structures, future work includes online query processing costs.
+
+This architecture is a novel combination of three necessary design decisions: an interface agnostic prediction model, a streaming architecture, and progressive visualizations.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.
+
+To summarize our contributions:
 
 \begin{itemize}[leftmargin=*, topsep=0mm, itemsep=0mm]
 
