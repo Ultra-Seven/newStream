@@ -13,11 +13,11 @@ Classic2: vis does everything.  If viz is super powerful, then it works, however
 
 Classic3: client server.  assumption that working set fits in the client.  elegant.  however speed is not its strong suit.
 Despite recent work on declarative ned-to-end specification and a unified execution framework, rather than separate client and server systems, the fundamental hardware architecture of a thin client (e.g., browser, laptop) and resource rich server (e.g., database server, cloud) is a reality.
+This is why making a faster database isn't good enough.
 
-Techniques: faster DB.  
-approximation pushed by vis and database folks -- key is progressive and measuring good enough.
+Approximation pushed by vis and database folks -- key is that progressive results are ofetn good enough.  THis is evident in the huge amount of work on visualization-oriented sampling.  However for large databases, the samples are still too large for clients, so this is just a variant of faster databases.
 
-However a bottleneck is the request-response model of interaction.    Despite fast, or even precomputed results, computing delays, networking hiccups, data transfer, client costs, and other factors can all affect the response times.
+Ultimately, we argue the bottleneck is due to the request-response model in existing systems.    Despite fast, or even precomputed results, computing delays, networking hiccups, data transfer, client costs, and other factors can all affect the response times.
 
 Prefetching has been the primary technique, because it can pipeline user decision making with request handling.  However the results from prior work has suggested an inherent trade-off between the numbero of available interactions in the interface and the effectiveness of prefetching.
 
@@ -27,14 +27,13 @@ To answer this question, we used a simple model-based analysis of end-to-end lat
 
 Based on these observations, we have designed \sys, a streaming-based architecture that generalizes the request-response model to support rich interactive visual exploration interfaces.  The primary idea is to model user interactions as a series of probability distributions over possible visualization requests at a future time steps.  Under this model, a given request is simply an impulse distribution centered around the user's interaction, however by sending a distribution.  This is similar to the notion of a QueryIntent~\cite{ebenstein2016fluxquery} however used in this context not to predict what the user will do but for prefetching.
 
+However, simply having query distributions is not sufficient because XXX.  Thus \sys combines two additional ideas: progressive visualization results and streaming push-based results. \ewu{describe more}
 
-We combine this with a streaming push-based architecture where.
+All three are {\it necessary}.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.
 
-Progressive encoding enables.
 
 Our current system assume precomputed data structures, future work includes online query processing costs.
 
-This architecture is a novel combination of three necessary design decisions: an interface agnostic prediction model, a streaming architecture, and progressive visualizations.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.
 
 To summarize our contributions:
 
