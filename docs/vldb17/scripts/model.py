@@ -50,7 +50,9 @@ ggsave("model_base.png", p, libs=["grid"], width=4, height=2)
 
 
 # concurrency
-funcs = [dict(label="N=%s" % (t), t=t, p="Threshold: %s" % p, f=make_func(concurrency=t, lperc=p)) for t in [1, 2, 5] for p in [100, 500]]
+funcs = [dict(label="N=%02d" % (t), t=t, p="Threshold: %s" % p, f=make_func(concurrency=t, lperc=p)) for t in [1, 5, 10, 20] for p in [100, 500]]
+print make_func(concurrency=5, lperc=500)(1000)
+#exit()
 p = toplot(funcs)
 p += facet_grid(".~p")
 p += scale_color_discrete(name=esc("Concurrency"))

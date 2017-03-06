@@ -1,39 +1,76 @@
 
 \section{Model-based Analysis}
 
-As described in the introduction, prefetching has the potential to enable visualization systems to respond with interactive latencies.  However, current approaches are designed for interfaces with limited options for user interaction, and many have suggested that there is a fundamental trade-off betwene user interaction exrpessiveness and the quality of a predictive model.  In his section, we seek to understand how accurate a model needs to be in order to achivee low user perceived latencies, and under what conditions.
+As described in the introduction, prefetching has the potential to enable visualization systems to respond with interactive latencies.  However, current approaches are designed for interfaces with limited options for user interaction~\cite{}; many have suggested that increasing the expressivity of the interface (e.g., the number of possible user actions) makes the prediction task significantly more challenging.  In this section, we seek to understand the minimum accuracy for model needs in order to support low user perceived latencies, as well as the conditions that affect this accuracy.
 
+\subsection{The Model}
 
-Let $t$ be the number of milliseconds in the future when the user will make a request.
-Let the variables $l_{net,cache,user}$ represent the latency to fetch and render the request from the server,
-the latency to render data if it is found in the client cache, and the perceived latency of the user, respectively.
-Let $\alpha$ be the accuracy of the prediction model.
+Our goal is to estimate the minimum prediction accuracy $\alpha$ needed in order to ensure that the user perceived latency $l_{user}$ is below a fixed threshold (e.g. 100ms~\cite{} or 500ms).
+Let $T=0$ be the time.
+We assume that the user will perform her request at $T=t$ where $t \ge 0$, and that the cost of answering a request consists of fetching and rendering the results.
+$l_{user}$ is defined as the time between $t$ and the change reflected in the visualization. 
+Let $l_{net}$ be the latency to execute a request, transfer the results across the network, and render it on screen.   In a typical system, $l_{user} = l_{net}$, which can be undesirable when query processing or the network latency are high.
+Prefetching allows the client to proactively answer a request at $T=0$ and store the results in a client cache.
+If a future request accessed data in the cache, then it can take much less time $l_{cache} < l_{net}$ and result in a more responsive user perceived experience.
 
-Walk through typical numbers for these variables and where they come frome.
+We now model the expected user perceived latency as $l_{cache} + max(0, l_{net} - t)$ if model accurately predicted the request, and $l_{net}$ if it mispredicted.  The $max()$ operation accounts for cases when the cost of a cache miss is larger than $t$:
 
-$$l_{user} = (l_{cache} + max(0, l_{net} - t)\times \alpha + l_{net}\times(1-\alpha) $$
-
-We use $max()$ because 
+$$l_{user} = (l_{cache} + max(0, l_{net}-t))\times \alpha + l_{net}\times(1-\alpha) $$
 
 Rearranging the terms, we can derive the minimum prediction accuracy in order to maintain $l_{user}$.
 
-$$\alpha = \frac{l_{net} - l_{user}}{l_{net} - l_{cache}}$$
+%$$\alpha = \frac{l_{net} - l_{user}}{l_{net} - l_{cache}}$$
+$$\alpha = \frac{l_{user} - l_{net}}{l_{cache} + max(0, l_{net}-t) - l_{net}}$$
 
-If we set the desired user latency to $100$ milliseconds, then Figure~\ref{fig:model_base} plots the model accuracy as the network latency (x-axis) and \ewu{another factor} (lines).
+\ewu{Describe common constants} 
+Figure~\ref{fig:model_base} plots the model accuracy for two commonly cited $l_{user}$ thresholds (100 and 500ms).  The x-axis varies $l_{net}$ and each line represents the percentage of the prefetching costs that the user will experience.  For instance, when $\frac{t}{l_{net}}=1$, the user initiates the request at $T=t=l_{net}$ and does not experience any of the prefetching costs, whereas when $\frac{t}{l_{net}}=0.5$, the prefetching request is only half complete by the time the user initiates her request at $T=0.5\times l_{net}$.
+\ewu{Describe the figure}
 
-\begin{figure}
+\begin{figure}[ht]
 	\centering
 	\includegraphics[width=1\columnwidth]{figures/model_base}
- 	\caption{Required prediction accuracy as a function of network latency, when look-ahead time $t$ is a fraction of network latency.}
+ 	\caption{Minimum $\alpha$ vs network latency (x-axis), $\frac{t}{l_{net}}$ ratios (lines), and two thresholds (facets).}
     \label{fig:model_base}
 \end{figure}
 
-\begin{figure}
+
+
+\stitle{Vary Prefetch Concurrency}
+Most modern data processing systems are able to execute multiple concurrent requests~\cite{ebenstein2016fluxquery,giannikis2012shareddb}.  
+We now vary the number of concurrent prefetch requests $N$;
+the $(1-\alpha)^N$ term is the probability that none of the prefetch requests match the user's actual request at $T=t$:
+
+$$l_{user} = (l_{cache} + max(0, l_{net} - t)\times (1-(1-\alpha)^N) + l_{net}\times(1-\alpha)^N $$
+
+Rearranging the terms results in the following minimum prediction accuracy:
+
+
+$$\alpha = 1 - \left(\frac{l_{cache}+max(0,l_{net}-t)-l_{user}}{max(0,l_{net}-t)-l_{net}}\right)^{1/N}$$
+
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=1\columnwidth]{figures/model_concurrency}
- 	\caption{Required prediction accuracy as a function of network latency, as concurrency increases (lines) and for two latency thresholds (facets).}
+ 	\caption{Minimum $\alpha$ vs network latency (x-axis), concurrency (lines), and two latency thresholds (facets).}
   \label{fig:model_concurrency}
 \end{figure}
+
+
+Figure~\ref{fig:model_concurrency} shows that increasing the number of concurrent requests has an immediate effect on $\alpha$ ($t=l_{net}$ in these plots).    With $N=20$, a prediction model need only be $12\%$ accurate to ensure an interactive latency of $l_{user}=100$, while ensuring  $l_{user}=500$ only requires an accuracy of $3.5\%$. \ewu{Describe implications}
+
+
+
+\stitle{Vary Perceived Latency Threshold}
+
+\stitle{Network Latency Variance}
+
+\stitle{Progressive Loading}
+Assuming a tile is XXX kilobytes, and a throughput of $T mb/s$, then can sustain a concurrency level of XXX.  
+When combined with progressive loading of $20\%$ (base this number off sampling and immens arguments), increases the concurrency level to XXX, 
+and the model accuracy to YYY.  In many existing settings, where the number of interaction options is limited, this effectively means the prediction model
+can draw randomly and be effective.  
+
+However, in interfaces such as XXX, the number of possible interactions are roughly YYY, for which existing techniques would fail.  Under our analysis, the model simply needs to be.
+
 
 \begin{figure}
 	\centering
@@ -42,22 +79,6 @@ If we set the desired user latency to $100$ milliseconds, then Figure~\ref{fig:m
     \label{fig:model_partial}
 \end{figure}
 
-
-
-\stitle{Vary Prefetch Concurrency}
-
-\stitle{Vary Perceived Latency Threshold}
-
-\stitle{Network Latency Variance}
-
-\stitle{Progressive Loading}
-
-Assuming a tile is XXX kilobytes, and a throughput of $T mb/s$, then can sustain a concurrency level of XXX.  
-When combined with progressive loading of $20\%$ (base this number off sampling and immens arguments), increases the concurrency level to XXX, 
-and the model accuracy to YYY.  In many existing settings, where the number of interaction options is limited, this effectively means the prediction model
-can draw randomly and be effective.  
-
-However, in interfaces such as XXX, the number of possible interactions are roughly YYY, for which existing techniques would fail.  Under our analysis, the model simply needs to be.
 
 
 
