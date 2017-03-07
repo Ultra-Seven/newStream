@@ -11,10 +11,17 @@ var Evaluator = (function() {
   //             where trace is [ [x, y, t, action], ... ]
   function Evaluator(fullTraces) {
     this.fullTraces = fullTraces;
-    this.evaluators = _.object(_.map(branches, function(branch){
-      var klass = require("./evaluator_"+branch).Evaluator;
-      return [branch, new klass(fullTraces)];
-    }));
+    this.evaluators = _.object(_.compact(_.map(branches, function(branch){
+      try {
+        var klass = require("./evaluator_"+branch).Evaluator;
+        return [branch, new klass(fullTraces)];
+      } catch (e) {
+        console.error("\n");
+        console.error("Error in require('evaluator_" + branch + ".js');");
+        console.error(e);
+        return null;
+      }
+    })));
   };
 
   // @predictor a Predictor object
@@ -24,7 +31,9 @@ var Evaluator = (function() {
       try {
         return [branch, evaluator.eval(predictor)]
       } catch (e) {
-        console.log(branch + "\t" + e.message)
+        console.error("\n");
+        console.error("Error running evaluator_"+branch+".eval() on predictor_" + predictor.branch );
+        console.error(e);
         return null;
       }
     })));

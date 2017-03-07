@@ -8,7 +8,13 @@ function loadJSON(path) {
   return JSON.parse(fs.readFileSync(path));
 };
 function evaluate(name, predictor, evaluator) {
-  var scores = evaluator.eval(baseline);
+  try {
+    var scores = evaluator.eval(predictor);
+  } catch(e) {
+    console.error("Error in evaluate() on " + name);
+    console.error(e);
+    return null;
+  }
   _.each(scores, function(score, evalname) {
     console.log([name, evalname, score].join("\t"));
   });
@@ -32,3 +38,26 @@ console.log(["Predictor", "Evaluator", "Score"].join("\t"));
 console.log("-------------------------------------------------");
 evaluate("Baseline", baseline, eval);
 
+var results = _.object(_.compact(_.map(branches, function(branch){
+  try {
+    var YourPredictor = require("./predict_" + branch).YourPredictor;
+    var yourPred = new YourPredictor();
+    yourPred.branch = branch;
+  } catch(e) {
+    console.error("\n");
+    console.error("Error in require('predict_"+branch+".js'): ");
+    console.error(e);
+    return null;
+  }
+
+  try {
+    var results = evaluate(branch, yourPred, eval);
+    return [branch, results];
+  } catch(e) {
+    console.error("\n");
+    console.error("Error in evaluate(): " + branch);
+    console.error(e);
+    return null;
+  }
+
+})));
