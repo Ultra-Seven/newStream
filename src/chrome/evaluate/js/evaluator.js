@@ -16,8 +16,9 @@ var Evaluator = (function() {
         var klass = require("./evaluator_"+branch).Evaluator;
         return [branch, new klass(fullTraces)];
       } catch (e) {
-        console.log("Failed to load evaluator for " + branch);
-        console.log(e);
+        console.error("\n");
+        console.error("Error in require('evaluator_" + branch + ".js');");
+        console.error(e);
         return null;
       }
     })));
@@ -30,8 +31,9 @@ var Evaluator = (function() {
       try {
         return [branch, evaluator.eval(predictor)]
       } catch (e) {
-        console.log(branch + "\t" + e.message)
-        console.log(e)
+        console.error("\n");
+        console.error("Error running evaluator_"+branch+".eval() on predictor_" + predictor.branch );
+        console.error(e);
         return null;
       }
     })));
