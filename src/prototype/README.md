@@ -204,6 +204,16 @@ Submission
 * Push your code to your branch on github.  Make sure not to include derivative files such as `static/js/index.js` or `node_modules/`
 * Reply to the assignment post on piazza describing what you did at a high level.
 
+Grading
+
+* Your grade will be based on the staff asking the following questions about your code:
+  1. (50%) does the code run?
+  1. (10%) does the viz interface completely slow down due to your code
+  1. (10%) do the mouse predictions seem sensible? This is related to your solution to [hw3](https://github.com/cudbg/stream/tree/master/src/chrome)
+  1. (10%) do you successfully map mouse predictions to interactable boxes?
+  1. (20%) do you successfully map mouse predictions to query template distributinos?
+  1. (10% extra) do you have the fastest implementation of getQueryDistributionan and toWire (while still generating reasonable predictions)? 
+
 
 <a name="assignment4" />
 

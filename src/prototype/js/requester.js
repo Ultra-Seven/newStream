@@ -34,7 +34,10 @@ var Requester = (function(EventEmitter) {
     // TODO: pass in your mouse predictor!
     this.mousePredictor = opts.mousePredictor;
 
-    this.n = 0;
+    this.nDist = 0;
+    this.nEnc = 0;
+    this.distCost = 0;
+    this.encodeCost = 0;
 
     EventEmitter.call(this);
 
@@ -47,12 +50,24 @@ var Requester = (function(EventEmitter) {
   //  2. get query distribution and send to server
   //  3. sleep for minInterval
   //
+  // We track how quickly the distribution and toWire() call costs
+  //
   Requester.prototype.run = function() {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
+      var start = Date.now();
       var distribution = this.getQueryDistribution(trace, 100);
-      if (distribution != null) 
-        this.send(distribution);
+      this.distCost += (Date.now() - start);
+      this.nDist++;
+      
+      if (distribution != null) {
+        start = Date.now();
+        var encodedDist = JSON.stringify(dist.toWire());
+        this.encodeCost += (Date.now() - start);
+        this.nEnc++;
+
+        this.send(encodedDist);
+      }
     }
 
     setTimeout(this.run.bind(this), this.minInterval);
@@ -61,15 +76,17 @@ var Requester = (function(EventEmitter) {
   //
   // manually send a distribution to the server
   //
-  Requester.prototype.send = function(dist, cb) {
+  Requester.prototype.send = function(encodedDist, cb) {
     $.ajax({
       type: "POST",
       contentType: "application/json; charset=utf-8",
       url: "/distribution/set",
-      data:  JSON.stringify(dist.toWire()),
+      data:  encodedDist,
       success: function (data) {
         if (Util.DEBUG)
           console.log(["sendDist got response", data])
+        if (cb)
+          cb(data);
       },
       dataType: "json"
     });
