@@ -23,6 +23,10 @@ def copy_from_branches(branches):
     cp /tmp/stream/src/chrome/server/js/predict.js ./js/predict_%s.js;
     """ % (branch, branch, branch))
 
+    try:
+      os.system("cp /tmp/stream/src/chrome/server/js/kf.js ./js/kf.js;")
+    except e:
+      pass
     for fname in os.listdir("/tmp/stream/src/chrome/server/"):
       if fname.endswith(".bdb"):
         os.system("""
