@@ -166,9 +166,9 @@ Submitting
 * [Submit to this link](https://www.dropbox.com/request/h9fYM27EPJGybrUQlm5B)
 
 
-<a name="assignment3" />
+<a name="assignment4" />
 
-### Assignment 3:
+### Assignment 4:
 
 Due: 3/19 midnight
 
@@ -215,9 +215,9 @@ Grading
   1. (10% extra) do you have the fastest implementation of getQueryDistributionan and toWire (while still generating reasonable predictions)? 
 
 
-<a name="assignment4" />
+<a name="assignment5" />
 
-### Assignment 4:
+### Assignment 5:
 
 Due: 4/2 midnight
 
