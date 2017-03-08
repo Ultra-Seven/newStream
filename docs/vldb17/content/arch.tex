@@ -8,6 +8,12 @@
   \label{fig:arch}
 \end{figure}
 
+
+Challenges:   How to represent and generate distributions?
+What to return?  Scheduling problem -- adopt existing scheduling work.
+Progressive encoding -- try obvious options.  see if they work.
+
+
 \ewu{copied from assignment readme}
 Figure~\ref{fig:arch} represents the overall architecture of the system and will be used to introduce the major files.
 From left to write, the developer creates visualization charts as wrappers around query templates. When the viz are instantiated, the query templates are registered with the server, so the server can instantiate the appropriate precomputed data structures. The query templates basically parameterize SQL queries.

@@ -11,7 +11,7 @@ xs = np.arange(1, 2000, 10)
 def make_func(tratio=1, lperc=100, concurrency=1, partial=1, std=0):
   f = lambda x: (float(lperc) - x) / (10.0 - (tratio * x))
   f = lambda x: 1.0 - ((lperc - 10.0 - max(0, x - tratio * x)) / (x - 10.0 - max(0.0, x - tratio * x)))**(1.0/concurrency)
-  f = lambda x: 1.0 - ((10.0 + max(0, x-tratio*x)-lperc)/(max(0, x-tratio*x)-x))**(1.0 / concurrency)
+  f = lambda x: 1.0 - max(0, ((10.0 + max(0, x-tratio*x)-lperc)/(max(0, x-tratio*x)-x)))**(1.0 / concurrency)
   h = lambda x: f(x * partial)
   h.std = std
   h.partial = partial
@@ -43,7 +43,7 @@ def plotit(data):
   p = ggplot(data, aes(x="x", y="y", color="label", group="label"))
   p += geom_line()
   p += axis_labels("Network Latency", "Required Accuracy", ykwargs=dict(lim=[0,1]))
-  p += geom_vline(xintercept=950, color=esc("grey"))
+  p += geom_vline(xintercept=1000, color=esc("grey"))
   p += legend_bottom
   p += guides(col = guide_legend(nrow=1))
   p += theme(**{
@@ -69,7 +69,7 @@ print max(filter(lambda d: d['std'] == 500, data), key=lambda d: d['x'])
 p = ggplot(data, aes(x="x", y="y", color="label", group="label"))
 p += geom_point(size=0.05, alpha=0.2)
 p += axis_labels("Network Latency", "Required Accuracy", xkwargs=dict(breaks=[500, 1000, 1500, 2000], labels=map(esc, ["500", "1k", "1.5k", "2k"])), ykwargs=dict(lim=[0,.4]))
-p += geom_vline(xintercept=950, color=esc("grey"))
+p += geom_vline(xintercept=1000, color=esc("grey"))
 p += legend_bottom
 p += guides(col = guide_legend(nrow=1))
 p += theme(**{
@@ -93,7 +93,7 @@ ggsave("model_base.png", p, libs=["grid"], width=4, height=2)
 
 
 # concurrency
-funcs = [dict(label="N=%02d" % (t), t=t, p="Threshold: %s" % p, f=make_func(concurrency=t, lperc=p)) for t in [1, 5, 10, 20] for p in [100, 500]]
+funcs = [dict(label="N=%02d" % (t), t=t, p="Threshold: %s" % p, f=make_func(concurrency=t, tratio=.9, lperc=p)) for t in [1, 5, 10, 20, 500] for p in [100, 500]]
 print make_func(concurrency=5, lperc=500)(1000)
 #exit()
 p = toplot(funcs)

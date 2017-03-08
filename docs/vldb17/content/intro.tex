@@ -27,11 +27,12 @@ To answer this question, we used a simple model-based analysis of end-to-end lat
 
 Based on these observations, we have designed \sys, a streaming-based architecture that generalizes the request-response model to support rich interactive visual exploration interfaces.  The primary idea is to model user interactions as a series of probability distributions over possible visualization requests at a future time steps.  Under this model, a given request is simply an impulse distribution centered around the user's interaction, however by sending a distribution.  This is similar to the notion of a QueryIntent~\cite{ebenstein2016fluxquery} however used in this context not to predict what the user will do but for prefetching.
 
-However, simply having query distributions is not sufficient because XXX.  Thus \sys combines two additional ideas: progressive visualization results and streaming push-based results. \ewu{describe more}
+However, simply having query distributions is not sufficient because \ewu{waiting until the query distribution to be sent to the server is still not good enough and arguably exacerbates the problem due to the size to encode the distribution}.  Thus \sys combines two additional ideas: progressive visualization results and streaming push-based results. \ewu{describe more}
 
 All three are {\it necessary}.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.
 
 
+We show that a simple analysis, and a judicious implementation using common components outperforms existing request-response-based approaches.
 Our current system assume precomputed data structures, future work includes online query processing costs.
 
 

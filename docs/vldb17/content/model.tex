@@ -19,9 +19,14 @@ Rearranging the terms, we can derive the minimum prediction accuracy in order to
 %$$\alpha = \frac{l_{net} - l_{user}}{l_{net} - l_{cache}}$$
 $$\alpha = \frac{l_{user} - l_{net}}{l_{cache} + max(0, l_{net}-t) - l_{net}}$$
 
-\ewu{Describe common constants} 
-Figure~\ref{fig:model_base} plots the model accuracy for two commonly cited $l_{user}$ thresholds (100 and 500ms).  The x-axis varies $l_{net}$ and each line represents the percentage of the prefetching costs that the user will experience.  For instance, when $\frac{t}{l_{net}}=1$, the user initiates the request at $T=t=l_{net}$ and does not experience any of the prefetching costs, whereas when $\frac{t}{l_{net}}=0.5$, the prefetching request is only half complete by the time the user initiates her request at $T=0.5\times l_{net}$.
-\ewu{Describe the figure}
+Prior perception and interactive visualization literature have used both $100$ and $500$ millisecond response times as thresholds for what is considered interactive~\cite{liu2014effects}.   Similarly, we assume request latencies can vary from $0$ to $2$ seconds~\cite{}, which embodies latencies that stem from query processing, serialization, network latencies and client overheads.  Finally, it is typically challenging to make accurate predictions more than several hundred milliseconds into the future~\cite{pasqual2014mouse}; we vary the ratio $\frac{t}{l_{net}}$ between $0.5$ and $1$.   We use the above constants in our analysis below.
+
+Figure~\ref{fig:model_base} plots the model accuracy for two commonly cited $l_{user}$ thresholds (100 and 500ms).  The x-axis varies $l_{net}$ and each line represents the percentage of the prefetching costs that the user will experience.  For instance, when $\frac{t}{l_{net}}=1$, the user initiates the request at $T=t=l_{net}$ and does not experience any of the prefetching costs, whereas when $\frac{t}{l_{net}}=0.5$, the prefetching request is only half complete by the time the user initiates her request at $T=0.5\times l_{net}$.  We use a vertical line to mark the network latency at $1$ second.  
+
+The first observation is that when $l_{net}$ is smaller than the threshold, the user perceived accuracy is independent of the model accuracy.  When the threshold is $100$, the minimum model accuracy quickly exceeds $80\%$ by even a request latency of $500$ms; although the minimum accuracy is lower under the $500$ms threshold, the accuracy converges to $70\%$.
+It is challenging to guarantee such high user prediction accuracy for a single request---the accuracy in existing literature is slightly above $50\%$ for a constrained user interface with 9 interaction options~\cite{battle2016dynamic}.
+
+\ewu{Argue that assuming $t < l_{net}$ is a reasonable assumption.}
 
 \begin{figure}[ht]
 	\centering
@@ -33,9 +38,8 @@ Figure~\ref{fig:model_base} plots the model accuracy for two commonly cited $l_{
 
 
 \stitle{Vary Prefetch Concurrency}
-Most modern data processing systems are able to execute multiple concurrent requests~\cite{ebenstein2016fluxquery,giannikis2012shareddb}.  
-We now vary the number of concurrent prefetch requests $N$;
-the $(1-\alpha)^N$ term is the probability that none of the prefetch requests match the user's actual request at $T=t$:
+Most modern data processing systems are able to execute multiple concurrent requests~\cite{ebenstein2016fluxquery,giannikis2012shareddb}, thus we now modify the model to vary the number of concurrent prefetch requests $N$.
+The $(1-\alpha)^N$ term is the probability that none of the prefetch requests match the user's actual request at $T=t$:
 %
 $$l_{user} = (l_{cache} + max(0, l_{net} - t)\times (1-(1-\alpha)^N) + l_{net}\times(1-\alpha)^N $$
 %
@@ -51,11 +55,11 @@ $$\alpha = 1 - \left(\frac{l_{cache}+max(0,l_{net}-t)-l_{user}}{max(0,l_{net}-t)
 \end{figure}
 
 
-Figure~\ref{fig:model_concurrency} shows that increasing the number of concurrent requests has an immediate effect on $\alpha$ ($t=l_{net}$ in these plots).    With $N=20$, a prediction model need only be $12\%$ accurate to ensure an interactive latency of $l_{user}=100$, while ensuring  $l_{user}=500$ only requires an accuracy of $3.5\%$. \ewu{Describe implications}
+Figure~\ref{fig:model_concurrency} shows that increasing the number of concurrent requests has an immediate effect on $\alpha$ ($t=l_{net}$ in these plots).    With $N=20$, a prediction model need only be $12\%$ accurate to ensure an interactive latency of $l_{user}=100$, while ensuring  $l_{user}=500$ only requires an accuracy of $3.5\%$.  At the limit, sending concurrent requests for all possible queries (assuming the cost is $l_{net}$) means the user latency is independent of prediction accuracy.  These results suggest that increasing the concurrency is an effective counter balance to model accuracy.
 
 
 \stitle{Network Latency Variance}
-Figure~\ref{fig:model_std} simulates $l_{net}$ drawn from a gaussian distribution with standard deviation of $0, 100, 500$ milliseconds.  We set $N=20$, $t=l_{net}$.  We find that although the request variance affects the required model accuracy when $l_{net}$ is low, the curves converge to similar points as $l_{net}$ increases, irrespective of the variance.
+Figure~\ref{fig:model_std} simulates $l_{net}$ drawn from a gaussian distribution with standard deviation of $std \in \{0, 100, 500\}$ milliseconds.  We set $N=20$, $t=l_{net}$, and the y-axis is from 0 to $0.4$.  Although the request variance affects the required model accuracy when $l_{net}$ is low, the curves for each threshold converge to the same levels independent of $std$; this is simply because $l_{net}$, rather than $std$, is the dominant factor as it increases.
 
 \begin{figure}[h]
 	\centering
@@ -72,9 +76,9 @@ Figure~\ref{fig:model_std} simulates $l_{net}$ drawn from a gaussian distributio
 \end{figure}
 
 
-\stitle{Progressive Loading}
-\ewu{Lots of work on approximation and perceptual inaccuracy.}  In our final analysis, we simulate the effects of partial results by simply reducing the time it takes to respond to a request.
-A powerful result is that combining concurrency and partial results can reduce the required accuracy of the prediction model to nearly $0$ and still support interactivity of $l_{user}=500ms$ when $l_{net}\le 2000$.
+\stitle{Progressive Results}
+The visualization and database communities have argued for approximate visualizations that are slightly inaccurate but potentially much faster to compute.  Techniques such as Online Aggergation~\cite{control,wanderjoin} or streaming wavelet compression~\cite{} are considered {\it progressive} because they are able to immediately return (and render) approximate results that improve over time; thus providing a natural trade-off between latency and result quality.  Our final analysis studies progressive results that require a fraction of the full request latency to be ``sufficiently good''.
+\ewu{Use sampling and immens arguments as basis for 25\% partial results.} We find that $5\%$ accuracy is enough to maintain user perceived latency of $100$ when $25\%$ of the results is sufficient; at threshold of $500$, the perceived latency is independent of the model accuracy when $l_{net}\le 2000$.
 
 
 
@@ -82,16 +86,6 @@ A powerful result is that combining concurrency and partial results can reduce t
 
 
 \subsection{Discussion}
-
-\ewu{Argue that it is clear that progressive encoding and apprximate results will be the future.  Thus the combination of partial results and concurrency go hand in hand.  We also see that the prediction model simply needs to be ``good enough'' with an accuracy around $10\%$.  When the number of possible interactions are limited, then a random model is sufficient.  However when it is unlimited, then the accuracy can easiry be very low~\cite{}.  }
-
-
-
-Assuming a tile is XXX kilobytes, and a throughput of $T mb/s$, then can sustain a concurrency level of XXX.  
-When combined with progressive loading of $20\%$ (base this number off sampling and immens arguments), increases the concurrency level to XXX, 
-and the model accuracy to YYY.  In many existing settings, where the number of interaction options is limited, this effectively means the prediction model
-can draw randomly and be effective.  
-
-
-However, in interfaces such as XXX, the number of possible interactions are roughly YYY, for which existing techniques would fail.  Under our analysis, the model simply needs to be.
+We find that a careful combination of existing techniques (concurrency and progressive results) can dramatically reduce the required model accuracy to enable low user perceived latency---in some extreme cases when the threshold is $500$, the model accuracy can even be $0\%$.  
+\ewu{Argue that given  fixed network throughput between client and server, increasing concurrency beyond a certain point naturally requires partial results.  Thus the two go hand in hand.   We also see that the prediction model simply needs to be ``good enough'' with an accuracy of $5-10\%$.  When the number of possible interactions are limited to $10-20$ possible interactions, then even a random model is sufficient.  However in rich interfaces with potentially dozens or a hundred possible interactions, there may simply be too many choices to learn a good model.}
 
