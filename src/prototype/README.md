@@ -170,9 +170,11 @@ Submitting
 
 ### Assignment 3:
 
-Due: 3/17 midnight
+Due: 3/19 midnight
 
 You have now implemented a good mouse predictor -- in this assignment you will integrate it into the main stream system so that it starts sending _query_ (instead of mouse) distributions.
+
+* You may discuss this assignment with classmates on piazza
 
 
 Pull updated code from master:
@@ -181,27 +183,26 @@ Pull updated code from master:
           git checkout <your branch name>
           git merge master
 
-Integrate your predictor code into the stream prototype codebase.  Most of the code you will edit is in [requester.js](./js/requester.js).  We have implemented a basic skeleton for mapping mouse prediction distributions into query prediction distributions, however most of the logic will be written by you:  
+Integrate your predictor code into the stream prototype codebase.  Most of the code you will edit is in [requester.js](./js/requester.js).  We have implemented a basic skeleton for mapping mouse prediction distributions into query prediction distributions, however most of the logic will be written by you.  We have sprinkled TODO comments and "Not Implemented" errors at places in the code where you will need to change or be aware of.  
 
 1. Check that you are on your team's branch and not master.
-2. Add your predictor from assignment 2 into this code base (may be easiest to create a new module/file for your predictor.)
-3. Edit `getMouseDistribution()` in [requester.js](./js/requester.js) to return a mouse distribution.
-4. Edit and fill in `mapMouseToQueryDistribution()` to map your mouse distribution into a query distribution.  Some things you may want to consider:
+1. Add your predictor from assignment 2 into this code base 
+  * May be easiest to create a new module/file for your predictor e.g., `predictor_<your branch>.js` and import it `require('./predictor_<your branch>.js')`
+1. Edit and fill in `mapMouseToQueryDistribution()` to map your mouse distribution into a query distribution.  Some things you may want to consider:
   * What information do you need to store in order to know what DOM elements correspond to a given x, y coordinate?
   * What information do you need to know the query requests that interacting with a DOM element will trigger?  
   * How do you compute the probabilities accurately enough?
-5. Once you have completed these tasks, uncomment the `return null` line in `getQueryDistribution()`.  You should see the server receiving query distributions at short intervals.   Pass in a smaller `minInterval` parameter to the `Requester` constructor in [engine.js](./js/engine.js) to control this interval.
-6. We will provide a demo page that will visualize the interactions that you predict, and also show numbers that measure your code's perfomance overhead.
+1. Once you have completed these tasks, uncomment the line in `getQueryDistribution()`.  You should see the server receiving query distributions at short intervals.   Vary the `opts.minInterval` parameter to the `Requester` constructor in [engine.js](./js/engine.js) to control this interval.
+1. We will provide a demo page that will visualize the interactions that you predict, and also show numbers that measure your code's perfomance overhead.
 
 You may not see any performance changes (or even worse performance) in the interactivity of the demo because predicting more accurate distributions incurs overhead but the server doesn't do anything smart to take advantage of this information.  (At some point we may want to figure out an efficient representation of prediction distributions!)  You will make the server smart in the next assignment.
 
 
 Submission
 
-* Just push to your branch on github.
-* (optional) reply to the assignment post on piazza what you thought of the assignment, codebase, or the architecture.
-
-
+* Make sure the predictor and evaluators from HW2 run work.
+* Push your code to your branch on github.  Make sure not to include derivative files such as `static/js/index.js` or `node_modules/`
+* Reply to the assignment post on piazza describing what you did at a high level.
 
 
 <a name="assignment4" />

@@ -1,6 +1,7 @@
 var EventEmitter = require("events");
 var Util = require("./util");
 var Dist = require("./dist");
+var Logger = require("./logger").Logger;
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -23,20 +24,43 @@ var Requester = (function(EventEmitter) {
   function Requester(engine, opts) {
     opts = opts || {};
     this.engine = engine;
-    this.minInterval = opts.minInterval || 10;
+    this.minInterval = opts.minInterval || 50;
+    this.logger = new Logger({
+      minResolution: 5,
+      traceLength: 150
+    });
+    this.logger.bind(document);
+
+    // TODO: pass in your mouse predictor!
+    this.mousePredictor = opts.mousePredictor;
+
+    this.n = 0;
 
     EventEmitter.call(this);
+
+    this.run();
   };
 
-  // Run the requester forever
+  //
+  // Run forever:
+  //  1. get current mouse trace
+  //  2. get query distribution and send to server
+  //  3. sleep for minInterval
+  //
   Requester.prototype.run = function() {
-    var distribution = this.getQueryDistribution();
-    if (distribution != null) 
-      this.send(distribution);
-    setTimeout(this.run().bind(this), this.minInterval);
+    if (this.mousePredictor) {
+      var trace = this.logger.trace;
+      var distribution = this.getQueryDistribution(trace, 100);
+      if (distribution != null) 
+        this.send(distribution);
+    }
+
+    setTimeout(this.run.bind(this), this.minInterval);
   };
 
+  //
   // manually send a distribution to the server
+  //
   Requester.prototype.send = function(dist, cb) {
     $.ajax({
       type: "POST",
@@ -53,8 +77,8 @@ var Requester = (function(EventEmitter) {
 
   ////////////////////////////////////////////////////////
   //
-  //  Everything below is an unimplemented skeleton
-  //  for actually generating a real query distribution
+  //  You will need to implement the functions below.
+  //  We have left comments to help you out.
   //
   ////////////////////////////////////////////////////////
 
@@ -70,16 +94,22 @@ var Requester = (function(EventEmitter) {
     };
   };
 
+  // @trace current mouse trace
   // @param dt number of milliseconds into the future
   // @return a list of [querytemplateid, params, probability]
   //         that conforms to the Requester wire format
-  var getQueryDistribution = function(dt) {
-    // TODO: Uncomment me when the function is implemented
-    return null;
-    return mapMouseToQueryDistribution(getMouseDistribution(dt));
+  Requester.prototype.getQueryDistribution = function(trace, dt) {
+    dt = dt || 100;
+    var mouseDist = this.mousePredictor(trace, dt);
+    // TODO: Uncomment below when the function is implemented
+    var queryDist = null; // mapMouseToQueryDistribution(mouseDist);
+    return queryDist;
   };
 
+  //
   // Returns a list of DOM elements that the user can interact with
+  // Hint: an easy way is to annotate the interactable marks in the visualization with 
+  //       a custom class
   //
   // TODO: implement me!
   //
@@ -94,15 +124,6 @@ var Requester = (function(EventEmitter) {
   var getInteractableElements = function() {
     throw Error("Implement Me");
   };
-
-  //
-  // TODO: implement this
-  // @param dt number of milliseconds into the future
-  // @return distribution of mouse positions
-  //
-  var getMouseDistribution = function(dt) {
-    throw Error("Implement Me");
-  }
 
   //
   // TODO: implement this
