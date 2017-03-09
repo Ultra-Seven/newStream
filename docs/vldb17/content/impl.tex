@@ -1,5 +1,8 @@
 \section{Implementation}
 
+Our current prototype is implemented as a javascript client library and a Python server because this is common.  Performance-critical parts of the client are written in asm.js and AOT compiled.
+In this section, we describe our implementation of the major components.
+
 
 \subsection{Prediction Model}
 
@@ -9,13 +12,32 @@ Describe the challenges: prediction in general.  Note that the needed accuracy i
 \stitle{Representing Distributions}
 Distributions can represent thousands of possible queries.  Simply representing it efficiently is an issue.
 
-\subsection{Streaming Results}
+\subsection{Storage Engines}
 
-Two policies: topk, all, best effort, Microsoft
+Data cube.
 
+Query Template.
+
+Sampling???  This would require client side execution engine...
+
+
+\subsection{Scheduler}
+
+The key challenge for the scheduler is to determine the number of bytes to allocate to each query in the predictied distribution, and the order to send them back.  We decompose this into two policy decisions: how to transform the distribution to account for previously sent data, and how to allocate bandwidth given a single distribution.
+
+\stitle{Transformation:}  One approach is to schedule query results for each distribution independently and ignore past sent data.  A more advanced policy is to adjust the distributions to dampen the probability for queries that have been recently retrieved.  We call these \texttt{Indep} and \texttt{Dampen}, respectively.
+
+\stitle{Allocation:} The second consideration is the number of bytes to allocate each We experiment with three policies: topk, proportional, Microsoft.
+Top K sends all bytes for each query from highest to lowest probability.
+Proportional allocates the bandwidth proportionally to all queries with a probability above a threshold $thresh$.  We use $thresh=0$ in the experiments.
+Finally, Microsoft is an adaptation of a resource allocation algorithm from~\cite{} that \ewu{XXX}. 
+
+
+\ewu{Note that the ring buffer does not mean data will be constantly overwritten---the scheduler can decide not to send any data if it doesn't want to overwrite something.  }
 
 \subsection{Progressive Encoding}
 
-\stitle{Sampling}
+We experiment with two progressive encoding schemes.  The first is haar wavelet encoding~\cite{}, and the second is running fast fourier transform~\cite{nussbaumer2012fast} (FFT) on the query results and progressively sending each component.
 
-\stitle{Wavelet}
+
+
