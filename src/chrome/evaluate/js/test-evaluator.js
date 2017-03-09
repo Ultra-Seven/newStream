@@ -16,7 +16,9 @@ function evaluate(name, predictor, evaluator) {
     return null;
   }
   _.each(scores, function(score, evalname) {
-    console.log([name, evalname, score].join("\t"));
+    var namePadding = _.times(Math.max(0, 25 - name.length), function() { return " ";}).join("");
+    var evalPadding = _.times(Math.max(0, 25 - evalname.length), function() { return " ";}).join("");
+    console.log([name + namePadding, evalname + evalPadding, score].join("\t"));
   });
   return scores;
 }
@@ -34,8 +36,8 @@ var ktmdata = loadJSON("./data/ktmdata.json");
 var baseline = new BaselinePredictor([], ktmdata);
 
 // we will import your prediction objects to evaluate here
-console.log(["Predictor", "Evaluator", "Score"].join("\t"));
-console.log("-------------------------------------------------");
+console.log(["Predictor               ", "Evaluator                    ", "Score"].join("\t"));
+console.log("--------------------------------------------------------------------");
 evaluate("Baseline", baseline, eval);
 
 var results = _.object(_.compact(_.map(branches, function(branch){
