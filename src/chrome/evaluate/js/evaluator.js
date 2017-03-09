@@ -14,7 +14,10 @@ var Evaluator = (function() {
     this.evaluators = _.object(_.compact(_.map(branches, function(branch){
       try {
         var klass = require("./evaluator_"+branch).Evaluator;
-        return [branch, new klass(fullTraces)];
+        var start = Date.now();
+        var o = new klass(fullTraces);
+        var cost = Date.now() - start;
+        return [branch, { evaluator: o, cost: cost }];
       } catch (e) {
         console.error("\n");
         console.error("Error in require('evaluator_" + branch + ".js');");
@@ -27,9 +30,13 @@ var Evaluator = (function() {
   // @predictor a Predictor object
   // @return an accuracy score between 0 and 1, where 0 sucks, and 1 is great
   Evaluator.prototype.eval = function(predictor) {
-    var res = _.object(_.compact(_.map(this.evaluators, function(evaluator, branch) {
+    var res = _.object(_.compact(_.map(this.evaluators, function(d, branch) {
+      var evaluator = d.evaluator;
       try {
-        return [branch, evaluator.eval(predictor)]
+        var start = Date.now();
+        var score = evaluator.eval(predictor);
+        var cost = Date.now() - start;
+        return [branch, { score: score, cost: cost } ];
       } catch (e) {
         console.error("\n");
         console.error("Error running evaluator_"+branch+".eval() on predictor_" + predictor.branch );

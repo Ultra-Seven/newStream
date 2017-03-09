@@ -7,6 +7,17 @@ var BaselinePredictor = require("./predict").BaselinePredictor;
 function loadJSON(path) {
   return JSON.parse(fs.readFileSync(path));
 };
+
+// right pad or shorten string to len
+function pad(len, s) {
+  s = s.toString();
+  if (s.length > len) return s.slice(0, len);
+  var padding = _.times(Math.max(0, len - s.length), function() { return " ";}).join("");
+  return s + padding;
+}
+var pad20 = _.partial(pad, 20);
+var pad5 = _.partial(pad, 5)
+
 function evaluate(name, predictor, evaluator) {
   try {
     var scores = evaluator.eval(predictor);
@@ -15,10 +26,10 @@ function evaluate(name, predictor, evaluator) {
     console.error(e);
     return null;
   }
-  _.each(scores, function(score, evalname) {
-    var namePadding = _.times(Math.max(0, 25 - name.length), function() { return " ";}).join("");
-    var evalPadding = _.times(Math.max(0, 25 - evalname.length), function() { return " ";}).join("");
-    console.log([name + namePadding, evalname + evalPadding, score].join("\t"));
+  _.each(scores, function(d, evalname) {
+    var score = d.score,
+        cost = d.cost;
+    console.log([pad20(name), pad20(evalname), pad5(score), pad5(cost)].join("\t"));
   });
   return scores;
 }
@@ -29,15 +40,15 @@ branches = ["bgwte", "fpyz", "gal", "gr2547_sh3266", "lw2666_az2407"]
 console.log("Assuming you are running test script in src/evaluator/");
 
 var traces = loadJSON("./data/alltraces.json");
-traces = _.head(_.filter(traces, function(trace) { return trace.length > 3; }), 20);
+traces = _.head(_.filter(traces, function(trace) { return trace.length > 3; }), 200);
 var eval = new Evaluator(traces);
 
 var ktmdata = loadJSON("./data/ktmdata.json");
 var baseline = new BaselinePredictor([], ktmdata);
 
 // we will import your prediction objects to evaluate here
-console.log(["Predictor               ", "Evaluator                    ", "Score"].join("\t"));
-console.log("--------------------------------------------------------------------");
+console.log([pad20("Predictor"), pad20("Evaluator"), pad5("Score"), pad5("time")].join("\t"));
+console.log("----------------------------------------------------------------------------");
 evaluate("Baseline", baseline, eval);
 
 var results = _.object(_.compact(_.map(branches, function(branch){
