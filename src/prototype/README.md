@@ -170,7 +170,9 @@ Submitting
 
 ### Assignment 4:
 
-Due: 3/19 midnight
+<strikethrough>Due: 3/19 midnight</strikethrough>
+
+Due: 3/26 midnight.
 
 You have now implemented a good mouse predictor -- in this assignment you will integrate it into the main stream system so that it starts sending _query_ (instead of mouse) distributions.
 
