@@ -91,7 +91,8 @@ var Engine = (function(EventEmitter) {
 
     // 3. send an explicit query distirubiton
     var dist = Dist.NaiveDistribution.from(q);
-    this.requester.send(dist);
+    var encodedDist = JSON.stringify(dist.toWire());
+    this.requester.send(encodedDist);
 
   }
 
