@@ -3,32 +3,34 @@ import os
 import bsddb3
 
 branches = ["bgwte", "fpyz", "gal", "gr2547_sh3266", "lw2666_az2407"]
+custom_files = ["kf.js", "poly_predict.js", "regression.min.js"]
 
-
-def copy_from_branches(branches):
-  custom_files = ["kf.js", "poly_predict.js"]
-  try:
-    os.system("""
+scripts = [
+    """
+    rm -rf /tmp/stream;
+    """,
+    """
     cd /tmp;
     git clone git@github.com:cudbg/stream.git;
     cd -;
-    """)
-  except:
-    # already cloned
-    pass
-
-  try:
-    os.system("""
+    """,
+    """
       cd /tmp/stream;
+      git pull;
       git checkout master;
       cd -;
       cp /tmp/stream/src/chrome/server/js/ktm.js ./js/;
       cp /tmp/stream/src/chrome/server/js/predict.js ./js/;
       cp /tmp/stream/src/chrome/server/js/dist.js ./js/;
-      """)
-  except Exception as e:
-    print e
-    
+      """
+]
+
+def copy_from_branches(branches):
+  for script in scripts:
+    try:
+      os.system(script)
+    except Exception as e:
+      print e
 
   for branch in branches:
     print branch
