@@ -46,18 +46,19 @@ var BaselinePredictor = (function(Predictor) {
   // @templates list of precomputed KTM templates (default is loaded from /static/data/ktmdata.json)
   function BaselinePredictor(boxes, templates) {
     this.ktm = new ktmPred.KTM(templates);
+    this.defaultPrediction = Dist.NaiveDistribution.from([0,0,'m'], mouseToKey);
     Predictor.apply(this, arguments);
   };
 
   BaselinePredictor.prototype.predict = function(trace, deltaTime) {
     var pt = null;
     if (trace.length <= 2) { 
-      if (trace.length == 0) return null;
+      if (trace.length == 0) return this.defaultPrediction;
       pt = trace[trace.length - 1];
     } else {
       try{
         pt = this.ktm.predictPosition(trace, deltaTime);
-      } catch (e) { return null; }
+      } catch (e) { return this.defaultPrediction; }
     }
     var pred = [pt[0], pt[1], "m"];
     var dist = Dist.NaiveDistribution.from(pred, mouseToKey);
