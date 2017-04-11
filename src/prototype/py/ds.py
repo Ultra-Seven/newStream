@@ -77,6 +77,13 @@ class DS(object):
   def get_iter(self, data):
     return None
 
+  @staticmethod
+  def can_answer(query_template):
+    """
+    @query_template is the output of the client's QueryTemplate.toWire() method.
+    """
+    return False
+
   def cost_est(self, data):
     """
     data is the "data" attribute in the output of the client's Query.toWire()
@@ -107,6 +114,9 @@ class Precompute(DS):
     return self.lookup(self.key(data))
 
   def get_iter(self, data, block_size=50):
+    """
+    XXX: note that it ignores block_size right now
+    """
     block = self.lookup_bytes(self.key(data))
     if block:
       key = self.key(data)
@@ -121,7 +131,7 @@ class Precompute(DS):
     """
     This maps the query data to a unique key.
     The analagous function in javascript is js/datastruct.js:queryToKey()
-    These two functions _must_ match
+    THESE FUNCTIONS MUST MATCH!!
     """
     return json.dumps(sorted(data.items())).replace(" ", "")
 
@@ -147,7 +157,7 @@ class Precompute(DS):
 
   def cost_est(self, data):
     if self.key(data) in self.cache:
-      return 1
+      return 100
     return None
 
 
@@ -202,8 +212,119 @@ class GBDataStruct(Precompute):
 
     Precompute.setup_cache(self, f())
 
+  @staticmethod
+  def can_answer(query_template):
+    """
+    @query_template is the output of the client's QueryTemplate.toWire() method.
+    """
+    return query_template.get('name') == GBDataStruct.name
 
 
+
+class ProgressiveDataStruct(Precompute):
+  """
+  Python version of js/progds.js
+
+  The signature and spec are the same as GBdataStruct, however it encodes data progressively
+  TODO: the data structure that you will implement and fill in
+  TODO: write a custom get_iter() in order to return blocks of partial results
+  """
+  name = "progressive"
+
+  def __init__(self, db, spec, *args, **kwargs):
+    """
+    spec = {
+        select: { alias: expr },
+        fr: <tablename>,
+        groupby: [ "expr", ... ],
+        params: { attr: <data type "num" or "str"> }
+    }
+    """
+
+    # name of the file cache
+    fname = "prog_%s.cache" % ",".join(spec["groupby"])
+    kwargs['fname'] = kwargs.get("fname", fname)
+    super(ProgressiveDataStruct, self).__init__(db, *args, **kwargs)
+
+    self.name = ProgressiveDataStruct.name
+    self.spec = spec
+    self.encoding = 2
+
+  def cost_est(self, data):
+    """
+    Force the cost estimate for progressive data structure to be 
+    lower than group by data structure (10 vs 100)
+    """
+    if self.key(data) in self.cache:
+      return 10
+    return None
+
+
+  def spec_to_sql(self, params):
+    """
+    Translates query parameters into an actual SQL string
+    Identical to function in GBDataStruct
+    """
+    qtemplate = """ SELECT %s FROM %s WHERE %s GROUP BY %s """
+    s = ["%s AS %s" % (expr, alias) for alias, expr in self.spec['select'].items()]
+    s = ", ".join(s)
+    g = ", ".join(self.spec["groupby"])
+    w = ["true"]
+    for attr, val in params.iteritems():
+      if attr in self.spec['params']:
+        if self.spec['params'][attr] == "num":
+          w.append("%s = %s" % (attr, val))
+        else:
+          w.append("%s = '%s'" % (attr, val))
+    w = w and " AND ".join(w) 
+    q = text(qtemplate % (s, self.spec["fr"], w, g))
+    return q
+
+  def setup_cache(self, param_ranges):
+    def f():
+      """
+      This generator yields all SQL queries that should be precomputed
+      """
+      all_names = param_ranges.keys()
+      for names in powerset(all_names):
+        print names
+        iters = map(param_ranges.get, names)
+        for i, vals in enumerate(product(*iters)):
+          data = dict(zip(names, vals))
+          key = self.key(data)
+          q = self.spec_to_sql(data)
+          yield key, [q]
+
+    for key, exec_args in f():
+      cur = self.db.execute(*exec_args)
+      schema = cur.keys()
+      rows = cur.fetchall()
+      self.cache[key] = self.progressively_encode_table(schema, rows)
+    print "cache contains %d items" % len(self.cache)
+
+  def progressively_encode_table(self, schema, rows):
+    """
+    You can byte encode the progressive data using protocol buffers, or something custom.
+    If you plan to do things custom, take a look at StringIO and struct.pack/unpack
+    There are examples above
+    """
+    # TODO: implement me
+    raise Exception("Implement Me!")
+
+  @staticmethod
+  def can_answer(query_template):
+    """
+    @query_template is the output of the client's QueryTemplate.toWire() method.
+    """
+    return query_template.get('name') in (GBDataStruct.name, ProgressiveDataStruct.name)
+
+
+
+
+
+
+
+# Currently deprecated
 class SQLTemplates(Precompute):
   """
   Precomputes templated queries

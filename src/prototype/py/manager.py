@@ -4,16 +4,23 @@ import json
 import flask
 import time
 import numpy as np
+from collections import defaultdict
 
 
 class Manager(object):
   def __init__(self):
-    self.data_structs = {}
+
+    # Keeps 
+    self.data_structs = defaultdict(list)
+
+    # default block size in bytes for sending back to client
     self.block_size = 50
+
+    # when was the last distribution from the client?
     self.prev_dist_update_time = None
 
   def add_data_structure(self, ds):
-    self.data_structs[ds.id] = ds
+    self.data_structs[ds.id].append(ds)
     if flask.DEBUG:
       print "added data structure id %d" % ds.id
 
@@ -55,29 +62,31 @@ class Manager(object):
     a query template id that directly matches <= 1 data structure id
     on the server.
 
+    XXX: note that we ignore prob right now, and that get_iter() returns full results
+
     @returns if a data structure can answer the query, 
              then returns a tuple (data structure, result iterable), 
              or (None, None) if query can't be answered
     """
     template = query['template']
     qid = template['qid']
+    name = template['name']
     args = query["data"]
+
     if qid not in self.data_structs: 
       return None, None
 
-    # TODO: support multiple data structures that may answer the query
-    ds = self.data_structs[qid]
-    cost = ds.cost_est(args)
-    if cost is None: 
+    # find the data struture with the minimum cost
+    dses = self.data_structs[qid]
+    costs = [(ds.cost_est(args), ds) for ds in dses]
+    costs = filter(lambda (cost, ds): cost is not None, costs)
+    if not costs: 
       return None, None
-    return ds, ds.get_iter(args)
 
-
-
-
-
-
-
+    mincost, best_ds = min(costs)
+    # TODO: you probably will want to change the signature of get_iter() in order to control 
+    #       partial results.
+    return best_ds, best_ds.get_iter(args)
 
 
 
@@ -101,7 +110,7 @@ def round_robin_manager(dist):
   """
   data_structs = []
   iters = []
-  block_size = 50 # bytes
+  block_size = 50
   for q, prob in dist:
     costs = [(ds, ds.cost_est(q)) for ds in data_structs]
     costs = filter(lambda ds, c: c is not None, costs)

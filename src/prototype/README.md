@@ -219,8 +219,69 @@ Grading
 
 <a name="assignment5" />
 
-### Assignment 5:
+### Assignment 5 (final assignment):
 
-Due: 4/2 midnight
+High level
 
-You will now modify the server to take advantage of the query distributions.  Most of the code will be in [py/manager.py](./py/manager.py).  This file is initialized with a set of data structures and queries them 
+* Due: 5/10 midnight
+* You may combine teams to work on different aspects.  Just list your team members in the final submission (described below)
+
+You will now modify the server to take advantage of the query distributions by returning progressively encoded results rather than the full results.  Most of the code will be in [py/manager.py](./py/manager.py) and [py/ds.py](./py/ds.py).  [manager.py](./py/manager.py) is initialized with a set of [data structures](./py/ds.py) and queries them.  This is also an opportunity to improve your predictors if needed.
+
+#### The Manager at a high level
+
+The manager is initalized as a global variable `flask.manager` in [server.py][./server.py].  Its purpose is tho initialize the backend data structures (e.g., data cubes, pre-computed results, etc) and make policy decisions about what bytes to transmit to the client based on the query distributions that it receives.  
+
+The following is a high level description of the control flow between the client and the current implementation of the manager:
+
+1. client registers query template T (e.g., data cube for attributes `a` and `b`, or parameterized queries of the form `SELECT ... FROM D WHERE a = ?`)
+1. manager initializes a pre-computed data structure that can answer questions for template T 
+1. client sends a query distribution for time `now + t`, which is (currently) assigned to `flask.dist`
+1. manager executes an infinite loop that periodically
+  1. checks `flask.dist`
+  1. extracts the highest probability query
+  1. finds the data structures that can answer that query template (see `register_qtemplate` in [server.py](./server.py))
+  1. picks the data structure that has the lowest cost estimate (`cost_est()` in [ds.py](./py/ds.py)) and reads the data as a sequence of bytes
+  1. adds a header and sends the bytes to the client
+
+Clearly this is a naive process.  It ignores other possible queries, fully sends all bytes of the highest probability query, and doesn't take the `now+t` timestamp for the query distribution into account.  
+
+
+#### Partial Results
+
+Your task will be to modify the manager to take advantage of query distributions by sending partial results for many queries, rather than full results for a single query, to the client.  
+The current data structures don't support this -- they encode the full query result and will not decode if any bytes are missing.
+As our latency analysis in class showed, answering queries with partial results effectively increases the concurrency of the speculation and reduces the needed query prediction accuracy.
+Thus, you will develop a custom data structure called `progressive` that supports partial results.
+
+How you send partial results matters---just sending 4 of 10 bars in a bar chart doesn't make much sense.  Thus you will want to send lossy compressed results (similar to [JPEG](https://en.m.wikipedia.org/wiki/JPEG)).  This means that if the full query result is 100 bytes, then the first 10 bytes show an incorrect but reasonable result, reading 10 more bytes improves the quality of the result, and so on.  Common encoding schemes include wavelets (e.g., [haar wavelets](https://en.m.wikipedia.org/wiki/Haar_wavelet)) and [fourier analysis](https://en.m.wikipedia.org/wiki/Fourier_analysis).
+
+
+
+Key files:
+
+* [py/ds.py](./py/ds.py) contains `ProgressiveDataStruct`, which has been mostly implemented for you.  Similar to `GBDataStruct` it precomputes all the results of a group by query template (see `viz_setup` variable in [setup.py](./py/setup.py)).  However, instead of encoding the results as a protocol buffer, you will use a progressive encoding scheme and store those bytes instead.  To do so, you will modify `progressively_encode_table()` to store whatever you deem desirable.  One simple possibility is to progressively encode the results and split it into small sized blocks.
+* [py/manager.py](./py/manager.py) contains the manager.  You will want to edit `get_iterable()` so that it returns the progressive results in small chunks, as well as determine how many bytes to send for each query in the distribution.  
+* [js/progds.js](./js/progds.js) is the javascript counterpart of ProgressiveDataStruct.  It should store the blocks tha the server sends and decode them into (approximate) tables to be rendered.  If you want full control, you can write your own data structure and not subclass from [GarbageCollectingDataStructure](./js/datastruct.js).
+
+
+Submission
+
+* Push your code to your branch
+* Make sure your code works on a fresh repo clone
+* Reply to the assignment post on piazza to describe (doesn't have to be anonymous)
+  * your encoding scheme 
+  * what you did at a high level 
+  * list your team members
+
+
+Grading and Evaluation
+
+* Your grade will be based on the staff asking the following questions about your code:
+  1. (60%) given a fresh checkout of your branch, does the orginal demo run?
+  1. (10%) did you follow the submission instructions?
+  1. (10%) did you use a sensible progressive encoding scheme and document it?
+  1. (10%) does the viz interface feel as fast or faster than the original code? 
+  1. (10%) if we reduce or increase the [ring buffer size in the Engine](./js/index.js), does the performance degrade gracefully (due to the progressive encoding)?
+
+

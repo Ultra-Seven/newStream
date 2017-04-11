@@ -76,10 +76,14 @@ def register_qtemplate():
     return Response("ok", mimetype="application/wu")
 
   for ds_klass in ds_klasses:
-    if template.get('name') == ds_klass.name:
-      ds = ds_klass(None, template)
-      ds.id = qid
-      flask.manager.add_data_structure(ds)
+    if ds_klass.can_answer(template):
+      try:
+        ds = ds_klass(None, template)
+        ds.id = qid
+        flask.manager.add_data_structure(ds)
+      except Exception as e:
+        print e
+        continue
 
   return Response("ok", mimetype="application/wu")
 

@@ -63,7 +63,6 @@ def setup_spec(db, spec):
   generate all the relevant data structures to answer the queries
   """
   if spec['name'] == "gbquery":
-    ds = GBDataStruct(db, spec)
 
     # figure out the valid values for the parameters
     param_vals = dict()
@@ -72,7 +71,18 @@ def setup_spec(db, spec):
       vals = zip(*db.execute(q).fetchall())[0]
       param_vals[expr] = list(vals)
 
+    # setup the data struture
+    ds = GBDataStruct(db, spec)
     ds.setup_cache(param_vals)
+
+
+
+    # TODO: setup your incrementally encoded data structure
+    ds2 = ProgressiveDataStruct(db, spec)
+    ds.setup_cache(param_vals)
+
+
+
 
 def setup_specs(db, specs):
   for spec in specs:
