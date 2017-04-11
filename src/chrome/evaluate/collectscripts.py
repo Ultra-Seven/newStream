@@ -6,11 +6,29 @@ branches = ["bgwte", "fpyz", "gal", "gr2547_sh3266", "lw2666_az2407"]
 
 
 def copy_from_branches(branches):
-  os.system("""
-  cd /tmp;
-  git clone git@github.com:cudbg/stream.git;
-  cd -;
-  """)
+  custom_files = ["kf.js", "poly_predict.js"]
+  try:
+    os.system("""
+    cd /tmp;
+    git clone git@github.com:cudbg/stream.git;
+    cd -;
+    """)
+  except:
+    # already cloned
+    pass
+
+  try:
+    os.system("""
+      cd /tmp/stream;
+      git checkout master;
+      cd -;
+      cp /tmp/stream/src/chrome/server/js/ktm.js ./js/;
+      cp /tmp/stream/src/chrome/server/js/predict.js ./js/;
+      cp /tmp/stream/src/chrome/server/js/dist.js ./js/;
+      """)
+  except Exception as e:
+    print e
+    
 
   for branch in branches:
     print branch
@@ -23,10 +41,11 @@ def copy_from_branches(branches):
     cp /tmp/stream/src/chrome/server/js/predict.js ./js/predict_%s.js;
     """ % (branch, branch, branch))
 
-    try:
-      os.system("cp /tmp/stream/src/chrome/server/js/kf.js ./js/kf.js;")
-    except e:
-      pass
+    for cfname in custom_files:
+      try:
+        os.system("cp /tmp/stream/src/chrome/server/js/%s ./js/%s;" % (cfname, cfname))
+      except e:
+        pass
     for fname in os.listdir("/tmp/stream/src/chrome/server/"):
       if fname.endswith(".bdb"):
         os.system("""
