@@ -238,11 +238,11 @@ The following is a high level description of the control flow between the client
 1. manager initializes a pre-computed data structure that can answer questions for template T 
 1. client sends a query distribution for time `now + t`, which is (currently) assigned to `flask.dist` (your job from HW4)
 1. manager executes an [infinite loop](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L35) that periodically
-  1. checks `flask.dist`
-  1. extracts the highest probability query
-  1. finds the data structures that can answer that query template ([see code](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L79))
-  1. picks the data structure that has the lowest cost estimate (all the `cost_est()` in [ds.py](./py/ds.py)) and [reads the data as a sequence of bytes](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L49)
-  1. [adds a header](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L53) and sends the bytes to the client
+    1. checks `flask.dist`
+    1. extracts the highest probability query
+    1. finds the data structures that can answer that query template ([see code](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L79))
+    1. picks the data structure that has the lowest cost estimate (all the `cost_est()` in [ds.py](./py/ds.py)) and [reads the data as a sequence of bytes](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L49)
+    1. [adds a header](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L53) and sends the bytes to the client
 
 Clearly this is a naive process.  It ignores other possible queries, fully sends all bytes of the highest probability query, and doesn't take the `now+t` timestamp for the query distribution into account.  
 
@@ -264,23 +264,24 @@ Key files:
 * [js/progds.js](./js/progds.js) is the javascript counterpart of ProgressiveDataStruct.  It should store the blocks tha the server sends and decode them into (approximate) tables to be rendered.  If you want full control, you can write your own data structure and not subclass from [GarbageCollectingDataStructure](./js/datastruct.js).
 
 
-Submission
+#### Submission
 
 * Push your code to your branch
 * Make sure your code works on a fresh repo clone
 * Reply to the assignment post on piazza to describe (doesn't have to be anonymous)
-  * your encoding scheme 
-  * what you did at a high level 
-  * list your team members
+    * your encoding scheme 
+    * what you did at a high level 
+    * list your team members
 
 
-Grading and Evaluation
+#### Grading and Evaluation
 
-* Your grade will be based on the staff asking the following questions about your code:
-  1. (60%) given a fresh checkout of your branch, does the orginal demo run?
-  1. (10%) did you follow the submission instructions?
-  1. (10%) did you use a sensible progressive encoding scheme and document it?
-  1. (10%) does the viz interface feel as fast or faster than the original code? 
-  1. (10%) if we reduce or increase the [ring buffer size in the Engine](./js/index.js), does the performance degrade gracefully (due to the progressive encoding)?
+Your grade will be based on the staff asking the following questions about your code:
+
+1. (60%) given a fresh checkout of your branch, does the orginal demo run?
+1. (10%) did you follow the submission instructions?
+1. (10%) did you use a sensible progressive encoding scheme and document it?
+1. (10%) does the viz interface feel as fast or faster than the original code? 
+1. (10%) if we reduce or increase the [ring buffer size in the Engine](./js/index.js), does the performance degrade gracefully (due to the progressive encoding)?
 
 
