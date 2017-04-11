@@ -17,8 +17,9 @@ var GBDataStructure = (function(GarbageCollectingDataStructure) {
   this.encoding = encoding;
 
   function GBDataStructure() {
+    GarbageCollectingDataStructure.call(this);
+
     this.decoder = new Decoders.TableDecoder();
-    this.idx = {};
 
     // maps <some key that represents a query> to the actual data
     // the key could just be the json encoded parameters
@@ -29,8 +30,6 @@ var GBDataStructure = (function(GarbageCollectingDataStructure) {
     this.idx = {};  // key -> data
 
     this.encoding = encoding;
-
-    GarbageCollectingDataStructure.call(this);
   };
 
   GBDataStructure.prototype.decode = function(bytes) {

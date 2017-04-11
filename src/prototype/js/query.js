@@ -97,7 +97,7 @@ var GBQueryTemplate = (function(QueryTemplateBase) {
 
   GBQueryTemplate.prototype.toWire = function() {
     return {
-      qid: this.id,
+      tid: this.id,
       name: this.name,
       select: this.select,
       from: this.from,
@@ -147,7 +147,7 @@ var QueryTemplate = (function(QueryTemplateBase) {
   //        due to name conflict it's called "data" here rather than "params"
   QueryTemplate.prototype.toWire = function() { 
     return {
-      qid: (this.id || -1),
+      tid: (this.id || -1),
       name: QueryTemplate.name,
       qstr: this.qstr
     };

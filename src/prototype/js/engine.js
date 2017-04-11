@@ -23,7 +23,7 @@ var Engine = (function(EventEmitter) {
   };
 
   Engine.prototype.registerDataStruct = function(ds) {
-    this.ringbuf.register(encoding, ds);
+    this.ringbuf.register(ds.encoding, ds);
     this.ringbuf.on("dealloc", ds.dealloc.bind(ds));
     this.datastructs[ds.encoding] = ds;
   };

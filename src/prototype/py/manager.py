@@ -24,8 +24,8 @@ class Manager(object):
     if flask.DEBUG:
       print "added data structure id %d" % ds.id
 
-  def has_data_structure(self, qid):
-    return qid in self.data_structs
+  def has_data_structure(self, tid):
+    return tid in self.data_structs
 
   def __call__(self):
     """
@@ -69,15 +69,15 @@ class Manager(object):
              or (None, None) if query can't be answered
     """
     template = query['template']
-    qid = template['qid']
+    tid = template['tid']
     name = template['name']
     args = query["data"]
 
-    if qid not in self.data_structs: 
+    if tid not in self.data_structs: 
       return None, None
 
     # find the data struture with the minimum cost
-    dses = self.data_structs[qid]
+    dses = self.data_structs[tid]
     costs = [(ds.cost_est(args), ds) for ds in dses]
     costs = filter(lambda (cost, ds): cost is not None, costs)
     if not costs: 

@@ -151,6 +151,7 @@ var GarbageCollectingDataStructure = (function(DataStructure) {
     var header = this.readHeader(block);
     var key = header.key;
     var decodedData = this.decode(block.slice(header.nBytesRead));
+
     if (decodedData == null) return;
 
     var data = {

@@ -20,7 +20,9 @@ var progDS = new ProgressiveDataStructure();
 
 // TODO: comment next line to use the ProgressiveDataStructure to answer queries
 engine.registerDataStruct(gbDS);
-engine.registerDataStruct(progDS);
+
+// TODO: uncomment the next line to enable ProgressiveDataStructures
+// engine.registerDataStruct(progDS);
 
 
 var q1 = window.q1 = new Query.GBQueryTemplate(

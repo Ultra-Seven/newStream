@@ -70,16 +70,16 @@ def register_qtemplate():
   the corresponding data structure based on those in ds_klasses
   """
   template = json.loads(request.data)
-  flask.queries[template["qid"]] = template
-  qid = template['qid']
-  if flask.manager.has_data_structure(qid): 
+  flask.queries[template["tid"]] = template
+  tid = template['tid']
+  if flask.manager.has_data_structure(tid): 
     return Response("ok", mimetype="application/wu")
 
   for ds_klass in ds_klasses:
     if ds_klass.can_answer(template):
       try:
         ds = ds_klass(None, template)
-        ds.id = qid
+        ds.id = tid
         flask.manager.add_data_structure(ds)
       except Exception as e:
         print e

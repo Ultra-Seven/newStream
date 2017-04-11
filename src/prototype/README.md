@@ -263,6 +263,10 @@ Key files:
 * [py/manager.py](./py/manager.py) contains the manager.  It is not yet equipped to return partial results.  You will want to edit [get_iterable()](https://github.com/cudbg/stream/blob/master/src/prototype/py/manager.py#L89) so that it returns the progressive results in small chunks, as well as determine how many bytes to send for each query in the distribution.  
 * [js/progds.js](./js/progds.js) is the javascript counterpart of ProgressiveDataStruct.  It should store the blocks tha the server sends and decode them into (approximate) tables to be rendered.  If you want full control, you can write your own data structure and not subclass from [GarbageCollectingDataStructure](./js/datastruct.js).
 
+Once you get into the code, here are some helpful notes:
+
+* names, encodings: each data structure has a name and encoding id.  The name (e.g., gbquery, progressive) is a human understandable name, while the encoding is a unique integer that is used when actually sending bytes across the wire.  They are basically interchangable.  
+* qids: you will notice that each query template is assigned an `id`.  THis is assigned by the client [engine](./js/engine.js) when a query template is registered.  Due to a poor naming decision, the query template's [toWire()](https://github.com/cudbg/stream/blob/master/src/prototype/js/query.js#L98) method names it as `qid`.  
 
 #### Submission
 
