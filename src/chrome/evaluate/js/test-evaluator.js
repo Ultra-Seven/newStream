@@ -20,6 +20,7 @@ var pad5 = _.partial(pad, 5)
 
 function evaluate(name, predictor, evaluator) {
   try {
+    predictor.branch = name;
     var scores = evaluator.eval(predictor);
   } catch(e) {
     console.error("Error in evaluate() on " + name);
@@ -40,7 +41,10 @@ branches = ["bgwte", "fpyz", "gal", "gr2547_sh3266", "lw2666_az2407"]
 console.log("Assuming you are running test script in src/evaluator/");
 
 var traces = loadJSON("./data/alltraces.json");
-traces = _.head(_.filter(traces, function(trace) { return trace.length > 3; }), 200);
+traces = _.filter(traces, function(trace) { return trace.length > 5; });
+traces = _.shuffle(traces, 500);
+//traces = _.head(, 200);
+
 var eval = new Evaluator(traces);
 
 var ktmdata = loadJSON("./data/ktmdata.json");
