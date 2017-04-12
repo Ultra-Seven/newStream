@@ -228,6 +228,14 @@ High level
 
 You will now modify the server to take advantage of the query distributions by returning progressively encoded results rather than the full results.  Most of the code will be in [py/manager.py](./py/manager.py) and [py/ds.py](./py/ds.py).  [manager.py](./py/manager.py) is initialized with a set of [data structures](./py/ds.py) and queries them.  This is also an opportunity to improve your predictors if needed.
 
+Pull updated code from master:
+
+          git pull
+          git checkout <your branch name>
+          git merge master
+
+
+
 #### The Manager at a high level
 
 The manager is initalized as a global variable `flask.manager` in [server.py](./server.py).  Its purpose is to store the backend data structures (e.g., data cubes, pre-computed results, etc) and make policy decisions about what bytes to transmit to the client based on the query distributions that it receives.  
