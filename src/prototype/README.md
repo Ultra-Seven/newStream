@@ -225,6 +225,7 @@ High level
 
 * Due: 5/10 midnight
 * You may combine teams to work on different aspects.  Just list your team members in the final submission (described below)
+* You may use your own, or any other group's predictors
 
 You will now modify the server to take advantage of the query distributions by returning progressively encoded results rather than the full results.  Most of the code will be in [py/manager.py](./py/manager.py) and [py/ds.py](./py/ds.py).  [manager.py](./py/manager.py) is initialized with a set of [data structures](./py/ds.py) and queries them.  This is also an opportunity to improve your predictors if needed.
 
