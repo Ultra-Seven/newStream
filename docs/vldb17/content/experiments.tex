@@ -12,9 +12,15 @@ We run a series of micro and end-to-end system experiments to understand the per
 This subsection describes our experimental setup and metrics.
 
 \stitle{Traces: }
-In our system experiments, we use \ewu{XXX} user traces collected from a Chromium extension running on the authors' browsers.  These traces were collected over the span of \ewu{XXX} weeks for all webpages that the authors browser.  The trace tracks mouse events (e.g., click, move, drag), as well as the type of page element that the user interacted with.  In effect, the schema of the trace is \texttt{trace(eventid, userid, time, x, y, action, page, label)}. 
+In our system experiments, we use \ewu{XXX} user traces collected from a Chromium extension running on the authors' browsers.  These traces were collected over the span of \ewu{XXX} weeks for all webpages that the authors browser.  The trace tracks mouse events (e.g., click, move, drag), as well as the type of page element that the user interacted with. 
 
-We also collected a specialized set of user traces when interacting with custom interactive visualizations used in the user study, and labeled the type of interaction (e.g., button click, slider drag, pan, zoom in, etc).  For the visualization-based traces, we also logged the corresponding query requests for each mouse event in order to collect the ground truth.  This corresponds to a query log with schema \texttt{queries(qid, eventid, querystring)}.  The traces, visualizations, and queries will be released after publication.
+We also collected a specialized set of user traces when interacting with custom interactive visualizations used in the user study, and labeled the type of interaction (e.g., button click, slider drag, pan, zoom in, etc).  For the visualization-based traces, we also logged the corresponding query requests for each mouse event in order to collect the ground truth.  The traces, visualizations, and queries will be released after publication.
+
+To summarize, our traces conform to the following schemas:
+{\small \begin{verbatim}
+ events(eid, user, time, x, y, action, url, label)
+queries(qid, eid, querystring)
+\end{verbatim}}
 
 \stitle{Conditions: } 
 We use a request-response baseline ($Base_{acc}^{c}$) that performs query pre-fetching $400$ms into the future using a query prediction model with accuracy $acc$ and a FIFO cache size that can store $c$ query results.   This allows our baseline to reproduce prediction and caching characteristics from prior prefetching-based papers in a general manner.  We evaluate \sys by varying the accuracy of the mouse prediction model, the scheduling parameters, and the type of progressive encoding.  
