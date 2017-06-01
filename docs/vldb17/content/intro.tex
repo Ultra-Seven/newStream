@@ -4,6 +4,8 @@
 
 \label{s:intro}
 
+Interactive data visualization systems are important. 
+
 A number of design principles are emerging in terms of system architectures
 for visual data exploration.
 
@@ -27,13 +29,14 @@ To answer this question, we used a simple model-based analysis of end-to-end lat
 
 Based on these observations, we have designed \sys, a streaming-based architecture that generalizes the request-response model to support rich interactive visual exploration interfaces.  The primary idea is to model user interactions as a series of probability distributions over possible visualization requests at a future time steps.  Under this model, a given request is simply an impulse distribution centered around the user's interaction, however by sending a distribution.  This is similar to the notion of a QueryIntent~\cite{ebenstein2016fluxquery} however used in this context not to predict what the user will do but for prefetching.
 
-However, simply having query distributions is not sufficient because \ewu{waiting until the query distribution to be sent to the server is still not good enough and arguably exacerbates the problem due to the size to encode the distribution}.  Thus \sys combines two additional ideas: progressive visualization results and streaming push-based results. \ewu{describe more}
+However, simply having query distributions is not sufficient because \ewu{waiting until the query distribution to be sent to the server is still not good enough and arguably exacerbates the problem due to the size to encode the distribution}.  Thus \sys combines two additional ideas: progressive visualization results and streaming push-based results. \ewu{describe more}.  All three are {\it necessary}.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.  
 
-All three are {\it necessary}.  Each in isolation is not enough.   This architecture supports interactive visualizations where requests can be modeled as SQL queries, including DVMS, Vega, Forecache, Tableau, and common data viz systems.
+\ewu{What about cases where network latency is high?  Does this work for those settings, or just ones where network is free and compute is partial-able?}
 
 
-We show that a simple analysis, and a judicious implementation using common components outperforms existing request-response-based approaches.
-Our current system assume precomputed data structures, future work includes online query processing costs.
+Ultimately, we show that a judicious combination of three well established areas---mouse prediction, network scheduling, and progressive encoding---that is informed by a simple model analysis leads to an end-to-end visual interative system that out-performs existing request/response-based system designs in terms of the richness of the supported interactions, and interaction response times.  To summarize, our contributions include:
+
+%\sys is designed using data strutures that are computed offline---a common setup for interactive data visualization systems..  
 
 
 To summarize our contributions:

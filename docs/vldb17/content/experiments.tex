@@ -4,54 +4,49 @@
 \section{Experiments}
 \label{sec:experiments}
 
-All experiments were run on 12x2.66 GHz  machines with 16GB RAM running IBM CPLEX~\cite{cplex2014v12} as the MILP solver on CentOS release 6.6.
-In the following text, \sys refers to the complete streaming system with all the bells and whistles.
-
+We run a series of micro and end-to-end system experiments to understand the performance improvements that each component contributes, as well as a user study to measure user-perceived latency.  These experiments use three different interactive visualization front-end designs that vary in the number of possible interactions that the user can perform---a simple pan-and-zoom map interface~\cite{}, a complex cross-filtering application, and an interface that is button-heavy.
 
 
 
 \subsection{Experimental Setup}
+This subsection describes our experimental setup and metrics.
 
+\stitle{Traces: }
+In our system experiments, we use \ewu{XXX} user traces collected from a Chromium extension running on the authors' browsers.  These traces were collected over the span of \ewu{XXX} weeks for all webpages that the authors browser.  The trace tracks mouse events (e.g., click, move, drag), as well as the type of page element that the user interacted with.  In effect, the schema of the trace is \texttt{trace(eventid, userid, time, x, y, action, page, label)}. 
 
+We also collected a specialized set of user traces when interacting with custom interactive visualizations used in the user study, and labeled the type of interaction (e.g., button click, slider drag, pan, zoom in, etc).  For the visualization-based traces, we also logged the corresponding query requests for each mouse event in order to collect the ground truth.  This corresponds to a query log with schema \texttt{queries(qid, eventid, querystring)}.  The traces, visualizations, and queries will be released after publication.
 
-\iffalse
-  \begin{table}[t]\small
-    \centering
-    \begin{tabular}{@{}cl@{}}
-    \toprule
-    {\bf Param} & {\bf Description} \\ \midrule
-    $p$ & Precision: \% of repaired tuples that are correct. \\
-    $r$ & Recall: \% of full complaint set repaired.\\ \bottomrule \end{tabular}
-    \caption{Metrics Compared}
-    \label{t:metrics}
-  \end{table}
-\fi
+\stitle{Conditions: } 
+We use a request-response baseline ($Base_{acc}^{c}$) that performs query pre-fetching $400$ms into the future using a query prediction model with accuracy $acc$ and a FIFO cache size that can store $c$ query results.   This allows our baseline to reproduce prediction and caching characteristics from prior prefetching-based papers in a general manner.  We evaluate \sys by varying the accuracy of the mouse prediction model, the scheduling parameters, and the type of progressive encoding.  
 
+\stitle{Metrics: }
+In addition to reporting standard mouse prediction accuracy on the user traces, we report metrics for visualization quality and performance:
 
+\begin{itemize}[leftmargin=*, topsep=0mm, itemsep=0mm]
+  \item {\it Visualization Metrics: } Since \sys quickly renders visualizations that progressively improve over time, we introduce two ways to measure how accurate the visualization is.  {\it Value Error ($\epsilon_v$)} compares the difference between each mark's pixel coordinates in the progressive visualization against their coordinates in the final visualization.  For instance, if the results are rendered as a scatterplot, then we compare each point's x and y coordinates; if rendered as a bar chart, we compare each bar's pixel height.  {\it Pixel Error ($\epsilon_p$)} follows the procedure in M4~\cite{m4} and measures the number of pixels that differ in value between the progressive and final visualization.  For each measure, we report the median and $\pm 1\sigma$ bounds across time.  In addition, during our user study, we report the percentage of user interactions that achieve different $\epsilon_v$ bounds.
 
-\stitle{Synthetic:} \label{sec:syntheticgen}
+  \item {\it Performance Metrics: }  We report latency from user interaction to first visualization ($l_{1st}$), as well as latency until $\epsilon_v$ is below XXX ($l_{\epsilon_v}$).  
+\end{itemize}
 
-\stitle{Real Data:} 
+\subsection{Microbenchmarks}
 
-\subsection{Mouse-based predictive models}
+This set of experiments highlight the characteristics of the mouse prediction and network schedulers in isolation.
 
-\subsection{Varying communication throughput and latency}
+\subsubsection{Mouse-based predictive models}
+
+\subsubsection{Varying communication throughput and latency}
 \label{sec:experiments:inc}
 
+Vary: network throughput and latency (via client/server-side artificial delays)
 
 \subsubsection{Throughput}
-\smallskip
-\textit{
-  Takeaways: We find some interesting takeaways
-}
-
 
 \subsubsection{Latency}
-\smallskip
-\textit{
-  Takeaways: We find some interesting takeaways
-}
 
+
+\subsection{Macrobenchmarks}
+
+\subsection{User-Study}
 
 
 
