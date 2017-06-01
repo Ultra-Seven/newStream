@@ -6,10 +6,37 @@
 
 We run a series of micro and end-to-end system experiments to understand the performance improvements that each component contributes, as well as a user study to measure user-perceived latency.  These experiments use three different interactive visualization front-end designs that vary in the number of possible interactions that the user can perform---a simple pan-and-zoom map interface~\cite{}, a complex cross-filtering application, and an interface that is button-heavy.
 
+\begin{figure*}
+  \centering
+   \begin{subfigure}[t]{.32\textwidth}
+    \includegraphics[width = .99\columnwidth]{figures/nofig}
+    \caption{Simple map exploration visualization.}
+    \label{f:vis_map} 
+  \end{subfigure}
+  \begin{subfigure}[t]{.32\textwidth}
+    \includegraphics[width = .99\columnwidth]{figures/nofig}
+    \caption{Medium cross-filtering interface.}
+    \label{f:vis_xfilter} 
+  \end{subfigure}
+  \begin{subfigure}[t]{.32\textwidth}
+    \includegraphics[width = .99\columnwidth]{figures/nofig}
+    \caption{Complex Tableau-like interface.}
+    \label{f:vis_tableau} 
+  \end{subfigure}
+  \caption{Interactive visualization designs that vary in interaction complexity.  
+  Simple map visualization with 9 possible button-based interactions (a), cross filter visualization with two continuous sliders (b),
+Tableau-like interface with XXX possible interactions (c).}
+
+  \label{f:interfaces}
+\end{figure*}
+
 
 
 \subsection{Experimental Setup}
 This subsection describes our experimental setup and metrics.
+
+\stitle{Interactive Visualizations: }
+Figure~\ref{f:interfaces} shows the three interactive visualization interfaces used in the experiments.  The interfaces vary in interaction complexity (e.g., number of possible user interactions).  Figure~\ref{f:vis_map} is a button-based map interface that supports panning and zooming;  Figure~\ref{f:vis_xfilter} supports continuous selection interactions, where drawing a selection in a given view dynamically updates the data in nthe other views; Figure~\ref{f:vis_tableau} is a full featured visual data exploration interface that supports continuous interactions such as cross-filtering and sliders, as well as discrete button-based interactions.
 
 \stitle{Traces: }
 In our system experiments, we use \ewu{XXX} user traces collected from a Chromium extension running on the authors' browsers.  These traces were collected over the span of \ewu{XXX} weeks for all webpages that the authors browser.  The trace tracks mouse events (e.g., click, move, drag), as well as the type of page element that the user interacted with. 
@@ -38,19 +65,16 @@ In addition to reporting standard mouse prediction accuracy on the user traces, 
 
 This set of experiments highlight the characteristics of the mouse prediction and network schedulers in isolation.
 
-\subsubsection{Mouse-based predictive models}
+\subsubsection{Mouse Prediction Models}
 
-\subsubsection{Varying communication throughput and latency}
-\label{sec:experiments:inc}
+\subsubsection{Network Scheduling}
 
 Vary: network throughput and latency (via client/server-side artificial delays)
 
-\subsubsection{Throughput}
-
-\subsubsection{Latency}
-
+\subsubsection{Progressive Encoding}
 
 \subsection{Macrobenchmarks}
+In these experiments, we replay $N$ random user traces on each interactive visualization 
 
 \subsection{User-Study}
 
