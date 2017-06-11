@@ -1,5 +1,10 @@
 \section{Related Work}
 
+Prefetching architectures for interactive data exploration are commonplace.
+For instance, Chan et al.~\cite{chan2008maintaining} use a momentum-based prediction technique for time-series visualization interactions (e.g., pan, scroll, zoom) to pre-issue queries to a backend server that manages the level of detail to return to the client.  These three components---prediction, prefetching, and level of detail---is present in many modern interactive visualization system architectures.
+
+At its core, \sys is similar in spirit, however it uses a model-based analysis to combine innovations in each component so that the end-to-end interactivity can be maintained for rich interactive interfaces and network delays.  Specifically, its prediction model is based on continuous mouse cursor movements rather than discrete database queries; its prefetching model explicitly models a distribution of user interactions; its level of detail management interleaves progressively encoded results to ensure a visualization for any future query.
+
 Prefetching: The Web~\cite{domenech2006web,nanopoulos2003data}
 Databases have studied prefetching as part of client server~\cite{ramachandran2005dynamic,ramachandraholistic,sapia2000promise,smith1978sequentiality}, 
 query execution for operators such as hash-join~\cite{chen2007improving}.
