@@ -3,7 +3,7 @@ import os
 import bsddb3
 
 branches = ["bgwte", "fpyz", "gal", "gr2547_sh3266", "lw2666_az2407"]
-custom_files = ["kf.js", "poly_predict.js", "regression.min.js"]
+custom_files = ["kf.js", "poly_predict.js", "regression.min.js", "serverrequest.js"]
 
 scripts = [
     """
