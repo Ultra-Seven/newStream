@@ -117,6 +117,59 @@ var NaiveDistribution = (function(Base) {
 })(DistributionBase);
 
 
+var GuassianDistribution = (function(Base) {
+  extend(GuassianDistribution, Base);
+
+  GuassianDistribution.from = function(q, keyFunc) {
+    var d = new GuassianDistribution(keyFunc);
+    d.set(q, 1);
+    return d;
+  };
+
+  function GuassianDistribution(keyFunc, gaussianX, gaussianY) {
+    this.keyFunc = keyFunc || qToKey;
+    this.dist = {};
+    this.gaussianX = gaussianX;
+    this.gaussianY = gaussianY;
+    // call parent constructor 
+    Base.call(this);
+  }
+
+  GuassianDistribution.prototype.set = function(q, prob) {
+    this.dist[this.keyFunc(q)] = [q, prob]; 
+  };
+
+  GuassianDistribution.prototype.get = function(q) {
+    if (q == null || q === undefined) return 0;
+    var key = this.keyFunc(q);
+    if (key in this.dist) return this.dist[key][1];
+    return 0;
+  };
+  GuassianDistribution.prototype.getArea = function(qs) {
+    if (qs == null || qs === undefined) return 0;
+    let topright = this.gaussianX.cdf(qs[0][0]) * this.gaussianY.cdf(qs[0][1]);
+    let topleft = this.gaussianX.cdf(qs[1][0]) * this.gaussianY.cdf(qs[1][1]);
+    let bottomright = this.gaussianX.cdf(qs[2][0]) * this.gaussianY.cdf(qs[2][1]);
+    let = bottomleft = this.gaussianX.cdf(qs[3][0]) * this.gaussianY.cdf(qs[3][1]);
+
+    return (topright - topleft - bottomright + bottomleft);
+  };
+  GuassianDistribution.prototype.getAllAbove = function(prob) {
+    prob = prob || 0;
+    return _.filter(_.values(this.dist), function(pair) {
+      return pair[1] >= prob;
+    });
+  };
+
+  GuassianDistribution.prototype.getTopK = function(k) {
+    return _.rest(_.sortBy(_.values(this.dist), 
+                           function(pair) { return pair[1]; }),
+                  -k);
+  };
+
+
+  return GuassianDistribution;
+})(DistributionBase);
 
 
 
@@ -125,5 +178,6 @@ var NaiveDistribution = (function(Base) {
 
 module.exports = {
   DistributionBase: DistributionBase,
-  NaiveDistribution: NaiveDistribution
+  NaiveDistribution: NaiveDistribution,
+  GuassianDistribution: GuassianDistribution
 }

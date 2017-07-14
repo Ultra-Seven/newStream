@@ -2,8 +2,7 @@
   "name": "vizstreamingarch",
   "version": "0.0.1",
   "description": "Prototype of streaming architecture for large scale viz.",
-  "keywords": [
-  ],
+  "keywords": [],
   "author": {
     "name": "eugene wu"
   },
@@ -13,8 +12,7 @@
       "url": "http://www.eugenewu.net"
     }
   ],
-  "maintainers": [
-  ],
+  "maintainers": [],
   "homepage": "",
   "main": "",
   "repository": {
@@ -30,12 +28,12 @@
     "async": "2.1.4"
   },
   "dependencies": {
-    "underscore": "1.8.3",
-    "jssqlparser": "0.0.9",
+    "async": "2.1.4",
+    "gaussian": "^1.1.0",
     "google-protobuf": "3.2.0-rc.2",
-    "async": "2.1.4"
+    "jssqlparser": "0.0.9",
+    "underscore": "1.8.3"
   },
- 
   "scripts": {
     "test": "./node_modules/.bin/vows"
   }

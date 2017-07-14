@@ -2,6 +2,7 @@ var EventEmitter = require("events");
 var Util = require("./util");
 var Dist = require("./dist");
 var Logger = require("./logger").Logger;
+var Pred = require("./predictor.js");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -32,7 +33,10 @@ var Requester = (function(EventEmitter) {
     this.logger.bind(document);
 
     // TODO: pass in your mouse predictor!
-    this.mousePredictor = opts.mousePredictor;
+    //this.mousePredictor = opts.mousePredictor;
+    this.mousePredictor = new Pred.YourPredictor([]);
+    // the cache of interactable elements 
+    this.interactableElements = [];
 
     this.nDist = 0;
     this.nEnc = 0;
@@ -62,7 +66,7 @@ var Requester = (function(EventEmitter) {
       
       if (distribution != null) {
         start = Date.now();
-        var encodedDist = JSON.stringify(dist.toWire());
+        var encodedDist = JSON.stringify(distribution.toWire());
         this.encodeCost += (Date.now() - start);
         this.nEnc++;
 
@@ -117,9 +121,13 @@ var Requester = (function(EventEmitter) {
   //         that conforms to the Requester wire format
   Requester.prototype.getQueryDistribution = function(trace, dt) {
     dt = dt || 100;
-    var mouseDist = this.mousePredictor(trace, dt);
+    // predicting is a heavy calculation
+    // var mouseDist = new Dist.NaiveDistribution(null);
+    var mouseDist = this.mousePredictor.predict(trace, dt);
     // TODO: Uncomment below when the function is implemented
-    var queryDist = null; // mapMouseToQueryDistribution(mouseDist);
+    // var queryDist = null;
+    var queryDist = mapMouseToQueryDistribution(mouseDist);
+    console.log("topK:", queryDist.getTopK(10));
     return queryDist;
   };
 
@@ -139,7 +147,22 @@ var Requester = (function(EventEmitter) {
   //             https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
   //
   var getInteractableElements = function() {
-    throw Error("Implement Me");
+    //throw Error("Implement Me");
+    let elements = this.interactableElements || [];
+    if(elements.length == 0) {
+      elements = document.getElementsByClassName('mark');
+      var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
+      //var target = document.querySelector('#some-id');
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          elements = document.getElementsByClassName('mark');
+          this.interactableElements = elements;
+        });
+      });
+      observer.observe(document, {childList:true,subtree:true});
+    }
+    this.interactableElements = elements;
+    return this.interactableElements;
   };
 
   //
@@ -157,7 +180,26 @@ var Requester = (function(EventEmitter) {
     // 2. be able to map a DOM element to the query+params that it would
     //    trigger if the user interacts with it
     var magicalGetQueryParams = function(el) {
-      throw Error("Implement Me");
+      var row = d3.select(el).data()[0];
+      var jelm = $(el);
+      var svg = jelm.parent().parent().parent()[0];
+      var visName = "#" + svg.id;
+      //engine.vizes
+      retQueries = [];
+      _.each(engine.vizes, function(v1, i1) {
+        if(v1.id === visName) {
+          var attr = v1.qtemplate.select['x']
+          var data = { };
+          data[attr] = row['x'];
+          _.each(engine.vizes, function(v2, i2) {
+            if (i1 != i2) {
+              var q = new Query.Query(v2.qtemplate, data);
+              retQueries.push(q);
+            }
+          });
+        }
+      });
+      return retQueries;
     }
 
     // 3. be able to compute the probability of interacting with a DOM element
@@ -165,21 +207,34 @@ var Requester = (function(EventEmitter) {
     var markProbability = function(el) {
       var bound = getBoundingBox(el);
       var probs = [];
-      for (var dx = 0; dx < bound.w; dx++) {
-        for (var dy = 0; dy < bound.h; dy++) {
-          probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
-        }
-      }
-      return d3.mean(probs);
+      let xpw = bound.x + bound.w;
+      let xmw = bound.x - bound.w;
+      let yph = bound.y + bound.h;
+      let ymh = bound.y - bound.h;
+      let probability = mouseDist.getArea([
+        [xpw, yph], 
+        [xmw, yph],
+        [xpw, ymh],
+        [xmw, ymh]]);
+      // for (var dx = 0; dx < bound.w; dx++) {
+      //   for (var dy = 0; dy < bound.h; dy++) {
+      //     probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
+      //   }
+      // }
+      //return d3.mean(probs);
+      return probability;
     };
-
+    var queryDistribution = new Dist.NaiveDistribution(null);
     // 4. use the above to construct a query distribution
-    els.each(function(el) {
-      var query = magicalGetQueryParams(el);
+    _.each(els, function(el) {
+      let queries = magicalGetQueryParams(el);
       // add it to a query distribution
-      throw Error("Implement Me");
+      var prob = markProbability(el);
+      _.each(queries, function(query) {
+        queryDistribution.set(query, prob);
+      });
     });
-
+    return queryDistribution;
   }
 
 
