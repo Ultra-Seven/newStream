@@ -2,7 +2,7 @@ var async = require("async");
 var Engine = require("./engine").Engine;
 var Util = window.Util = require("./util");
 var GBDataStructure = require("./gbds").GBDataStructure;
-var ProgressiveDataStructure = require("./progds").ProgressiveDataStructure;
+var SampleProgDataStructure = require("./progds").SampleProgDataStructure;
 var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
@@ -23,13 +23,14 @@ var engine = window.engine = new Engine(450); // replace 450 with bytespermb * #
 // Setup Data Structures
 //
 var gbDS = new GBDataStructure();
-var progDS = new ProgressiveDataStructure();
+// var progDS = new ProgressiveDataStructure();
+var sampleDS = new SampleProgDataStructure();
 
 // TODO: comment next line to use the ProgressiveDataStructure to answer queries
-engine.registerDataStruct(gbDS);
+// engine.registerDataStruct(gbDS);
 
 // TODO: uncomment the next line to enable ProgressiveDataStructures
-// engine.registerDataStruct(progDS);
+engine.registerDataStruct(sampleDS);
 
 
 var q1 = window.q1 = new Query.GBQueryTemplate(

@@ -3,6 +3,7 @@ import struct
 import json
 import flask
 import time
+import math
 import numpy as np
 from collections import defaultdict
 
@@ -14,7 +15,7 @@ class Manager(object):
     self.data_structs = defaultdict(list)
 
     # default block size in bytes for sending back to client
-    self.block_size = 50
+    self.block_size = 500
 
     # when was the last distribution from the client?
     self.prev_dist_update_time = None
@@ -34,27 +35,72 @@ class Manager(object):
     """
     while 1:
       time.sleep(0.001)
+
+
+
       if not flask.dist: 
         continue
       if self.prev_dist_update_time == flask.dist_update_time:
         continue
 
-      (query, prob) = tuple(max(flask.dist, key=lambda pair: pair[1]))
-      self.prev_dist_update_time = flask.dist_update_time
-      if prob == 0: 
-        continue
+      if flask.DEBUG and flask.logger:
+        flask.logger.log('2 : before scheduler')
 
-      ds, iterable = self.get_iterable(query, prob)
-      if iterable is None: continue
+      # result = self.naive_schedule()
+      result = self.proportion_schedule()
+      for header, content in result:
+        yield header
+        yield content
+
+      if flask.DEBUG and flask.logger:
+        flask.logger.log('3 : after scheduler')
+        flask.logger.writeLog()
+
+  def proportion_schedule(self):
+    """
+    proportion_schedule
+
+    send back data proportional to the probability of the query.
+    use dictionary in DS object to store which part of the result should be send back.
+    """
+    dist = sorted(flask.dist, key=lambda pair: pair[1])
+    self.prev_dist_update_time = flask.dist_update_time
+    for d in dist:
+      (query, prob) = tuple(d)
+      if prob == 0:
+        break
+
+      bs = math.floor(self.block_size * prob)
+      ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
       for block in iterable:
         # write the header: length of the block and the data structure's encoding id
         if flask.DEBUG:
           print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
-        yield struct.pack("2I", len(block), ds.encoding)
-        yield block
+        yield (struct.pack("2I", len(block), ds.encoding), block)
+        if flask.DEBUG:
+          flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
 
 
-  def get_iterable(self, query, prob):
+  def naive_schedule(self):
+    """
+    Naive scheduling
+
+    extract the most possible prediction and send back all data
+    """
+    (query, prob) = tuple(max(flask.dist, key=lambda pair: pair[1]))
+    self.prev_dist_update_time = flask.dist_update_time
+    if prob == 0: 
+      return
+
+    ds, iterable = self.get_iterable(query, prob)
+    if iterable is None: return
+    for block in iterable:
+      # write the header: length of the block and the data structure's encoding id
+      if flask.DEBUG:
+        print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
+      yield (struct.pack("2I", len(block), ds.encoding), block)
+
+  def get_iterable(self, query, prob, **kwargs):
     """
     Picks the best data structure to answer this query and returns an iterator of byte blocks.
 
@@ -86,7 +132,7 @@ class Manager(object):
     mincost, best_ds = min(costs)
     # TODO: you probably will want to change the signature of get_iter() in order to control 
     #       partial results.
-    return best_ds, best_ds.get_iter(args)
+    return best_ds, best_ds.get_iter(args, **kwargs)
 
 
 

@@ -11,6 +11,8 @@ from sqlalchemy.sql.elements import TextClause
 from table_pb2 import *
 from itertools import product, chain, combinations
 
+import math
+
 
 def powerset(iterable):
   "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
@@ -113,7 +115,7 @@ class Precompute(DS):
   def __call__(self, data, block_size=50):
     return self.lookup(self.key(data))
 
-  def get_iter(self, data, block_size=50):
+  def get_iter(self, data, **kwargs):
     """
     XXX: note that it ignores block_size right now
     """
@@ -249,6 +251,7 @@ class ProgressiveDataStruct(Precompute):
     self.name = ProgressiveDataStruct.name
     self.spec = spec
     self.encoding = 2
+    self.pos = {}
 
   def cost_est(self, data):
     """
@@ -311,6 +314,39 @@ class ProgressiveDataStruct(Precompute):
     # TODO: implement me
     raise Exception("Implement Me!")
 
+  def get_iter(self, data, **kwargs):
+    """
+    get_iter function to get blocks to send back
+    
+    block_size: size limit, -1 means no limit
+    """
+    block_size = kwargs.get('block_size', -1)
+    restart = kwargs.get('restart', True)
+    key = self.key(data)
+    block = self.lookup_bytes(key)
+    if block:
+      startFrom = self.pos[key] if (key in self.pos) and not res else 0
+      table = ProgressiveTable()
+      table.ParseFromString(block)
+      size = 0
+      index = startFrom
+      l = len(table.blocks)
+      while True:
+        # send enough data OR send all data
+        if (size > block_size and block_size > 0) or (index == startFrom and size > 0):
+          self.pos[key] = index
+          return
+        b = table.blocks[index]
+        t = ProgressiveTable(blocks=[b])
+        buf = StringIO()
+        buf.write(struct.pack("2I", len(key), self.id))
+        buf.write(struct.pack("%ds" % len(key), key))
+        buf.write(t.SerializeToString())
+        yield buf.getvalue()
+        size = size + len(buf.getvalue())
+        index = (index + 1) % l
+        buf.close()
+
   @staticmethod
   def can_answer(query_template):
     """
@@ -319,10 +355,74 @@ class ProgressiveDataStruct(Precompute):
     return query_template.get('name') in (GBDataStruct.name, ProgressiveDataStruct.name)
 
 
+class SampleProgDataStruct(ProgressiveDataStruct):
+  """
+  Progressive Data Structure using sampling encoding
+  """
 
+  name = "SampleProg"
 
+  def __init__(self, db, spec, *args, **kwargs):
+        # name of the file cache
+    fname = "sampleprog_%s.cache" % ",".join(spec["groupby"])
+    kwargs['fname'] = kwargs.get("fname", fname)
 
+    super(SampleProgDataStruct, self).__init__(db, spec, *args, **kwargs)
 
+    self.name = SampleProgDataStruct.name
+    self.spec = spec
+    self.chunkSize = kwargs.get("chunkSize", 16)
+    self.encoding = 3
+
+  def progressively_encode_table(self, schema, rows):
+    srows = sorted(rows, key=(lambda x: x[1]))
+    table = ProgressiveTable()
+    lower = srows[0][1]
+    higher = srows[-1][1]
+
+    ca = map(lambda x: x[0], srows)
+    l = len(ca)
+    step = 1
+    while(l > self.chunkSize):
+      l = math.ceil(l / 2)
+      step = step * 2
+
+    blocks = [[] for i in range(step)]
+    for i, n in enumerate(ca):
+      blocks[i % step].append(n)
+
+    for i, b in enumerate(blocks):
+      block = table.blocks.add()
+      block.schema.name.extend(schema)
+      block.lower = lower
+      block.higher = higher
+      block.id = i
+      block.val.extend(b)
+
+    return table.SerializeToString()
+
+  @staticmethod
+  def can_answer(query_template):
+    return query_template.get('name') in (GBDataStruct.name, ProgressiveDataStruct, SampleProgDataStruct.name)
+
+class WaveletProgDataStruct(ProgressiveDataStruct):
+  """
+  Progressive Data Struct using haar wavelet encoding
+  """
+  name = "WaveletProg"
+
+  def __init__(self, arg):
+    super(WaveletProgDataStruct, self).__init__()
+    self.arg = arg
+    self.encoding = 4
+
+  # TODO: complete this
+  def progressively_encode_table(self, schema, rows):
+    pass
+
+  @staticmethod
+  def can_answer(query_template):
+    return query_template.get('name') in (GBDataStruct.name, ProgressiveDataStruct.name, WaveletProgDataStruct.name)
 
 # Currently deprecated
 class SQLTemplates(Precompute):
@@ -378,5 +478,7 @@ class SQLTemplates(Precompute):
 
 
 # register relevant data structer classes
-ds_klasses = [GBDataStruct, SQLTemplates]
+# ds_klasses = [GBDataStruct, SQLTemplates]
+ds_klasses = [GBDataStruct, SampleProgDataStruct, SQLTemplates]
+# ds_klasses = [GBdataStruct, SampleProgDataStruct, WaveletProgDataStruct, SQLTemplates]
 
