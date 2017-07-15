@@ -76,7 +76,7 @@ var Requester = (function(EventEmitter) {
         const encode_delta = (Date.now() - start);
         this.encodeCost += encode_delta;
         this.nEnc++;
-        console.log("SEND DISTRIBUTION");
+        //console.log("SEND DISTRIBUTION");
         this.send(encodedDist);
 
         if (Util.DISTDEBUG)
