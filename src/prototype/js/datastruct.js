@@ -160,7 +160,7 @@ var GarbageCollectingDataStructure = (function(DataStructure) {
       table: decodedData
     };
     this.rangeIdx.add(byteRange, data);
-
+    console.log("addBlock:", key);
     this.storeData(data, header);
 
 

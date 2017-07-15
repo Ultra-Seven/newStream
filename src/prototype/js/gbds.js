@@ -41,7 +41,8 @@ var GBDataStructure = (function(GarbageCollectingDataStructure) {
   };
   
   GBDataStructure.prototype.removeData = function(data) {
-    if (data && data.key) {
+    if (data && data.key && this.idx[data.key]) {
+      console.log("removeData:", data.key);
       delete this.idx[data.key];
     }
   };

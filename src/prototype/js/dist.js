@@ -156,7 +156,13 @@ var GuassianDistribution = (function(Base) {
     let bottomright = this.gaussianX.cdf(qs[2][0]) * this.gaussianY.cdf(qs[2][1]);
     let = bottomleft = this.gaussianX.cdf(qs[3][0]) * this.gaussianY.cdf(qs[3][1]);
 
-    return (topright - topleft - bottomright + bottomleft);
+    let results = _.sortBy([topright, topleft, bottomright, bottomleft], function(num) {
+      return num;
+    })
+    // if (results[3] - results[2] - results[1] + results[0] > 0) {
+    //   console.log("results:", results);
+    // }
+    return (results[3] - results[2] - results[1] + results[0]);
   };
   GuassianDistribution.prototype.getAllAbove = function(prob) {
     prob = prob || 0;

@@ -70,6 +70,7 @@ var Engine = (function(EventEmitter) {
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
       if (ds.tryExec(q, cb)) {
+        console.log("cache hit!");
         if (Util.HITRATIO) {
           Util.Debug.addHits();
         }

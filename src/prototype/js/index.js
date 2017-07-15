@@ -9,8 +9,8 @@ var Viz = require("./viz");
 Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
-Util.RESPONSIVE = true;
-Util.HITRATIO = false;
+Util.RESPONSIVE = false;
+Util.HITRATIO = true;
 
 // strategies
 Util.PREDICTOR = true;

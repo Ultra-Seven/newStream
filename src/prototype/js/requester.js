@@ -76,7 +76,7 @@ var Requester = (function(EventEmitter) {
         const encode_delta = (Date.now() - start);
         this.encodeCost += encode_delta;
         this.nEnc++;
-        //console.log("SEND DISTRIBUTION");
+        console.log("SEND DISTRIBUTION:", distribution);
         this.send(encodedDist);
 
         if (Util.DISTDEBUG)
@@ -244,7 +244,9 @@ var Requester = (function(EventEmitter) {
       // add it to a query distribution
       var prob = markProbability(el);
       _.each(queries, function(query) {
-        queryDistribution.set(query, prob);
+        if (prob > 0) {
+          queryDistribution.set(query, prob);
+        }
       });
     });
     return queryDistribution;
