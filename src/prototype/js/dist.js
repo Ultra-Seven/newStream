@@ -61,6 +61,10 @@ var DistributionBase = (function() {
     return pairs;
   }
 
+  DistributionBase.prototype.getArea = function(qs) {
+    return 0;
+  }
+
   return DistributionBase;
 })();
 

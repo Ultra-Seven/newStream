@@ -33,7 +33,6 @@ var Predictor = (function() {
   Predictor.prototype.predict = function(trace, deltaTime) {
     return new Dist.NaiveDistribution(mouseToKey);
   }
-
   return Predictor;
 })();
 
@@ -212,48 +211,13 @@ var YourPredictor = (function(Predictor) {
 
       var mouseX = x.e(1, 1);
       var mouseY = x.e(2, 1);
-
-      var distributionX = gaussian(mouseX, P.e(1,1).toFixed(3));
-      var distributionY = gaussian(mouseY, P.e(2,2).toFixed(3));
+      // TODO: reurn null?
+      const vx = (P.e(1,1) < 0.001) ? 0.001 : P.e(1,1).toFixed(3);
+      const vy = (P.e(2,2) < 0.001) ? 0.001 : P.e(2,2).toFixed(3);
+      var distributionX = gaussian(mouseX, vx);
+      var distributionY = gaussian(mouseY, vy);
     }
-    //2-dimensional mean vector
-    //const covarianceMatrix = P.e(1,1);
-    // var distribution_parameters = {
-    //   // n*n covariance matrix 
-    //   sigma : [[P.e(1,1).toFixed(3), 0], 
-    //           [0, P.e(2,2).toFixed(3)]],
-    //   // sigma : [[1, 0.5], [0.5, 1]],
-    //   // n-dimensional mean vector 
-    //   mu : [mouseX, mouseY]
-    // }
-
-    //var distributionXY = new Gaussian(distribution_parameters);
-    const range = 20;
-    let distList = [];
-    let total = 0;
     let mydist = new Dist.GuassianDistribution(mouseToKey, distributionX, distributionY);
-    // for (let i = mouseX - range; i < mouseX + range; i++) {
-    //   for (let j = mouseY - range; j < mouseY + range; j++) {
-    //     const density = distributionXY.density([i, j]);
-    //     const predXY = [i, j, "m"];
-    //     distList.push({
-    //       pred: predXY,
-    //       density: density
-    //     });
-    //     total = total + density;
-    //   }
-    // }
-    //console.log("total:", total);
-    // _.each(distList, function(distElement) {
-    //   const prob = distElement.density / total;
-    //   //console.log("prob", prob);
-    //   mydist.set(distElement.pred, prob);
-    // });
-    //console.log("My Dist:", mydist);
-
-    // var pred = [mouseX, mouseY, "m"];
-    // var dist = Dist.NaiveDistribution.from(pred, mouseToKey);
-    // dist.set(pred, 1);
     return mydist;
   };
   return YourPredictor;

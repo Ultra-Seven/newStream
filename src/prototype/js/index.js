@@ -7,6 +7,9 @@ var Query = window.Query = require("./query");
 var Viz = require("./viz");
 
 Util.DEBUG = false;
+Util.WRITEDEBUG = false;
+Util.DISTDEBUG = false;
+Util.RESPONSIVE = true;
 
 
 var bytespermb = 1048576;
@@ -118,6 +121,7 @@ var makeViz3 = function(cb) {
 async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
     v1.on("mouseover", function(viz, el, row) {
+      
       // create the parameter data for the query
       var attr = v1.qtemplate.select['x']
       var data = { };
@@ -142,7 +146,11 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 Util.stream_from("/data", function(arr) {
   if (Util.DEBUG)
     Util.Debug.update(arr);
+  if (Util.WRITEDEBUG)
+    Util.Debug.updateWriteTime();
   engine.ringbuf.write(arr);
+  if (Util.WRITEDEBUG)
+    Util.Debug.updateWrite(arr);
 }, Util.Debug.debug.bind(Util.Debug));
 
 

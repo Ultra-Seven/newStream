@@ -60,17 +60,26 @@ var Requester = (function(EventEmitter) {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
+      // TODO: find proper time range
+      // for (let i = 0; i < 100; i = i + 10) {
+      //   var distribution = this.getQueryDistribution(trace, 10 + i);
+      // }
       var distribution = this.getQueryDistribution(trace, 100);
-      this.distCost += (Date.now() - start);
+      const dist_delta = (Date.now() - start);
+      this.distCost += dist_delta;
       this.nDist++;
       
       if (distribution != null) {
         start = Date.now();
         var encodedDist = JSON.stringify(distribution.toWire());
-        this.encodeCost += (Date.now() - start);
+        const encode_delta = (Date.now() - start);
+        this.encodeCost += encode_delta;
         this.nEnc++;
 
         this.send(encodedDist);
+
+        if (Util.DISTDEBUG)
+          Util.Debug.requesterTime(dist_delta, encode_delta, trace.length);
       }
     }
 
@@ -125,9 +134,11 @@ var Requester = (function(EventEmitter) {
     // var mouseDist = new Dist.NaiveDistribution(null);
     var mouseDist = this.mousePredictor.predict(trace, dt);
     // TODO: Uncomment below when the function is implemented
-    // var queryDist = null;
-    var queryDist = mapMouseToQueryDistribution(mouseDist);
-    console.log("topK:", queryDist.getTopK(10));
+    var queryDist = null;
+    if(mouseDist) {
+       queryDist = mapMouseToQueryDistribution(mouseDist);
+       //console.log("topK:", queryDist.getTopK(10));
+    }
     return queryDist;
   };
 
@@ -211,6 +222,7 @@ var Requester = (function(EventEmitter) {
       let xmw = bound.x - bound.w;
       let yph = bound.y + bound.h;
       let ymh = bound.y - bound.h;
+      //console.log("mouse predictor:", mouseDist);
       let probability = mouseDist.getArea([
         [xpw, yph], 
         [xmw, yph],

@@ -63,7 +63,7 @@ var Engine = (function(EventEmitter) {
   // to an interaction 
   //
   Engine.prototype.registerQuery = function(q, cb) {
-
+    let start = Date.now();
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
@@ -75,12 +75,20 @@ var Engine = (function(EventEmitter) {
 
     // make sure the callback will only run once!
     cb = _.once(cb);
+    let timer = _.once(function() {
+      let end = Date.now();
+      Util.Debug.responsiveEnd(end - start, arguments[0].length); 
+      //console.log("delta:", end - start, "data", arguments[0].length);
+    })
     var cb2 = function() {
       // if the query is answered, deregister globally
       for (var dsid in this.datastructs) {
         this.datastructs[dsid].deregister(q, cb2);
       }
       cb.apply(cb, arguments);
+      if (Util.RESPONSIVE) {
+        timer.apply(timer, arguments);
+      }
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
