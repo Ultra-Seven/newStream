@@ -54,6 +54,7 @@ var Viz = (function(EventEmitter) {
     if (data == null) return;
     var me = this;
     var bound = this.markg.selectAll(".mark").data(data);
+    //console.log("data", data);
 
     function attach(els) {
       els

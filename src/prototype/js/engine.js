@@ -64,11 +64,17 @@ var Engine = (function(EventEmitter) {
   //
   Engine.prototype.registerQuery = function(q, cb) {
     let start = Date.now();
+    //console.log("start time", start);
+    let id = arguments[2];
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) 
+      if (ds.tryExec(q, cb)) {
+        if (Util.HITRATIO) {
+          Util.Debug.addHits();
+        }
         return; 
+      }
     }
     
     // 2. register with data structures that support this query
@@ -77,18 +83,20 @@ var Engine = (function(EventEmitter) {
     cb = _.once(cb);
     let timer = _.once(function() {
       let end = Date.now();
-      Util.Debug.responsiveEnd(end - start, arguments[0].length); 
-      //console.log("delta:", end - start, "data", arguments[0].length);
+      Util.Debug.responsiveEnd(end - start, arguments[0].length);
+      //console.log("check start time", start);
+      //console.log("delta:", end - start);
     })
     var cb2 = function() {
+      //console.log("FINISH: for vis:" + id, "send query:" + q.toSQL());
       // if the query is answered, deregister globally
       for (var dsid in this.datastructs) {
         this.datastructs[dsid].deregister(q, cb2);
       }
-      cb.apply(cb, arguments);
       if (Util.RESPONSIVE) {
         timer.apply(timer, arguments);
       }
+      cb.apply(cb, arguments);
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
@@ -97,6 +105,7 @@ var Engine = (function(EventEmitter) {
         ds.register(q, cb2);
     }
 
+    //console.log("CACHE MISS: for vis:" + id, "send query:" + q.toSQL());
     // 3. send an explicit query distirubiton
     var dist = Dist.NaiveDistribution.from(q);
     var encodedDist = JSON.stringify(dist.toWire());

@@ -61,7 +61,10 @@ var Debug = (function Debug() {
   var responsive_time = [];
   var i = 1;
 
-  function Debug() { };
+  function Debug() { 
+    this.queryCounts = 0;
+    this.hitCounts = 0;
+  };
   Debug.prototype.debug = function(arr) {
     var cost = Date.now() - start;
     var total = d3.sum(counts);
@@ -118,7 +121,7 @@ var Debug = (function Debug() {
   }
   Debug.prototype.responsiveEnd = function(time, length) {
     responsive_time.push(time);
-    responsive_data.push(length);
+    responsive_data.push(length * 8);
     if (responsive_time.length >= 100) {
       let avg_time = d3.mean(responsive_time);
       let avg_length = d3.mean(responsive_data);
@@ -126,6 +129,21 @@ var Debug = (function Debug() {
       console.log(stats.join("\t"));
       responsive_data = [];
       responsive_time = [];
+    }
+  }
+
+  Debug.prototype.addQuery = function() {
+    this.queryCounts++;
+  }
+  Debug.prototype.addHits = function() {
+    this.hitCounts++;
+  }
+  Debug.prototype.hitRatios = function() {
+    if (this.queryCounts > 1000) {
+      console.log("query counts:", this.queryCounts, "hit counts:", this.hitCounts, 
+        "hit ratio:", (this.hitCounts+0.0) / this.queryCounts);
+      this.queryCounts = 0;
+      this.hitCounts = 0;
     }
   }
   return Debug;

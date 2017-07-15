@@ -26,11 +26,14 @@ var Requester = (function(EventEmitter) {
     opts = opts || {};
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
-    this.logger = new Logger({
-      minResolution: 5,
-      traceLength: 150
-    });
-    this.logger.bind(document);
+    this.logger;
+    if (Util.PREDICTOR) {
+      this.logger = new Logger({
+        minResolution: 5,
+        traceLength: 150
+      });
+      this.logger.bind(document);
+    }
 
     // TODO: pass in your mouse predictor!
     //this.mousePredictor = opts.mousePredictor;
@@ -45,7 +48,9 @@ var Requester = (function(EventEmitter) {
 
     EventEmitter.call(this);
 
-    this.run();
+    // Disable the prediction by commenting this line
+    if(Util.PREDICTOR)
+      this.run();
   };
 
   //
@@ -60,10 +65,6 @@ var Requester = (function(EventEmitter) {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
-      // TODO: find proper time range
-      // for (let i = 0; i < 100; i = i + 10) {
-      //   var distribution = this.getQueryDistribution(trace, 10 + i);
-      // }
       var distribution = this.getQueryDistribution(trace, 100);
       const dist_delta = (Date.now() - start);
       this.distCost += dist_delta;
@@ -75,7 +76,7 @@ var Requester = (function(EventEmitter) {
         const encode_delta = (Date.now() - start);
         this.encodeCost += encode_delta;
         this.nEnc++;
-
+        console.log("SEND DISTRIBUTION");
         this.send(encodedDist);
 
         if (Util.DISTDEBUG)

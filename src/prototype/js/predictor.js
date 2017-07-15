@@ -218,6 +218,7 @@ var YourPredictor = (function(Predictor) {
       var distributionY = gaussian(mouseY, vy);
     }
     let mydist = new Dist.GuassianDistribution(mouseToKey, distributionX, distributionY);
+    //console.log("mydist:", mydist);
     return mydist;
   };
   return YourPredictor;

@@ -10,6 +10,10 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = true;
+Util.HITRATIO = false;
+
+// strategies
+Util.PREDICTOR = true;
 
 
 var bytespermb = 1048576;
@@ -121,7 +125,6 @@ var makeViz3 = function(cb) {
 async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
     v1.on("mouseover", function(viz, el, row) {
-      
       // create the parameter data for the query
       var attr = v1.qtemplate.select['x']
       var data = { };
@@ -130,7 +133,12 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
         var q = new Query.Query(v2.qtemplate, data);
-        engine.registerQuery(q, v2.render.bind(v2));
+        console.log("REQUEST:for vis:" + v2.id, "send query:" + q.toSQL());
+        if (Util.HITRATIO) {
+          Util.Debug.hitRatios();
+          Util.Debug.addQuery();
+        }
+        engine.registerQuery(q, v2.render.bind(v2), v2.id);
       });
     });
   });
