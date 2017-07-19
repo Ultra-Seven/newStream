@@ -12,3 +12,19 @@ message Table {
     repeated string name = 1;
   }
 }
+
+message ProgressiveTable {
+  repeated Block blocks = 1;
+
+  message Block {
+    Schema schema = 1;
+    int32 lower = 2;
+    int32 higher = 3;
+    int32 id = 4;
+    repeated int32 val = 5;
+  }
+
+  message Schema {
+    repeated string name = 1;
+  }
+}

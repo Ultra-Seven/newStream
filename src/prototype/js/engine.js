@@ -74,7 +74,8 @@ var Engine = (function(EventEmitter) {
     // 2. register with data structures that support this query
 
     // make sure the callback will only run once!
-    cb = _.once(cb);
+    // cb = _.once(cb);
+    cb = Util.first(cb);
     var cb2 = function() {
       // if the query is answered, deregister globally
       for (var dsid in this.datastructs) {

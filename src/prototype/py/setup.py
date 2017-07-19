@@ -72,16 +72,17 @@ def setup_spec(db, spec):
       param_vals[expr] = list(vals)
 
     # setup the data struture
-    ds = GBDataStruct(db, spec)
-    ds.setup_cache(param_vals)
+    # ds = GBDataStruct(db, spec)
+    # ds.setup_cache(param_vals)
 
 
 
     # TODO: setup your incrementally encoded data structure
-    ds2 = ProgressiveDataStruct(db, spec)
-    ds.setup_cache(param_vals)
+    ds2 = SampleProgDataStruct(db, spec, chunkSize=16)
+    ds2.setup_cache(param_vals)
 
-
+    # ds3 = WaveletProgDataStruct(db, spec, chunkSize=16)
+    # ds3.setup_cache(param_vals)
 
 
 def setup_specs(db, specs):
@@ -154,12 +155,12 @@ if __name__ == "__main__":
   db = create_engine("postgresql://localhost/test")
 
   ## Uncomment to re-generate dataset and repopulate database
-  setup_db(db, dims, measures, 5)
+  # setup_db(db, dims, measures, 5)
 
   ## Uncomment to recompute offline data structures
   setup_specs(db, viz_setup)
 
-  ds = GBDataStruct(db, viz_setup[1]["template"])
-  print ds(dict(c=1))
+  # ds = GBDataStruct(db, viz_setup[1]["template"])
+  # print ds(dict(c=1))
 
 

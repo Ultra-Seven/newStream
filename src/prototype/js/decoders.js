@@ -1,5 +1,6 @@
 var proto = require("./table_pb");
 var Table = proto.Table;
+var ProgressiveTable = proto.ProgressiveTable
 
 // Wrapper around protocol buffer decoder to return a list of js objects instead of the protocol buffer object
 var TableDecoder = (function() {
@@ -30,6 +31,30 @@ var TableDecoder = (function() {
 })();
 
 
+var ProgressiveTableDecoder = (function() {
+  var ProgressiveTableDecoder = function() {};
+
+  ProgressiveTableDecoder.prototype.decode = function(buf) {
+    var pbProgTable = window.pbProgTable = ProgressiveTable.deserializeBinary(new Uint8Array(buf));
+    var block = pbProgTable.getBlocksList()[0];
+    var attrs = block.getSchema().getNameList();
+    if (attrs.length == 0) return [];
+
+    var lower = block.getLower();
+    var higher = block.getHigher();
+    var id = block.getId();
+    var ret = {
+      attrs: attrs,
+      lower: lower,
+      higher: higher,
+      id: id,
+      encodedData: block.getValList()
+    }
+    return ret;
+  };
+
+  return ProgressiveTableDecoder;
+})();
 
 
 var JSONDecoder = (function(){
@@ -48,5 +73,6 @@ var JSONDecoder = (function(){
 
 module.exports = {
   TableDecoder: TableDecoder,
-  JSONDecoder: JSONDecoder
+  JSONDecoder: JSONDecoder,
+  ProgressiveTableDecoder: ProgressiveTableDecoder
 }
