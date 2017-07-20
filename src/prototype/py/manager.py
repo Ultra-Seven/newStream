@@ -35,16 +35,26 @@ class Manager(object):
     """
     while 1:
       time.sleep(0.001)
+
+
+
       if not flask.dist: 
         continue
       if self.prev_dist_update_time == flask.dist_update_time:
         continue
+
+      if flask.DEBUG and flask.logger:
+        flask.logger.log('2 : before scheduler')
 
       # result = self.naive_schedule()
       result = self.proportion_schedule()
       for header, content in result:
         yield header
         yield content
+
+      if flask.DEBUG and flask.logger:
+        flask.logger.log('3 : after scheduler')
+        flask.logger.writeLog()
 
   def proportion_schedule(self):
     """
@@ -67,6 +77,8 @@ class Manager(object):
         if flask.DEBUG:
           print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
         yield (struct.pack("2I", len(block), ds.encoding), block)
+        if flask.DEBUG:
+          flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
 
 
   def naive_schedule(self):
