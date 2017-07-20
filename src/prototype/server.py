@@ -13,6 +13,7 @@ from flask import Flask, render_template, Response, request, stream_with_context
 
 from py.ds import *
 from py.manager import *
+from py.debug import *
 
 
 app = Flask(__name__)
@@ -20,13 +21,16 @@ app = Flask(__name__)
 #
 # Global variables
 #
-flask.DEBUG = False
+flask.DEBUG = True
 flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
 flask.queries = {}
 flask.db = create_engine("postgresql://localhost/test")
 flask.manager = Manager()
+
+if flask.DEBUG:
+  flask.logger = DebugLogger(toFile=True, logPath='stream.log')
 
 @app.route("/")
 def index():
@@ -103,7 +107,8 @@ def dist_set():
   flask.dist = json.loads(request.data)
   flask.dist_update_time = time.time()
   if flask.DEBUG:
-    print "got query distribution"
+    # print "got query distribution"
+    flask.logger.log('1 : get dist')
   return Response("ok", mimetype="application/wu")
 
 

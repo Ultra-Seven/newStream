@@ -80,7 +80,9 @@ var Engine = (function(EventEmitter) {
     // 2. register with data structures that support this query
 
     // make sure the callback will only run once!
-    cb = _.once(cb);
+    // changed to make it only run by one datastructure
+    // cb = _.once(cb);
+    cb = Util.first(cb);
     let timer = _.once(function() {
       let end = Date.now();
       Util.Debug.responsiveEnd(end - start, arguments[0].length);

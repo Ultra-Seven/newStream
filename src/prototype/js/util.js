@@ -150,6 +150,21 @@ var Debug = (function Debug() {
 })();
 Debug = new Debug();
 
+function first(func) {
+  var obj = undefined;
+  return function(o) {
+    if (obj == null) {
+      obj = o;
+    }
+    if (o === obj) {
+      arg = Array.prototype.slice.apply(arguments);
+      arg.shift();
+      return func.apply(this, arg);
+    } else {
+      return null;
+    }
+  }
+}
 
 module.exports = {
   stream_from: stream_from,
@@ -157,5 +172,6 @@ module.exports = {
   getAttrStats:getAttrStats,
   DEBUG: true,
   WRITEDEBUG: true,
-  DISTDEBUG: true
+  DISTDEBUG: true,
+  first:first,
 }
