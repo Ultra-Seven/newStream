@@ -21,7 +21,6 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_pb=_b('\n\x0btable.proto\"l\n\x05Table\x12\x1d\n\x06schema\x18\x01 \x01(\x0b\x32\r.Table.Schema\x12\x18\n\x04\x63ols\x18\x02 \x03(\x0b\x32\n.Table.Col\x1a\x12\n\x03\x43ol\x12\x0b\n\x03val\x18\x01 \x03(\x05\x1a\x16\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x03(\t\"\xbe\x01\n\x10ProgressiveTable\x12\'\n\x06\x62locks\x18\x01 \x03(\x0b\x32\x17.ProgressiveTable.Block\x1ai\n\x05\x42lock\x12(\n\x06schema\x18\x01 \x01(\x0b\x32\x18.ProgressiveTable.Schema\x12\r\n\x05lower\x18\x02 \x01(\x05\x12\x0e\n\x06higher\x18\x03 \x01(\x05\x12\n\n\x02id\x18\x04 \x01(\x05\x12\x0b\n\x03val\x18\x05 \x03(\x05\x1a\x16\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x03(\tb\x06proto3')
 )
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
 
@@ -252,6 +251,7 @@ _PROGRESSIVETABLE_SCHEMA.containing_type = _PROGRESSIVETABLE
 _PROGRESSIVETABLE.fields_by_name['blocks'].message_type = _PROGRESSIVETABLE_BLOCK
 DESCRIPTOR.message_types_by_name['Table'] = _TABLE
 DESCRIPTOR.message_types_by_name['ProgressiveTable'] = _PROGRESSIVETABLE
+_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Table = _reflection.GeneratedProtocolMessageType('Table', (_message.Message,), dict(
 
