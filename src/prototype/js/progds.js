@@ -44,6 +44,10 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
   ProgressiveDataStructure.prototype.register = function(q, cb) {
     if (Util.DEBUG)
       console.log(["register ", q.template.id, this.queryToKey(q), q])
+    for (k in this.listenerList) {
+      this.removeListener(k, this.listenerList[k])
+      delete this.listenerList[k]
+    }
     this.listenerList[this.queryToKey(q)] = cb;
     return this.on(this.queryToKey(q), cb);
   }
