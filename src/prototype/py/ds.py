@@ -325,7 +325,7 @@ class ProgressiveDataStruct(Precompute):
     key = self.key(data)
     block = self.lookup_bytes(key)
     if block:
-      startFrom = self.pos[key] if (key in self.pos) and not res else 0
+      startFrom = self.pos[key] if (key in self.pos) and not restart else 0
       table = ProgressiveTable()
       table.ParseFromString(block)
       size = 0
