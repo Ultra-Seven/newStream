@@ -22,6 +22,21 @@ var Engine = (function(EventEmitter) {
     EventEmitter.call(this);
   };
 
+  Engine.prototype.registerRingBufferSize = function(size, cb) {
+    var param = {size: size};
+    $.ajax({
+      type: "POST",
+      contentType: "application/json; charset=utf-8",
+      url: "/register/ringbuffersize",
+      data: JSON.stringify(param),
+      success: function (data) {},
+      dataType: "json"
+    });
+
+    if (cb && _.isFunction(cb)) cb(size);
+    return size;
+  }
+
   Engine.prototype.registerDataStruct = function(ds) {
     this.ringbuf.register(ds.encoding, ds);
     this.ringbuf.on("dealloc", ds.dealloc.bind(ds));

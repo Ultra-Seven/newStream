@@ -20,6 +20,10 @@ class Manager(object):
     # when was the last distribution from the client?
     self.prev_dist_update_time = None
 
+    # the ring buffer setting
+    self.use_ringbuf = True
+    self.ringbuf = None
+
   def add_data_structure(self, ds):
     self.data_structs[ds.id].append(ds)
     if flask.DEBUG:

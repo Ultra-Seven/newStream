@@ -1,7 +1,7 @@
 from StringIO import StringIO
 import datetime
 
-class DebugLogger():
+class DebugLogger(object):
     """
     Debug class for stream
 
@@ -10,6 +10,7 @@ class DebugLogger():
         1   : get query distribution
         2   : before executing scheduler
         3   : after executing scheduler
+        4   : set ringbuffer size
         104 : send data from proportional scheduler
 
 
