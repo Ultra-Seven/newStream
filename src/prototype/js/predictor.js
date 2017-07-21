@@ -156,10 +156,23 @@ var YourPredictor = (function(Predictor) {
       // To determine dt
       var time = trace[0][2]; 
 
-      for (var i = 0; i < trace.length; i++) {
-        var now = trace[i][2];
-        var dt = now - time;
-        time = now;
+      var Q = $M(
+          [[1, 0, 0, 0],
+          [0, 1, 0, 0],
+          [0, 0, 0.1, 0],
+          [0, 0, 0, 0.1]
+      ]);
+      let timeElapse = [];
+      for (let i = 0; i < trace.length - 1; i++) {
+        const time = (trace[i + 1][2] - trace[i][2] + 0.0) / 1000;
+        timeElapse.push(time);
+      }
+      //timeElapse.push((deltaTime + 0.0) / 1000);
+      for (var i = 1; i < trace.length; i++) {
+        // var now = trace[i + 1][2];
+        // var dt = (now - time + 0.0) / 1000;
+        let dt = timeElapse[i - 1];
+        // time = now;
         //console.log("dt:", dt, "now:", now);
         // Derive the next state
         F = $M([[1, 0, dt, 0], 
@@ -180,7 +193,7 @@ var YourPredictor = (function(Predictor) {
         
         // prediction
         x = F.x(x).add(u);
-        P = F.x(P).x(F.transpose());
+        P = F.x(P).x(F.transpose()).add(Q);
 
         // measurement update
         Z = $M([[xMeasure, yMeasure]]);
@@ -193,8 +206,9 @@ var YourPredictor = (function(Predictor) {
         
       }
       // Derive the next state
-      F = $M([[1, 0, deltaTime, 0], 
-              [0, 1, 0, deltaTime], 
+      const delta = (deltaTime + 0.0) / 1000
+      F = $M([[1, 0, delta, 0], 
+              [0, 1, 0, delta], 
               [0, 0, 1, 0], 
               [0, 0, 0, 1]
              ]); 
@@ -207,18 +221,19 @@ var YourPredictor = (function(Predictor) {
         
       // prediction
       x = F.x(x).add(u);
-      P = F.x(P).x(F.transpose());
+      P = F.x(P).x(F.transpose()).add(Q);
 
       var mouseX = x.e(1, 1);
       var mouseY = x.e(2, 1);
+
+
       // TODO: reurn null?
-      const vx = (P.e(1,1) < 0.001) ? 0.001 : P.e(1,1).toFixed(3);
-      const vy = (P.e(2,2) < 0.001) ? 0.001 : P.e(2,2).toFixed(3);
+      const vx = (P.e(1,1) < 0.1) ? 0.1 : P.e(1,1).toFixed(3);
+      const vy = (P.e(2,2) < 0.1) ? 0.1 : P.e(2,2).toFixed(3);
       var distributionX = gaussian(mouseX, vx);
       var distributionY = gaussian(mouseY, vy);
     }
     let mydist = new Dist.GuassianDistribution(mouseToKey, distributionX, distributionY);
-    //console.log("mydist:", mydist);
     return mydist;
   };
   return YourPredictor;

@@ -181,7 +181,57 @@ var GuassianDistribution = (function(Base) {
   return GuassianDistribution;
 })(DistributionBase);
 
+//
+// Concise distribution object
+//
+var ConciseDistribution = (function(Base) {
+  extend(ConciseDistribution, Base);
 
+  ConciseDistribution.from = function(q, keyFunc) {
+    var d = new ConciseDistribution(keyFunc);
+    d.set(q, 1);
+    return d;
+  };
+
+
+  // @keyFunc is a function that takes a "query" as input and returns a string used as a key in the hash table
+  //          by default it will use qToKey defined at the top of this file, but you can define your own
+  function ConciseDistribution(keyFunc) {
+    this.keyFunc = keyFunc || qToKey;
+    this.dist = {};
+    this.threshold = 0.1;
+    this.history = {};
+    // call parent constructor 
+    Base.call(this);
+  }
+
+  ConciseDistribution.prototype.set = function(q, prob) {
+    this.dist[this.keyFunc(q)] = [q, prob]; 
+  };
+
+  ConciseDistribution.prototype.get = function(q) {
+    if (q == null || q === undefined) return 0;
+    var key = this.keyFunc(q);
+    if (key in this.dist) return this.dist[key][1];
+    return 0;
+  };
+
+  ConciseDistribution.prototype.getAllAbove = function(prob) {
+    prob = prob || 0;
+    return _.filter(_.values(this.dist), function(pair) {
+      return pair[1] >= prob;
+    });
+  };
+
+  ConciseDistribution.prototype.getTopK = function(k) {
+    return _.rest(_.sortBy(_.values(this.dist), 
+                           function(pair) { return pair[1]; }),
+                  -k);
+  };
+
+
+  return ConciseDistribution;
+})(DistributionBase);
 
 
 
@@ -189,5 +239,6 @@ var GuassianDistribution = (function(Base) {
 module.exports = {
   DistributionBase: DistributionBase,
   NaiveDistribution: NaiveDistribution,
-  GuassianDistribution: GuassianDistribution
+  GuassianDistribution: GuassianDistribution,
+  ConciseDistribution: ConciseDistribution
 }

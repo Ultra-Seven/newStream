@@ -82,9 +82,6 @@ var Viz = (function(EventEmitter) {
         me.emit("mouseout", me.this, d3.select(this).data()[0]); 
       });
     bound.exit().remove();
-    if(Util.RESPONSIVE) {
-      Util.Debug.responsiveEnd(data); 
-    }
     return this;
   }
 
