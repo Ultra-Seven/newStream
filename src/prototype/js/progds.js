@@ -53,7 +53,7 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
   }
 
   ProgressiveDataStructure.prototype.deregister = function(q, cb) {
-
+  
   }
 
   ProgressiveDataStructure.prototype.decode = function(bytes) {

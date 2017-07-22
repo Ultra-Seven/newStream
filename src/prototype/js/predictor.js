@@ -85,7 +85,7 @@ var YourPredictor = (function(Predictor) {
     //console.log("trace:", trace);
     var pt = null;
     if (trace.length <= 2) {
-      if (trace.length == 0) return this.defaultPrediction;
+      if (trace.length == 0) return null;
       pt = trace[trace.length - 1];
     } else {
     
@@ -157,8 +157,8 @@ var YourPredictor = (function(Predictor) {
       var time = trace[0][2]; 
 
       var Q = $M(
-          [[1, 0, 0, 0],
-          [0, 1, 0, 0],
+          [[0.1, 0, 0, 0],
+          [0, 0.1, 0, 0],
           [0, 0, 0.1, 0],
           [0, 0, 0, 0.1]
       ]);
@@ -230,8 +230,8 @@ var YourPredictor = (function(Predictor) {
       // TODO: reurn null?
       const vx = (P.e(1,1) < 0.1) ? 0.1 : P.e(1,1).toFixed(3);
       const vy = (P.e(2,2) < 0.1) ? 0.1 : P.e(2,2).toFixed(3);
-      var distributionX = gaussian(mouseX, vx);
-      var distributionY = gaussian(mouseY, vy);
+      var distributionX = gaussian(mouseX, vx * 10000);
+      var distributionY = gaussian(mouseY, vy * 10000);
     }
     let mydist = new Dist.GuassianDistribution(mouseToKey, distributionX, distributionY);
     return mydist;

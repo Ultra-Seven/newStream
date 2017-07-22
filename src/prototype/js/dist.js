@@ -13,6 +13,7 @@ function qToKey(q) {
 
 
 
+
 // Models a distribution  at a single instant in time.  
 // The code doesn't support predicting into the future yet.
 //
@@ -88,12 +89,14 @@ var NaiveDistribution = (function(Base) {
   function NaiveDistribution(keyFunc) {
     this.keyFunc = keyFunc || qToKey;
     this.dist = {};
+    this.empty = true;
     // call parent constructor 
     Base.call(this);
   }
 
   NaiveDistribution.prototype.set = function(q, prob) {
     this.dist[this.keyFunc(q)] = [q, prob]; 
+    this.empty = false;
   };
 
   NaiveDistribution.prototype.get = function(q) {
@@ -154,12 +157,12 @@ var GuassianDistribution = (function(Base) {
     let topright = this.gaussianX.cdf(qs[0][0]) * this.gaussianY.cdf(qs[0][1]);
     let topleft = this.gaussianX.cdf(qs[1][0]) * this.gaussianY.cdf(qs[1][1]);
     let bottomright = this.gaussianX.cdf(qs[2][0]) * this.gaussianY.cdf(qs[2][1]);
-    let = bottomleft = this.gaussianX.cdf(qs[3][0]) * this.gaussianY.cdf(qs[3][1]);
+    let bottomleft = this.gaussianX.cdf(qs[3][0]) * this.gaussianY.cdf(qs[3][1]);
 
     let results = _.sortBy([topright, topleft, bottomright, bottomleft], function(num) {
       return num;
     })
-    // if (results[3] - results[2] - results[1] + results[0] > 0) {
+    // if (results[3] > 0 || results[2] > 0 || results[1] > 0 || results[0] > 0) {
     //   console.log("results:", results);
     // }
     return (results[3] - results[2] - results[1] + results[0]);
@@ -182,13 +185,12 @@ var GuassianDistribution = (function(Base) {
 })(DistributionBase);
 
 //
-// Concise distribution object
+// time distribution object
 //
-var ConciseDistribution = (function(Base) {
-  extend(ConciseDistribution, Base);
-
-  ConciseDistribution.from = function(q, keyFunc) {
-    var d = new ConciseDistribution(keyFunc);
+var TimeDistribution = (function(Base) {
+  extend(TimeDistribution, Base);
+  TimeDistribution.from = function(q, keyFunc) {
+    var d = new TimeDistribution(keyFunc);
     d.set(q, 1);
     return d;
   };
@@ -196,41 +198,55 @@ var ConciseDistribution = (function(Base) {
 
   // @keyFunc is a function that takes a "query" as input and returns a string used as a key in the hash table
   //          by default it will use qToKey defined at the top of this file, but you can define your own
-  function ConciseDistribution(keyFunc) {
+  function TimeDistribution(keyFunc) {
     this.keyFunc = keyFunc || qToKey;
     this.dist = {};
-    this.threshold = 0.1;
-    this.history = {};
     // call parent constructor 
     Base.call(this);
   }
-
-  ConciseDistribution.prototype.set = function(q, prob) {
-    this.dist[this.keyFunc(q)] = [q, prob]; 
+  TimeDistribution.prototype.addNaiveDist = function(naive, time) {
+    if (naive && !naive.empty) {
+      let sum = 0;
+      let sum_check = 0;
+      for (let key in naive.dist) {
+        sum = sum + naive.dist[key][1];
+      }
+      for (let key in naive.dist) {
+        naive.dist[key][1] = naive.dist[key][1] / sum;
+      }
+      for (let key in naive.dist) {
+        sum_check = sum_check + naive.dist[key][1];
+      }
+      this.dist[time] = naive.dist;
+    }
   };
 
-  ConciseDistribution.prototype.get = function(q) {
+  TimeDistribution.prototype.set = function(q, prob, time) {
+    this.dist[time][this.keyFunc(q)] = [q, prob]; 
+  };
+
+  TimeDistribution.prototype.get = function(q, time) {
     if (q == null || q === undefined) return 0;
     var key = this.keyFunc(q);
-    if (key in this.dist) return this.dist[key][1];
+    if (time in this.dist && key in this.dist[time]) return this.dist[time][key][1];
     return 0;
   };
 
-  ConciseDistribution.prototype.getAllAbove = function(prob) {
+  TimeDistribution.prototype.getAllAbove = function(prob, time) {
     prob = prob || 0;
-    return _.filter(_.values(this.dist), function(pair) {
+    return _.filter(_.values(this.dist[time]), function(pair) {
       return pair[1] >= prob;
     });
   };
 
-  ConciseDistribution.prototype.getTopK = function(k) {
-    return _.rest(_.sortBy(_.values(this.dist), 
+  TimeDistribution.prototype.getTopK = function(k, time) {
+    return _.rest(_.sortBy(_.values(this.dist[time]), 
                            function(pair) { return pair[1]; }),
                   -k);
   };
 
 
-  return ConciseDistribution;
+  return TimeDistribution;
 })(DistributionBase);
 
 
@@ -240,5 +256,5 @@ module.exports = {
   DistributionBase: DistributionBase,
   NaiveDistribution: NaiveDistribution,
   GuassianDistribution: GuassianDistribution,
-  ConciseDistribution: ConciseDistribution
+  TimeDistribution: TimeDistribution
 }

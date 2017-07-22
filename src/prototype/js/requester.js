@@ -2,6 +2,7 @@ var EventEmitter = require("events");
 var Util = require("./util");
 var Dist = require("./dist");
 var Logger = require("./logger").Logger;
+var Scheduler = require("./scheduler.js");
 var Pred = require("./predictor.js");
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -26,6 +27,7 @@ var Requester = (function(EventEmitter) {
     opts = opts || {};
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
+    this.timeRange = opts.timeRange || [5, 25, 50, 150];
     this.logger;
     if (Util.PREDICTOR) {
       this.logger = new Logger({
@@ -34,17 +36,18 @@ var Requester = (function(EventEmitter) {
       });
       this.logger.bind(document);
     }
-
-    // TODO: pass in your mouse predictor!
-    //this.mousePredictor = opts.mousePredictor;
+    
     this.mousePredictor = new Pred.YourPredictor([]);
-    // the cache of interactable elements 
+   
     this.interactableElements = [];
+
+    this.scheduler = new Scheduler.Scheduler();
 
     this.nDist = 0;
     this.nEnc = 0;
     this.distCost = 0;
     this.encodeCost = 0;
+
 
     EventEmitter.call(this);
 
@@ -65,14 +68,19 @@ var Requester = (function(EventEmitter) {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
-      var distribution = this.getQueryDistribution(trace, 100);
+      var dist = new Dist.TimeDistribution(null); 
+      for (var i = 0; i < this.timeRange.length; i++) {
+        let distribution = this.getQueryDistribution(trace, this.timeRange[i]);
+        dist.addNaiveDist(distribution, this.timeRange[i]);
+      }
+      // var distribution = this.getQueryDistribution(trace, 100);
       const dist_delta = (Date.now() - start);
       this.distCost += dist_delta;
       this.nDist++;
       
-      if (distribution != null) {
+      if (dist != null) {
         start = Date.now();
-        var encodedDist = JSON.stringify(distribution.toWire());
+        var encodedDist = JSON.stringify(dist.toWire());
         const encode_delta = (Date.now() - start);
         this.encodeCost += encode_delta;
         this.nEnc++;
@@ -83,7 +91,6 @@ var Requester = (function(EventEmitter) {
           Util.Debug.requesterTime(dist_delta, encode_delta, trace.length);
       }
     }
-
     setTimeout(this.run.bind(this), this.minInterval);
   };
 
@@ -132,12 +139,11 @@ var Requester = (function(EventEmitter) {
   Requester.prototype.getQueryDistribution = function(trace, dt) {
     dt = dt || 100;
     // predicting is a heavy calculation
-    // var mouseDist = new Dist.NaiveDistribution(null);
     var mouseDist = this.mousePredictor.predict(trace, dt);
     // TODO: Uncomment below when the function is implemented
     var queryDist = null;
     if(mouseDist) {
-       queryDist = mapMouseToQueryDistribution(mouseDist);
+       queryDist = this.mapMouseToQueryDistribution(mouseDist);
        //console.log("topK:", queryDist.getTopK(10));
     }
     return queryDist;
@@ -184,8 +190,8 @@ var Requester = (function(EventEmitter) {
   //
   // @mouseDist distribuiton of mouse positions (unimplementd)
   // @return query distribution
-  var mapMouseToQueryDistribution = function(mouseDist) {
-
+  Requester.prototype.mapMouseToQueryDistribution = function(mouseDist) {
+    let that = this;
     // 1. get interactable DOM elements
     var els = getInteractableElements();
 
@@ -220,32 +226,29 @@ var Requester = (function(EventEmitter) {
       var bound = getBoundingBox(el);
       var probs = [];
       let xpw = bound.x + bound.w;
-      let xmw = bound.x - bound.w;
+      let xmw = bound.x;
       let yph = bound.y + bound.h;
-      let ymh = bound.y - bound.h;
-      //console.log("mouse predictor:", mouseDist);
-      let probability = mouseDist.getArea([
+      let ymh = bound.y;
+      let probablity = mouseDist.getArea([
         [xpw, yph], 
         [xmw, yph],
         [xpw, ymh],
         [xmw, ymh]]);
-      // for (var dx = 0; dx < bound.w; dx++) {
-      //   for (var dy = 0; dy < bound.h; dy++) {
-      //     probs.push(mouseDist.get([bound.x+dx, bound.y+dy]))
-      //   }
-      // }
-      //return d3.mean(probs);
-      return probability;
+      return probablity;
     };
-    var queryDistribution = new Dist.NaiveDistribution(null);
+    let queryDistribution = new Dist.NaiveDistribution(null);
     // 4. use the above to construct a query distribution
     _.each(els, function(el) {
       let queries = magicalGetQueryParams(el);
       // add it to a query distribution
       var prob = markProbability(el);
       _.each(queries, function(query) {
-        if (prob > 0) {
-          queryDistribution.set(query, prob);
+        if (prob > 0.00001) {
+          let key = queryDistribution.keyFunc(query);
+          let probablity = that.scheduler.send(key, prob);
+          if (probablity > 0) {
+            queryDistribution.set(query, probablity);
+          }
         }
       });
     });
