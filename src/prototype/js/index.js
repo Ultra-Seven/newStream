@@ -10,7 +10,8 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = false;
+Util.HITRATIO = true;
+Util.DETAIL = false;
 
 // strategies
 Util.PREDICTOR = true;
@@ -134,7 +135,8 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
         var q = new Query.Query(v2.qtemplate, data);
-        // console.log("REQUEST:for vis:" + v2.id, "send query:" + q.toSQL());
+        if (Util.DETAIL) 
+          console.log("REQUEST:for vis:" + v2.id, "send query:" + q.toSQL());
         if (Util.HITRATIO) {
           Util.Debug.hitRatios();
           Util.Debug.addQuery();

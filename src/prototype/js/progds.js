@@ -118,6 +118,8 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
       var obj = this.idx[data.key];
       if (obj) {
         if (this.isDataCompleted(obj)) {
+          if (Util.DETAIL) 
+            console.log("remove:", data.key);
           delete this.idx[data.key];
         } else {
           this.releaseList[data.key] = true;

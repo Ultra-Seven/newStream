@@ -1,33 +1,37 @@
 var Scheduler = (function() {
-  function Scheduler() {
-    this.history = [];
+  function Scheduler(timeRange) {
+    this.history = {};
+    _.each(timeRange, time => {
+      this.history[time.toString()] = [];
+    })
     this.threshold = 0.1;
   };
-  Scheduler.prototype.addHistory = function(key, prob) {
-    this.history.push([key, prob]);
+  Scheduler.prototype.addHistory = function(key, prob, time) {
+    this.history[time].push([key, prob]);
   }
 
-  Scheduler.prototype.setHistory = function(index, prob) {
-    this.history[index][prob];
+  Scheduler.prototype.setHistory = function(index, prob, time) {
+    this.history[time][index][1] = prob;
   }
-  Scheduler.prototype.deleteHistory = function(index, prob) {
-    this.history[index][prob];
+  Scheduler.prototype.deleteHistory = function(index, time) {
+    this.history[time].splice(index, 1);
   }
-  Scheduler.prototype.send = function(key, prob) {
+  Scheduler.prototype.send = function(key, prob, time) {
     let index = this.getIndex(key);
+    time = time.toString();
     if (index >= 0) {
-      let last = this.history[index][1];
-      this.history[index][1] = prob;
+      let last = this.history[time][index][1];
+      this.setHistory(index, prob, time);
       if(prob > last) {
         return prob - last;
       }
       if (prob < this.threshold) {
-        this.history.splice(index, 1);
+        this.deleteHistory(index, time);
       }
       return 0;
     }
     else {
-      this.addHistory(key, prob);
+      this.addHistory(key, prob, time);
       return prob;
     }
   }
