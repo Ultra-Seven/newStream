@@ -90,36 +90,13 @@ var YourPredictor = (function(Predictor) {
       pt = trace[trace.length - 1];
     } else {
     
-      // The decay errodes the assumption that velocity 
-      // never changes.  This is the only unique addition
-      // I made to the proceedure.  If you set it to zero, 
-      // the filter will act just like the one we designed
-      // in class which means it strives to find a consitent
-      // velocitiy.  Over time this will cause it to assume
-      // the mouse is moving very slowly with lots of noise.
-      // Set too high and the predicted fit will mirror the 
-      // noisy data it recieves.  When at a nice setting, 
-      // the fit will be resposive and will do a nice job
-      // of smoothing out the function noise.
-      // I use the uncertainty matrix, R to add random noise
+      // R to add random noise
       // to the known position of the mouse.  The higher the
-      // values, the more noise, which can be seen by the 
-      // spread of the orange points on the canvas.
-      //
-      // If you adjust this number you will often need to 
-      // compensate by changing the decay so that the prediction
-      // function remains smooth and reasonable.  However, as
-      // these measurements get noisier we are left with a 
-      // choice between slower tracking (due to uncertainty)
-      // and unrealistic tracking because the data is too noisy.
+      // values, the more noise
       var decay = 0.003; 
-      var R = Matrix.Diagonal([0.02, 0.02]);
+      var R = Matrix.Diagonal([10, 10]);
           
       // initial state (location and velocity)
-      // I haven't found much reason to play with these
-      // in general the model will update pretty quickly 
-      // to any entry point.
-
       var x = $M([
         [trace[0][0]], 
         [trace[0][1]], 
@@ -128,21 +105,16 @@ var YourPredictor = (function(Predictor) {
       ]);
 
       // external motion
-      // I have not played with this at all, just
-      // added like a udacity zombie.
-
-      var u = $M([
+     var u = $M([
           [0], 
           [0], 
           [0], 
           [0]
       ]);
               
-      // initial uncertainty 
-      // I don't see any reason to play with this
-      // like the entry point it quickly adjusts 
-      // itself to the behavior of the mouse
+      // initial uncertainty
       var P = Matrix.Random(4, 4);
+    
 
       // measurement function (4D -> 2D)
       // This one has to be this way to make things run
@@ -158,23 +130,17 @@ var YourPredictor = (function(Predictor) {
       var time = trace[0][2]; 
 
       var Q = $M(
-          [[0.1, 0, 0, 0],
-          [0, 0.1, 0, 0],
+          [[10, 0, 0, 0],
+          [0, 10, 0, 0],
           [0, 0, 0.1, 0],
           [0, 0, 0, 0.1]
       ]);
       let timeElapse = [];
       for (let i = 0; i < trace.length - 1; i++) {
-        const time = (trace[i + 1][2] - trace[i][2] + 0.0) / 1000;
-        timeElapse.push(time);
+        timeElapse.push(trace[i + 1][2] - trace[i][2]);
       }
-      //timeElapse.push((deltaTime + 0.0) / 1000);
       for (var i = 1; i < trace.length; i++) {
-        // var now = trace[i + 1][2];
-        // var dt = (now - time + 0.0) / 1000;
         let dt = timeElapse[i - 1];
-        // time = now;
-        //console.log("dt:", dt, "now:", now);
         // Derive the next state
         F = $M([[1, 0, dt, 0], 
                 [0, 1, 0, dt], 
@@ -189,8 +155,8 @@ var YourPredictor = (function(Predictor) {
         });
         
         // Fake uncertaintity in our measurements
-        xMeasure = trace[i][0] + 500 * R.e(1,1) * 2 * (Math.random() - 0.5);
-        yMeasure = trace[i][1] + 500 * R.e(2,2) * 2 * (Math.random() - 0.5);
+        xMeasure = trace[i][0] + R.e(1,1) * 2 * (Math.random() - 0.5);
+        yMeasure = trace[i][1] + R.e(2,2) * 2 * (Math.random() - 0.5);
         
         // prediction
         x = F.x(x).add(u);
@@ -208,7 +174,7 @@ var YourPredictor = (function(Predictor) {
       }
       for (let i = 0; i < deltaTime.length; i++) {
         // Derive the next state
-        const delta = (deltaTime[i] + 0.0) / 1000
+        const delta = deltaTime[i];
         let F_time = $M([[1, 0, delta, 0], 
                 [0, 1, 0, delta], 
                 [0, 0, 1, 0], 
@@ -218,22 +184,22 @@ var YourPredictor = (function(Predictor) {
         // decay confidence
         // to account for change in velocity
         let P_time = P.map(function(x) {
-           return x * (1 + decay * deltaTime);
+           return x * (1 + decay * deltaTime[i]);
         });
           
         // prediction
         let x_time = F_time.x(x).add(u);
         P_time = F_time.x(P_time).x(F_time.transpose()).add(Q);
 
-        let mouseX = x.e(1, 1);
-        let mouseY = x.e(2, 1);
+        let mouseX = x_time.e(1, 1);
+        let mouseY = x_time.e(2, 1);
 
 
         // TODO: reurn null?
-        const vx = (P.e(1,1) < 0.1) ? 0.1 : P.e(1,1).toFixed(3);
-        const vy = (P.e(2,2) < 0.1) ? 0.1 : P.e(2,2).toFixed(3);
-        let distributionX = gaussian(mouseX, vx * 10000);
-        let distributionY = gaussian(mouseY, vy * 10000);
+        const vx = (P_time.e(1,1) < 1) ? 1 : P_time.e(1,1).toFixed(3);
+        const vy = (P_time.e(2,2) < 1) ? 1 : P_time.e(2,2).toFixed(3);
+        let distributionX = gaussian(mouseX, vx);
+        let distributionY = gaussian(mouseY, vy);
         mydists.push(new Dist.GuassianDistribution(mouseToKey, distributionX, distributionY));
       }
     }
@@ -246,6 +212,5 @@ var YourPredictor = (function(Predictor) {
 
 module.exports = {
   Predictor: Predictor,
-  // BaselinePredictor: BaselinePredictor,
   YourPredictor: YourPredictor
 }

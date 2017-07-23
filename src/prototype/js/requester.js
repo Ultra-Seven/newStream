@@ -27,12 +27,13 @@ var Requester = (function(EventEmitter) {
     opts = opts || {};
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
+    this.minProb = opts.minProb || 0.0001;
     this.timeRange = opts.timeRange || [5, 25, 50, 150];
     this.logger;
     if (Util.PREDICTOR) {
       this.logger = new Logger({
         minResolution: 5,
-        traceLength: 150
+        traceLength: 50
       });
       this.logger.bind(document);
     }
@@ -246,7 +247,7 @@ var Requester = (function(EventEmitter) {
       // add it to a query distribution
       var prob = markProbability(el);
       _.each(queries, query => {
-        if (prob > 0.00001) {
+        if (prob > this.minProb) {
           let key = queryDistribution.keyFunc(query);
           let probablity = this.scheduler.send(key, prob, time);
           if (probablity > 0) {
