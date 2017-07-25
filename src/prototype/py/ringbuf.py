@@ -43,18 +43,21 @@ class ringbuf(object):
 
         while self.range_overlaps(self.blocks[0]['range'], r):
             self.blocks.pop(0)
+            if len(self.blocks) == 0:
+                break
 
         r = (r[0] % self.size, r[1] % self.size)
         self.blocks.append({'range': r, 'meta': meta})
         return r
 
-    def retrive(self, f):
+    def retrive(self, f, g=lambda x:x):
         result = []
         for block in self.blocks:
             if f(block):
-                result.append(block)
+                result.append(g(block))
         return result
 
     # print out the detail of the ring buffer, used for debug
     def list_block(self):
         print json.dumps(self.blocks, indent=2)
+

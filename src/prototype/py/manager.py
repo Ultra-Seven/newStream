@@ -60,7 +60,7 @@ class Manager(object):
         flask.logger.log('3 : after scheduler')
         flask.logger.writeLog()
 
-  def proportion_schedule(self):
+  def proportion_schedule(self, use_ringbuf=False):
     """
     proportion_schedule
 
@@ -75,7 +75,10 @@ class Manager(object):
         break
 
       bs = math.floor(self.block_size * prob)
-      ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
+      if use_ringbuf and self.ringbuf:
+        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False, ringbuf_sync=True, ringbuf=self.ringbuf)
+      else:
+        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
       for block in iterable:
         # write the header: length of the block and the data structure's encoding id
         if flask.DEBUG:
