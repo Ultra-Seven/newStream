@@ -11,8 +11,11 @@ class DebugLogger(object):
         2   : before executing scheduler
         3   : after executing scheduler
         4   : set ringbuffer size
+        
         104 : send data from proportional scheduler
-
+        
+        301 : ringbuffer add block
+        302 : ringbuffer remove block
 
     """
     def __init__(self, **kwargs):
@@ -25,7 +28,7 @@ class DebugLogger(object):
             self.buf = StringIO()
     def __del__(self):
         if self.toFile:
-            self.log.close()
+            self.f.close()
 
     def log(self, msg):
         s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f') + ' -- ' + msg

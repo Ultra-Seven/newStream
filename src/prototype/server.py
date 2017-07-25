@@ -34,6 +34,12 @@ flask.manager = Manager()
 if flask.DEBUG:
   flask.logger = DebugLogger(toFile=True, logPath='stream.log')
 
+# logger configurations
+flask.log_scheduler = True
+flask.log_ringbuf = True
+flask.log_send_data = False
+flask.log_get_dist = False
+
 @app.route("/")
 def index():
   return render_template("index.html")
@@ -122,7 +128,7 @@ def dist_set():
   """
   flask.dist = json.loads(request.data)
   flask.dist_update_time = time.time()
-  if flask.DEBUG:
+  if flask.DEBUG and flask.log_get_dist:
     # print "got query distribution"
     flask.logger.log('1 : get dist')
   return Response("ok", mimetype="application/wu")

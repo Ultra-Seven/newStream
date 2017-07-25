@@ -5,6 +5,7 @@ Implements a ring buffer simillar to the on in js/ringbuffer.js.
 Used to synchronize the buffer in the client and server.
 '''
 import json
+import flask
 
 def overlaps(r1, r2):
     return (r1[0] <= r2[0] <= r1[1]) or (r1[0] <= r2[1] <= r1[1]) or (r2[0] <= r1[0] <= r2[1]) or (r2[0] <= r1[1] <= r2[1])
@@ -42,12 +43,17 @@ class ringbuf(object):
             r = (base+1, base+size)
 
         while self.range_overlaps(self.blocks[0]['range'], r):
-            self.blocks.pop(0)
+            b = self.blocks.pop(0)
+            if flask.DEBUG and flask.log_ringbuf:
+                flask.logger.log("302 : ringbuf remove %s:%d at %s" % (b["meta"]['key'], b["meta"]['id'], r))
+
             if len(self.blocks) == 0:
                 break
 
         r = (r[0] % self.size, r[1] % self.size)
         self.blocks.append({'range': r, 'meta': meta})
+        if flask.DEBUG and flask.log_ringbuf:
+            flask.logger.log("301 : ringbuf add %s:%d at %s" % (meta['key'], meta['id'], r))
         return r
 
     def retrive(self, f, g=lambda x:x):

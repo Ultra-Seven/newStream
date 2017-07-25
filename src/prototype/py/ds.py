@@ -339,8 +339,8 @@ class ProgressiveDataStruct(Precompute):
     block = self.lookup_bytes(key)
     if block and ringbuf:
       saved_blocks = ringbuf.retrive(
-        lambda x: True if x['key']==key else False,
-        lambda x: x['id']
+        lambda x: True if x['meta']['key']==key else False,
+        lambda x: x['meta']['id']
         )
       table = ProgressiveTable()
       table.ParseFromString(block)
@@ -350,7 +350,7 @@ class ProgressiveDataStruct(Precompute):
       for i in indices:
         if size > block_size and block_size > 0:
           return
-        vsize, val, meta = encode_block(key, table, i)
+        vsize, val, meta = self.encode_block(key, table, i)
         # add 8 for header 
         ringbuf.add(vsize + 8, meta)
         yield val
@@ -374,7 +374,7 @@ class ProgressiveDataStruct(Precompute):
         if (size > block_size and block_size > 0) or (index == startFrom and size > 0):
           self.pos[key] = index
           return
-        vsize, val, meta = encode_block(key, table, index)
+        vsize, val, meta = self.encode_block(key, table, index)
         yield val
         size = size + vsize
         index = (index + 1) % l
