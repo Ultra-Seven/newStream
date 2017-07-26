@@ -22,6 +22,8 @@ class ringbuf(object):
     def __init__(self, size):
         self.size = size
         self.blocks = []
+        if flask.DEBUG and flask.log_ringbuf:
+            flask.logger.log("300 : init ringbuf with size %d" % size)
 
     def range_overlaps(self, r1, r2):
         if r1[1] < r1[0]:
@@ -45,7 +47,7 @@ class ringbuf(object):
         while self.range_overlaps(self.blocks[0]['range'], r):
             b = self.blocks.pop(0)
             if flask.DEBUG and flask.log_ringbuf:
-                flask.logger.log("302 : ringbuf remove %s:%d at %s" % (b["meta"]['key'], b["meta"]['id'], r))
+                flask.logger.log("302 : ringbuf remove %d:%s:%d at %s" % (b["meta"]['ds'], b["meta"]['key'], b["meta"]['id'], b['range']))
 
             if len(self.blocks) == 0:
                 break
@@ -53,7 +55,7 @@ class ringbuf(object):
         r = (r[0] % self.size, r[1] % self.size)
         self.blocks.append({'range': r, 'meta': meta})
         if flask.DEBUG and flask.log_ringbuf:
-            flask.logger.log("301 : ringbuf add %s:%d at %s" % (meta['key'], meta['id'], r))
+            flask.logger.log("301 : ringbuf add %d:%s:%d at %s" % (meta['ds'], meta['key'], meta['id'], r))
         return r
 
     def retrive(self, f, g=lambda x:x):

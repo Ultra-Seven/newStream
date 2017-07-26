@@ -339,9 +339,12 @@ class ProgressiveDataStruct(Precompute):
     block = self.lookup_bytes(key)
     if block and ringbuf:
       saved_blocks = ringbuf.retrive(
-        lambda x: True if x['meta']['key']==key else False,
+        lambda x: True if x['meta']['key']==key and x['meta']['ds']==self.id else False,
         lambda x: x['meta']['id']
         )
+      if flask.DEBUG and flask.log_ringbuf:
+        flask.logger.log("304 : retrive %s for %d:%s" % (saved_blocks, self.id, key))
+
       table = ProgressiveTable()
       table.ParseFromString(block)
 
@@ -389,7 +392,7 @@ class ProgressiveDataStruct(Precompute):
     val = buf.getvalue()
     size = len(val)
     buf.close()
-    return (size, val, {'key':key, 'id':index})
+    return (size, val, {'key':key, 'id':index, 'ds':self.id})
 
   @staticmethod
   def can_answer(query_template):

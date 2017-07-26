@@ -65,7 +65,8 @@ var Requester = (function(EventEmitter) {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
-      var distribution = this.getQueryDistribution(trace, 100);
+      var distribution = null;
+      // distribution = this.getQueryDistribution(trace, 100);
       const dist_delta = (Date.now() - start);
       this.distCost += dist_delta;
       this.nDist++;

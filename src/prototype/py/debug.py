@@ -14,8 +14,10 @@ class DebugLogger(object):
         
         104 : send data from proportional scheduler
         
+        300 : init ringbuf
         301 : ringbuffer add block
         302 : ringbuffer remove block
+        303 : retrive ringbuffer info
 
     """
     def __init__(self, **kwargs):
