@@ -100,16 +100,7 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
     }
     this.emit(key, this, ret);
 
-    // deregister if all data has been received
-    if (this.isDataCompleted(this.idx[key])) {
-      if (this.listenerList[key])
-        this.removeListener(key, this.listenerList[key]);
-      delete this.listenerList[key];
-      delete this.releaseList[key];
-      if (window.DEBUG) {
-        console.log('removed listener for ' + key)
-      }
-    }
+    this.release(key);
   }
   
   // TODO: this should remove the data from your data structure because it has been removed from the ring buffer
@@ -154,6 +145,22 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
     throw Error("Not Implemented");
   }
 
+  ProgressiveDataStructure.prototype.release = function(key) {
+    // deregister if all data has been received
+    if (this.isDataCompleted(this.idx[key])) {
+      if (this.listenerList[key]) {
+        this.removeListener(key, this.listenerList[key]);
+        delete this.listenerList[key];
+      }
+      if (this.releaseList[key]) {
+        delete this.releaseList[key];
+      }
+      if (window.DEBUG) {
+        console.log('removed listener for ' + key)
+      }
+    }
+  }
+
   return ProgressiveDataStructure;
 })(GarbageCollectingDataStructure);
 
@@ -184,9 +191,10 @@ var SampleProgDataStructure = (function(ProgressiveDataStructure) {
     }
     var step = this.idx[key]['step'];
 
-    for (var i = 0; i*step + id < l; i++) {
-      this.idx[key]['data'][i*step+id] = data.table.encodedData[i];
-    }
+    // for (var i = 0; i*step + id < l; i++) {
+    //   this.idx[key]['data'][i*step+id] = data.table.encodedData[i];
+    // }
+    this.idx[key]['data'][id] = data.table.encodedData;
 
     if (window.DEBUG)
       console.log("storing " + key + ":" + id + " --- "+ data.table.encodedData);
@@ -195,7 +203,7 @@ var SampleProgDataStructure = (function(ProgressiveDataStructure) {
 
   SampleProgDataStructure.prototype.isDataCompleted = function(obj) {
     for (var i = 0; i < obj.step; i++) {
-      if (obj[i] == null) {
+      if (obj.data[i] == null) {
         return false;
       }
     }
@@ -216,8 +224,18 @@ var SampleProgDataStructure = (function(ProgressiveDataStructure) {
     var higher = obj.higher;
     var lower = obj.lower;
     var attrs = obj.attrs;
+    var step = obj.step;
+    var data = [];
 
-    arr = zeroSampling(obj.data, higher - lower + 1);
+    for (var i = 0; i < step; i++) {
+      if (obj.data[i]) {
+        for (var j = 0; j < obj.data[i].length; j++) {
+          data[j*step+i] = obj.data[i][j];
+        }
+      }
+    }
+
+    arr = zeroSampling(data, higher - lower + 1);
 
     var ret = []
     for (var i = lower; i <= higher; i++) {
@@ -227,6 +245,19 @@ var SampleProgDataStructure = (function(ProgressiveDataStructure) {
       ret.push(o)
     }
     return ret;
+  }
+
+  SampleProgDataStructure.prototype.removeData = function(data) {
+    // remove data stored in this datastructure, as it is removed in ringbuf
+    var key = data.key
+    var id = data.table.id;
+    if (key in this.idx) {
+      delete this.idx[key]['data'][id];
+      for (i in this.idx[key]['data']) {
+        return;
+      }
+      delete this.idx[key];
+    }
   }
 
   return SampleProgDataStructure;

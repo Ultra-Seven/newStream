@@ -18,7 +18,9 @@ Util.PREDICTOR = true;
 
 
 var bytespermb = 1048576;
-var engine = window.engine = new Engine(450); // replace 450 with bytespermb * #MBs
+var ringbufsize = 4500;
+var engine = window.engine = new Engine(ringbufsize); // replace 450 with bytespermb * #MBs
+engine.registerRingBufferSize(ringbufsize);
 
 //
 // Setup Data Structures

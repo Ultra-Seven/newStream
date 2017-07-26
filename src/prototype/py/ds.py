@@ -320,9 +320,50 @@ class ProgressiveDataStruct(Precompute):
     
     block_size: size limit, -1 means no limit
     """
+    non_stateful = kwargs.get('non_stateful', False)
+    ringbuf_sync = kwargs.get('ringbuf_sync', False)
+    it = None
+    if ringbuf_sync:
+      it = self.get_iter_ringbuf_sync(data, **kwargs)
+    else:
+      it = self.get_iter_non_stateful(data, **kwargs)
+
+    for block in it:
+      yield block
+
+  def get_iter_ringbuf_sync(self, data, **kwargs):
+    key = self.key(data)
+    block_size = kwargs.get('block_size', -1)
+    ringbuf = kwargs.get('ringbuf', None)
+
+    block = self.lookup_bytes(key)
+    if block and ringbuf:
+      saved_blocks = ringbuf.retrive(
+        lambda x: True if x['meta']['key']==key and x['meta']['ds']==self.id else False,
+        lambda x: x['meta']['id']
+        )
+      if flask.DEBUG and flask.log_ringbuf:
+        flask.logger.log("304 : retrive %s for %d:%s" % (saved_blocks, self.id, key))
+
+      table = ProgressiveTable()
+      table.ParseFromString(block)
+
+      indices = [i for i in range(len(table.blocks)) if i not in saved_blocks]
+      size = 0
+      for i in indices:
+        if size > block_size and block_size > 0:
+          return
+        vsize, val, meta = self.encode_block(key, table, i)
+        # add 8 for header 
+        ringbuf.add(vsize + 8, meta)
+        yield val
+        vsize = size + vsize
+
+  def get_iter_non_stateful(self, data, **kwargs):
+    key = self.key(data)
     block_size = kwargs.get('block_size', -1)
     restart = kwargs.get('restart', True)
-    key = self.key(data)
+
     block = self.lookup_bytes(key)
     if block:
       startFrom = self.pos[key] if (key in self.pos) and not restart else 0
@@ -336,16 +377,22 @@ class ProgressiveDataStruct(Precompute):
         if (size > block_size and block_size > 0) or (index == startFrom and size > 0):
           self.pos[key] = index
           return
-        b = table.blocks[index]
-        t = ProgressiveTable(blocks=[b])
-        buf = StringIO()
-        buf.write(struct.pack("2I", len(key), self.id))
-        buf.write(struct.pack("%ds" % len(key), key))
-        buf.write(t.SerializeToString())
-        yield buf.getvalue()
-        size = size + len(buf.getvalue())
+        vsize, val, meta = self.encode_block(key, table, index)
+        yield val
+        size = size + vsize
         index = (index + 1) % l
-        buf.close()
+
+  def encode_block(self, key, table, index):
+    b = table.blocks[index]
+    t = ProgressiveTable(blocks=[b])
+    buf = StringIO()
+    buf.write(struct.pack("2I", len(key), self.id))
+    buf.write(struct.pack("%ds" % len(key), key))
+    buf.write(t.SerializeToString())
+    val = buf.getvalue()
+    size = len(val)
+    buf.close()
+    return (size, val, {'key':key, 'id':index, 'ds':self.id})
 
   @staticmethod
   def can_answer(query_template):

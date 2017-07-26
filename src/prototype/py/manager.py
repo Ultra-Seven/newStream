@@ -20,6 +20,10 @@ class Manager(object):
     # when was the last distribution from the client?
     self.prev_dist_update_time = None
 
+    # the ring buffer setting
+    self.use_ringbuf = True
+    self.ringbuf = None
+
   def add_data_structure(self, ds):
     self.data_structs[ds.id].append(ds)
     if flask.DEBUG:
@@ -43,20 +47,21 @@ class Manager(object):
       if self.prev_dist_update_time == flask.dist_update_time:
         continue
 
-      if flask.DEBUG and flask.logger:
+      if flask.DEBUG and flask.log_scheduler:
         flask.logger.log('2 : before scheduler')
 
       # result = self.naive_schedule()
-      result = self.proportion_schedule()
+      result = self.proportion_schedule(True)
       for header, content in result:
         yield header
         yield content
 
-      if flask.DEBUG and flask.logger:
+      if flask.DEBUG and flask.log_scheduler:
         flask.logger.log('3 : after scheduler')
+      if flask.DEBUG:
         flask.logger.writeLog()
 
-  def proportion_schedule(self):
+  def proportion_schedule(self, use_ringbuf=False):
     """
     proportion_schedule
 
@@ -71,13 +76,16 @@ class Manager(object):
         break
 
       bs = math.floor(self.block_size * prob)
-      ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
+      if use_ringbuf and self.ringbuf:
+        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False, ringbuf_sync=True, ringbuf=self.ringbuf)
+      else:
+        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
       for block in iterable:
         # write the header: length of the block and the data structure's encoding id
         if flask.DEBUG:
           print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
         yield (struct.pack("2I", len(block), ds.encoding), block)
-        if flask.DEBUG:
+        if flask.DEBUG and flask.log_send_data:
           flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
 
 

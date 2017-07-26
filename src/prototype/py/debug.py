@@ -1,7 +1,7 @@
 from StringIO import StringIO
 import datetime
 
-class DebugLogger():
+class DebugLogger(object):
     """
     Debug class for stream
 
@@ -10,8 +10,14 @@ class DebugLogger():
         1   : get query distribution
         2   : before executing scheduler
         3   : after executing scheduler
+        4   : set ringbuffer size
+        
         104 : send data from proportional scheduler
-
+        
+        300 : init ringbuf
+        301 : ringbuffer add block
+        302 : ringbuffer remove block
+        303 : retrive ringbuffer info
 
     """
     def __init__(self, **kwargs):
@@ -24,7 +30,7 @@ class DebugLogger():
             self.buf = StringIO()
     def __del__(self):
         if self.toFile:
-            self.log.close()
+            self.f.close()
 
     def log(self, msg):
         s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f') + ' -- ' + msg

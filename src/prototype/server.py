@@ -14,6 +14,7 @@ from flask import Flask, render_template, Response, request, stream_with_context
 from py.ds import *
 from py.manager import *
 from py.debug import *
+from py.ringbuf import *
 
 
 app = Flask(__name__)
@@ -26,11 +27,18 @@ flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
 flask.queries = {}
+flask.default_ringbuf_size = 450
 flask.db = create_engine("postgresql://localhost/test")
 flask.manager = Manager()
 
 if flask.DEBUG:
   flask.logger = DebugLogger(toFile=True, logPath='stream.log')
+
+# logger configurations
+flask.log_scheduler = True
+flask.log_ringbuf = True
+flask.log_send_data = False
+flask.log_get_dist = False
 
 @app.route("/")
 def index():
@@ -91,6 +99,20 @@ def register_qtemplate():
 
   return Response("ok", mimetype="application/wu")
 
+@app.route("/register/ringbuffersize", methods=["post"])
+def register_ringbuf_size():
+  """
+  Registers the size of the ring buffer of the client. Create a ring buffer
+  at server side with the same size.
+  """
+  args = json.loads(request.data)
+  size = args.get('size', flask.default_ringbuf_size)
+  if flask.manager.ringbuf == None and flask.manager.use_ringbuf:
+    flask.manager.ringbuf = ringbuf(size)
+  if flask.DEBUG:
+    flask.logger.log("4 : set ringbuffer size to %d bytes" % size)
+  return Response("ok", mimetype="application/wu")
+
 @app.route("/distribution/set", methods=["post"])
 def dist_set():
   """
@@ -106,7 +128,7 @@ def dist_set():
   """
   flask.dist = json.loads(request.data)
   flask.dist_update_time = time.time()
-  if flask.DEBUG:
+  if flask.DEBUG and flask.log_get_dist:
     # print "got query distribution"
     flask.logger.log('1 : get dist')
   return Response("ok", mimetype="application/wu")
