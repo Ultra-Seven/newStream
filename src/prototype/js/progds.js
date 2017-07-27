@@ -145,7 +145,10 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
     if (key in this.idx) {
       var table = this.reconstruct(this.idx[key]);
       if (cb) cb(table);
-      return table;
+      if (isDataCompleted(this.idx[key]))
+        return table;
+      else
+        return null;
     }
     return null;
   };

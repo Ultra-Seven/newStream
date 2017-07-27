@@ -79,27 +79,33 @@ class Manager(object):
       2. Use ring buffer synchronization to determine which to send.
 
     """
-    times = sorted(flask.dist.keys(), key=lambda x:int(x))
+    dist = flask.dist
+    times = sorted(dist.keys(), key=lambda x:int(x))
     remain_size = self.block_size
     size = 0
     total_time = int(times[-1])
     num_times = len(times)
-    for i, time in enumerate(times):
+    print times
+    for i in range(num_times):
+      time = times[i]
       if i == num_times - 1 or int(time) == 0:
         # last time frame or exact query
         size = remain_size
+        print i, num_times, int(time)
       else:
         # logarithmic allocation of memory
-        size = remain_size * (1 - int(time)/total_time)
+        size = remain_size * (1 - float(time)/total_time)
+        print i, time, total_time, size
 
       if flask.DEBUG and flask.log_scheduler:
         flask.logger.log("105 : allocate %d bytes for time %s" % (size, time))
 
       remain_size = remain_size - size
+      s = size
 
-      dist = sorted(flask.dist[time], key=lambda pair: pair[1])
+      Dist = sorted(dist[time], key=lambda pair: pair[1])
       self.prev_dist_update_time = flask.dist_update_time
-      for d in dist:
+      for d in Dist:
         (query, prob) = tuple(d)
         if prob == 0:
           break
@@ -111,11 +117,14 @@ class Manager(object):
           ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
         for block in iterable:
           # write the header: length of the block and the data structure's encoding id
-          if flask.DEBUG:
-            print "ds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
+          # if flask.DEBUG:
+            # print "ds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
           yield (struct.pack("2I", len(block), ds.encoding), block)
           if flask.DEBUG and flask.log_send_data:
             flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
+
+          s = s - len(block) - 8
+          if s <= 0: break
 
 
   def naive_schedule(self):

@@ -351,7 +351,7 @@ class ProgressiveDataStruct(Precompute):
       indices = [i for i in range(len(table.blocks)) if i not in saved_blocks]
       size = 0
       for i in indices:
-        if size > block_size and block_size > 0:
+        if size > block_size and block_size >= 0:
           return
         vsize, val, meta = self.encode_block(key, table, i)
         # add 8 for header 
