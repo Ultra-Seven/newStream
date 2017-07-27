@@ -23,6 +23,7 @@ function qToKey(q) {
 //  get(object)       --> return some probabiity value 
 //  getAllAbove(prob) --> [ [ object, probability]* ]
 //  toWire()          --> JSON object to send to the server
+//  format: {"time1":[[{query1}, prob1], [{query2}, prob2], ...], ...}
 //
 //
 // subclass DistributionBase for specific types of distributions
@@ -162,9 +163,6 @@ var GuassianDistribution = (function(Base) {
     let results = _.sortBy([topright, topleft, bottomright, bottomleft], function(num) {
       return num;
     })
-    // if (results[3] > 0 || results[2] > 0 || results[1] > 0 || results[0] > 0) {
-    //   console.log("results:", results);
-    // }
     return (results[3] - results[2] - results[1] + results[0]);
   };
   GuassianDistribution.prototype.getAllAbove = function(prob) {
@@ -191,18 +189,30 @@ var TimeDistribution = (function(Base) {
   extend(TimeDistribution, Base);
   TimeDistribution.from = function(q, keyFunc) {
     var d = new TimeDistribution(keyFunc);
-    d.set(q, 1);
+    d.set(q, 1, 0);
     return d;
   };
 
 
   // @keyFunc is a function that takes a "query" as input and returns a string used as a key in the hash table
   //          by default it will use qToKey defined at the top of this file, but you can define your own
-  function TimeDistribution(keyFunc) {
+  function TimeDistribution(keyFunc, timesteps) {
     this.keyFunc = keyFunc || qToKey;
     this.dist = {};
+    this.timesteps = timesteps || [0];
     // call parent constructor 
     Base.call(this);
+  }
+  TimeDistribution.prototype.toWire = function() { 
+    let json = {};
+    _.each(this.timesteps, time => {
+      let pairs = this.getAllAbove(0, time);
+      for (var i = 0; i < pairs.length; i++) {
+        pairs[i][0] = pairs[i][0].toWire();
+      }
+      json[time] = pairs;
+    });
+    return json;
   }
   TimeDistribution.prototype.addNaiveDist = function(naive, time) {
     if (naive && !naive.empty) {
@@ -222,6 +232,7 @@ var TimeDistribution = (function(Base) {
   };
 
   TimeDistribution.prototype.set = function(q, prob, time) {
+    if (!(time in this.dist)) {this.dist[time] = {}}
     this.dist[time][this.keyFunc(q)] = [q, prob]; 
   };
 

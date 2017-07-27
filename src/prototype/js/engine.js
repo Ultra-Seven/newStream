@@ -125,7 +125,7 @@ var Engine = (function(EventEmitter) {
 
     //console.log("CACHE MISS: for vis:" + id, "send query:" + q.toSQL());
     // 3. send an explicit query distirubiton
-    var dist = Dist.NaiveDistribution.from(q);
+    var dist = Dist.TimeDistribution.from(q);
     var encodedDist = JSON.stringify(dist.toWire());
     this.requester.send(encodedDist);
 

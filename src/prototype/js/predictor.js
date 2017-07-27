@@ -94,7 +94,7 @@ var YourPredictor = (function(Predictor) {
       // to the known position of the mouse.  The higher the
       // values, the more noise
       var decay = 0.003; 
-      var R = Matrix.Diagonal([10, 10]);
+      var R = Matrix.Diagonal([0.1, 0.1]);
           
       // initial state (location and velocity)
       var x = $M([
@@ -130,8 +130,8 @@ var YourPredictor = (function(Predictor) {
       var time = trace[0][2]; 
 
       var Q = $M(
-          [[10, 0, 0, 0],
-          [0, 10, 0, 0],
+          [[0.1, 0, 0, 0],
+          [0, 0.1, 0, 0],
           [0, 0, 0.1, 0],
           [0, 0, 0, 0.1]
       ]);

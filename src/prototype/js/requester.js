@@ -28,7 +28,7 @@ var Requester = (function(EventEmitter) {
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
     this.minProb = opts.minProb || 0.0001;
-    this.timeRange = opts.timeRange || [5, 25, 50, 150];
+    this.timeRange = opts.timeRange || [10, 60, 110, 160];
     this.logger;
     if (Util.PREDICTOR) {
       this.logger = new Logger({
@@ -69,7 +69,7 @@ var Requester = (function(EventEmitter) {
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
-      var dist = new Dist.TimeDistribution(null); 
+      var dist = new Dist.TimeDistribution(null, this.timeRange); 
 
       let distributions = this.getQueryDistribution(trace, this.timeRange);
       for (var i = 0; i < distributions.length; i++) {
