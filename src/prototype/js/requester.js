@@ -28,7 +28,8 @@ var Requester = (function(EventEmitter) {
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
     this.minProb = opts.minProb || 0.0001;
-    this.timeRange = opts.timeRange || [10, 60, 110, 160];
+    this.timeRange = opts.timeRange || [25, 50, 150, 200];
+    this.K = opts.K || 5;
     this.logger;
     if (Util.PREDICTOR) {
       this.logger = new Logger({
@@ -73,7 +74,7 @@ var Requester = (function(EventEmitter) {
 
       let distributions = this.getQueryDistribution(trace, this.timeRange);
       for (var i = 0; i < distributions.length; i++) {
-        dist.addNaiveDist(distributions[i], this.timeRange[i]);
+        dist.addNaiveDist(distributions[i], this.timeRange[i], this.K);
       }
       // var distribution = this.getQueryDistribution(trace, 100);
       const dist_delta = (Date.now() - start);

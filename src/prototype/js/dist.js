@@ -214,20 +214,25 @@ var TimeDistribution = (function(Base) {
     });
     return json;
   }
-  TimeDistribution.prototype.addNaiveDist = function(naive, time) {
+  TimeDistribution.prototype.addNaiveDist = function(naive, time, K) {
     if (naive && !naive.empty) {
       let sum = 0;
       let sum_check = 0;
-      for (let key in naive.dist) {
-        sum = sum + naive.dist[key][1];
-      }
-      for (let key in naive.dist) {
-        naive.dist[key][1] = naive.dist[key][1] / sum;
-      }
-      for (let key in naive.dist) {
-        sum_check = sum_check + naive.dist[key][1];
-      }
-      this.dist[time] = naive.dist;
+      let topK = naive.getTopK(K);
+      _.each(topK, element => {
+        sum = sum + element[1];
+      });
+      _.each(topK, element => {
+        element[1] = element[1] / sum;
+      });
+      _.each(topK, element => {
+        sum_check = sum_check + element[1];
+      })
+      let dist = {};
+      _.each(topK, element => {
+        dist[this.keyFunc(element[0])] = element;
+      });
+      this.dist[time] = dist;
     }
   };
 
