@@ -77,10 +77,10 @@ var Engine = (function(EventEmitter) {
   // This is called if a visualization wants to run a query in response
   // to an interaction 
   //
-  Engine.prototype.registerQuery = function(q, cb) {
+  Engine.prototype.registerQuery = function(q, cb, id) {
     let start = Date.now();
+    let that = this;
     //console.log("start time", start);
-    let id = arguments[2];
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
@@ -101,15 +101,16 @@ var Engine = (function(EventEmitter) {
     cb = Util.first(cb);
     let timer = _.once(function() {
       let end = Date.now();
-      Util.Debug.responsiveEnd(end - start, arguments[0].length);
+      Util.Debug.responsiveEnd(end - start, arguments[1].length);
       //console.log("check start time", start);
       //console.log("delta:", end - start);
     })
     var cb2 = function() {
-      //console.log("FINISH: for vis:" + id, "send query:" + q.toSQL());
+      if (Util.DETAIL) 
+        console.log("FINISH: for vis:" + id, "send query:" + q.toSQL());
       // if the query is answered, deregister globally
-      for (var dsid in this.datastructs) {
-        this.datastructs[dsid].deregister(q, cb2);
+      for (var dsid in that.datastructs) {
+        that.datastructs[dsid].deregister(q, cb2);
       }
       if (Util.RESPONSIVE) {
         timer.apply(timer, arguments);

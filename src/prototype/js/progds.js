@@ -44,16 +44,29 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
   ProgressiveDataStructure.prototype.register = function(q, cb) {
     if (Util.DEBUG)
       console.log(["register ", q.template.id, this.queryToKey(q), q])
-    for (k in this.listenerList) {
-      this.removeListener(k, this.listenerList[k])
-      delete this.listenerList[k]
-    }
+    // TODO: bug is here
+    // for (k in this.listenerList) {
+    //   this.removeListener(k, this.listenerList[k])
+    //   delete this.listenerList[k]
+    // }
     this.listenerList[this.queryToKey(q)] = cb;
     return this.on(this.queryToKey(q), cb);
   }
 
   ProgressiveDataStructure.prototype.deregister = function(q, cb) {
-  
+    const key = this.queryToKey(q);
+    if (this.isDataCompleted(this.idx[key])) {
+      if (this.listenerList[key]) {
+        this.removeListener(key, this.listenerList[key]);
+        delete this.listenerList[key];
+      }
+      if (this.releaseList[key]) {
+        delete this.releaseList[key];
+      }
+      if (window.DEBUG) {
+        console.log('removed listener for ' + key)
+      }
+    }
   }
 
   ProgressiveDataStructure.prototype.decode = function(bytes) {
@@ -100,7 +113,7 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
     }
     this.emit(key, this, ret);
 
-    this.release(key);
+    //this.release(key);
   }
   
   // TODO: this should remove the data from your data structure because it has been removed from the ring buffer

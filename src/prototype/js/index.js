@@ -11,7 +11,7 @@ Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
 Util.HITRATIO = false;
-Util.DETAIL = false;
+Util.DETAIL = true;
 
 // strategies
 Util.PREDICTOR = true;
@@ -62,7 +62,7 @@ function setupViz(qtemplate, opts) {
   var viz = new Viz.Viz(engine, qtemplate, opts).setup();
   engine.registerViz(viz);
   var q = new Query.Query(qtemplate, {});
-  engine.registerQuery(q, viz.render.bind(viz));
+  engine.registerQuery(q, viz.render.bind(viz), viz.id);
   return viz;
 }
 
@@ -137,13 +137,14 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       _.each(vizes, function(v2, i2) {
         if (i1 == i2) return;
         var q = new Query.Query(v2.qtemplate, data);
+        const id = v2.id;
         if (Util.DETAIL) 
-          console.log("REQUEST:for vis:" + v2.id, "send query:" + q.toSQL());
+          console.log("REQUEST:for vis:" + id, "send query:" + q.toSQL());
         if (Util.HITRATIO) {
           Util.Debug.hitRatios();
           Util.Debug.addQuery();
         }
-        engine.registerQuery(q, v2.render.bind(v2), v2.id);
+        engine.registerQuery(q, v2.render.bind(v2), id);
       });
     });
   });

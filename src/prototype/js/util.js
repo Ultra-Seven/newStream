@@ -88,7 +88,6 @@ var Debug = (function Debug() {
   Debug.prototype.updateWrite = function(arr) {
     write_counts.push(arr.length);
     time_counts.push(Date.now() - write_start);
-    //console.log("time", write_start);
     let cost = d3.sum(time_counts);
     if (write_counts.length > 1000 || cost > 1000 * 2) {
       let total = d3.sum(write_counts);
