@@ -35,7 +35,7 @@ if flask.DEBUG:
   flask.logger = DebugLogger(toFile=True, logPath='stream.log')
 
 # logger configurations
-flask.log_scheduler = True
+flask.log_scheduler = False
 flask.log_ringbuf = True
 flask.log_send_data = False
 flask.log_get_dist = False
@@ -130,7 +130,8 @@ def dist_set():
   flask.dist_update_time = time.time()
   if flask.DEBUG and flask.log_get_dist:
     # print "got query distribution"
-    flask.logger.log('1 : get dist')
+    flask.logger.log('1 : get dist: %s' % [(t, len(flask.dist[t])) for t in flask.dist.keys()])
+    flask.logger.writeLog()
   return Response("ok", mimetype="application/wu")
 
 

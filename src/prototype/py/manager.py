@@ -45,6 +45,7 @@ class Manager(object):
       if not flask.dist: 
         continue
       if self.prev_dist_update_time == flask.dist_update_time:
+        # todo: change this to make the system work like a stream
         continue
 
       if flask.DEBUG and flask.log_scheduler:
@@ -65,37 +66,73 @@ class Manager(object):
     """
     proportion_schedule
 
-    send back data proportional to the probability of the query.
-    use dictionary in DS object to store which part of the result should be send back.
-    """
-    dist = sorted(flask.dist, key=lambda pair: pair[1])
-    self.prev_dist_update_time = flask.dist_update_time
-    for d in dist:
-      (query, prob) = tuple(d)
-      if prob == 0:
-        break
+    What queries to answer:
+      answer all query whose probability is not zero.
+    
+    How many to send:
+      memory allocation for each time frame is in a logarithmic fashion.
+      In each time frame, send back data that is proportional to probability.
 
-      bs = math.floor(self.block_size * prob)
-      if use_ringbuf and self.ringbuf:
-        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False, ringbuf_sync=True, ringbuf=self.ringbuf)
+    Which parts to send:
+      1. Use a dictionary in DS object to track which to send next, in a
+         circular manner.
+      2. Use ring buffer synchronization to determine which to send.
+
+    """
+    times = sorted(flask.dist.keys(), key=lambda x:int(x))
+    remain_size = self.block_size
+    size = 0
+    total_time = int(times[-1])
+    num_times = len(times)
+    for i, time in enumerate(times):
+      if i == num_times - 1 or int(time) == 0:
+        # last time frame or exact query
+        size = remain_size
       else:
-        ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
-      for block in iterable:
-        # write the header: length of the block and the data structure's encoding id
-        if flask.DEBUG:
-          print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
-        yield (struct.pack("2I", len(block), ds.encoding), block)
-        if flask.DEBUG and flask.log_send_data:
-          flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
+        # logarithmic allocation of memory
+        size = remain_size * (1 - int(time)/total_time)
+
+      if flask.DEBUG and flask.log_scheduler:
+        flask.logger.log("105 : allocate %d bytes for time %s" % (size, time))
+
+      remain_size = remain_size - size
+
+      dist = sorted(flask.dist[time], key=lambda pair: pair[1])
+      self.prev_dist_update_time = flask.dist_update_time
+      for d in dist:
+        (query, prob) = tuple(d)
+        if prob == 0:
+          break
+
+        bs = math.floor(size * prob)
+        if use_ringbuf and self.ringbuf:
+          ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False, ringbuf_sync=True, ringbuf=self.ringbuf)
+        else:
+          ds, iterable = self.get_iterable(query, prob, block_size=bs, restart=False)
+        for block in iterable:
+          # write the header: length of the block and the data structure's encoding id
+          if flask.DEBUG:
+            print "ds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
+          yield (struct.pack("2I", len(block), ds.encoding), block)
+          if flask.DEBUG and flask.log_send_data:
+            flask.logger.log("104 : send data %d bytes for prob %f" % (len(block), prob))
 
 
   def naive_schedule(self):
     """
     Naive scheduling
 
-    extract the most possible prediction and send back all data
+    What queries to answer:
+      Only answer the query in the nearest future with the largest probability.
+    
+    How many to send:
+      Send all data for one query.
+
+    Which parts to send:
+      All the parts
     """
-    (query, prob) = tuple(max(flask.dist, key=lambda pair: pair[1]))
+    key = min(flask.dist.keys(), key=lambda x:int(x))
+    (query, prob) = tuple(max(flask.dist[key], key=lambda pair: pair[1]))
     self.prev_dist_update_time = flask.dist_update_time
     if prob == 0: 
       return

@@ -13,6 +13,7 @@ class DebugLogger(object):
         4   : set ringbuffer size
         
         104 : send data from proportional scheduler
+        105 : allocate bandwidth for distribution
         
         300 : init ringbuf
         301 : ringbuffer add block
