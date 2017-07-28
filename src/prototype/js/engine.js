@@ -84,7 +84,13 @@ var Engine = (function(EventEmitter) {
     // 1. see if the data structures can immediately answer the query
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
-      if (ds.tryExec(q, cb)) {
+      r = ds.tryExec(q, cb);
+      if (r == 'incompleted data') {
+        // cache partial hit
+        if (Util.DETAIL)
+          console.log(r);
+      }
+      else if (r) {
         if (Util.HITRATIO) {
           console.log("cache hit!");
           Util.Debug.addHits();
