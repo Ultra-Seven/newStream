@@ -136,7 +136,7 @@ def dist_set():
   if flask.DEBUG and flask.log_get_dist:
     # print "got query distribution"
     flask.logger.log('1 : get dist: %s' % [(t, len(flask.dist[t])) for t in flask.dist.keys()])
-    flask.logger.writeLog()
+    # flask.logger.writeLog()
   return Response("ok", mimetype="application/wu")
 
 
