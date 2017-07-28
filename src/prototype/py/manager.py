@@ -39,9 +39,6 @@ class Manager(object):
     """
     while 1:
       time.sleep(0.001)
-
-
-
       if not flask.dist: 
         continue
       if self.prev_dist_update_time == flask.dist_update_time:
@@ -53,6 +50,7 @@ class Manager(object):
 
       # result = self.naive_schedule()
       result = self.proportion_schedule(True)
+      # result = self.test_schedule(True);
       for header, content in result:
         yield header
         yield content
@@ -61,6 +59,14 @@ class Manager(object):
         flask.logger.log('3 : after scheduler')
       if flask.DEBUG:
         flask.logger.writeLog()
+
+  def test_schedule(self, use_ringbuf=False):
+    dist = flask.dist
+    times = sorted(dist.keys(), key=lambda x:int(x))
+    if len(times) == 1:
+      return self.proportion_schedule(use_ringbuf)
+    else:
+      return []
 
   def proportion_schedule(self, use_ringbuf=False):
     """

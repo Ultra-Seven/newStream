@@ -30,6 +30,8 @@ var Requester = (function(EventEmitter) {
     this.minProb = opts.minProb || 0.0001;
     this.timeRange = opts.timeRange || [25, 50, 150, 200];
     this.K = opts.K || 5;
+    this.running = false;
+    this.runningQuery = 0;
     this.logger;
     if (Util.PREDICTOR) {
       this.logger = new Logger({
@@ -50,7 +52,7 @@ var Requester = (function(EventEmitter) {
     this.distCost = 0;
     this.encodeCost = 0;
 
-
+    this.timeoutId;
     EventEmitter.call(this);
 
     // Disable the prediction by commenting this line
@@ -67,6 +69,7 @@ var Requester = (function(EventEmitter) {
   // We track how quickly the distribution and toWire() call costs
   //
   Requester.prototype.run = function() {
+    this.running = true;
     if (this.mousePredictor) {
       var trace = this.logger.trace;
       var start = Date.now();
@@ -95,9 +98,22 @@ var Requester = (function(EventEmitter) {
           Util.Debug.requesterTime(dist_delta, encode_delta, trace.length);
       }
     }
-    setTimeout(this.run.bind(this), this.minInterval);
+    this.timeoutId = setTimeout(this.run.bind(this), this.minInterval);
   };
 
+  Requester.prototype.stopLoop = function() {
+    if (this.running) {
+      this.running = false;
+      clearTimeout(this.timeoutId);
+    }
+  }
+
+  Requester.prototype.startLoop = function() {
+    if (!this.running) {
+      this.running = true;
+      this.timeoutId = setTimeout(this.run.bind(this), this.minInterval);
+    }
+  }
   //
   // manually send a distribution to the server
   //
