@@ -19,6 +19,11 @@ from py.ringbuf import *
 
 app = Flask(__name__)
 
+# stop logging HTTP logs for debug
+# import logging
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
+
 #
 # Global variables
 #
@@ -35,10 +40,10 @@ if flask.DEBUG:
   flask.logger = DebugLogger(toFile=True, logPath='stream.log')
 
 # logger configurations
-flask.log_scheduler = False
-flask.log_ringbuf = True
+flask.log_scheduler = True
+flask.log_ringbuf = False
 flask.log_send_data = False
-flask.log_get_dist = False
+flask.log_get_dist = True
 
 @app.route("/")
 def index():
