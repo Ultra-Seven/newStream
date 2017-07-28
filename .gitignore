@@ -96,3 +96,7 @@ ENV/
 
 # cache data
 */*.cache
+
+# configure file
+configure.py
+configure.pyc

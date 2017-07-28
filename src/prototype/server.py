@@ -18,6 +18,8 @@ from py.ringbuf import *
 
 
 app = Flask(__name__)
+app.config.from_object('configure.Config')
+print app.config
 
 # stop logging HTTP logs for debug
 # import logging
@@ -32,18 +34,18 @@ flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
 flask.queries = {}
-flask.default_ringbuf_size = 450
-flask.db = create_engine("postgresql://localhost/test")
+flask.default_ringbuf_size = app.config['DEFAULT_RINGBUF_SIZE']
+flask.db = create_engine(app.config['DB_PATH'])
 flask.manager = Manager()
 
 if flask.DEBUG:
-  flask.logger = DebugLogger(toFile=True, logPath='stream.log')
+  flask.logger = DebugLogger(toFile=True, logPath=app.config['LOG_PATH'])
 
 # logger configurations
-flask.log_scheduler = True
-flask.log_ringbuf = False
-flask.log_send_data = False
-flask.log_get_dist = True
+flask.log_scheduler = app.config['LOG_SCHEDULER']
+flask.log_ringbuf = app.config['LOG_RINGBUF']
+flask.log_send_data = app.config['LOG_SEND_DATA']
+flask.log_get_dist = app.config['LOG_GET_DIST']
 
 @app.route("/")
 def index():
