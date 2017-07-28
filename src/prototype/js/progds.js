@@ -44,29 +44,35 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
   ProgressiveDataStructure.prototype.register = function(q, cb) {
     if (Util.DEBUG)
       console.log(["register ", q.template.id, this.queryToKey(q), q])
+    var key = this.queryToKey(q);
+    var id = key.split(':', 1)[0];
+    if (id in this.listenerList) {
+      this.removeListener(this.listenerList[id]['key'], this.listenerList[id]['cb'])
+    }
+    this.listenerList[id] = {'key': key, 'cb': cb};
     // TODO: bug is here
     // for (k in this.listenerList) {
     //   this.removeListener(k, this.listenerList[k])
     //   delete this.listenerList[k]
     // }
-    this.listenerList[this.queryToKey(q)] = cb;
+    // this.listenerList[this.queryToKey(q)] = cb;
     return this.on(this.queryToKey(q), cb);
   }
 
   ProgressiveDataStructure.prototype.deregister = function(q, cb) {
-    const key = this.queryToKey(q);
-    if (this.isDataCompleted(this.idx[key])) {
-      if (this.listenerList[key]) {
-        this.removeListener(key, this.listenerList[key]);
-        delete this.listenerList[key];
-      }
-      if (this.releaseList[key]) {
-        delete this.releaseList[key];
-      }
-      if (window.DEBUG) {
-        console.log('removed listener for ' + key)
-      }
-    }
+    // const key = this.queryToKey(q);
+    // if (this.isDataCompleted(this.idx[key])) {
+    //   if (this.listenerList[key]) {
+    //     this.removeListener(key, this.listenerList[key]);
+    //     delete this.listenerList[key];
+    //   }
+    //   if (this.releaseList[key]) {
+    //     delete this.releaseList[key];
+    //   }
+    //   if (window.DEBUG) {
+    //     console.log('removed listener for ' + key)
+    //   }
+    // }
   }
 
   ProgressiveDataStructure.prototype.decode = function(bytes) {
@@ -164,9 +170,10 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
   ProgressiveDataStructure.prototype.release = function(key) {
     // deregister if all data has been received
     if (this.isDataCompleted(this.idx[key])) {
-      if (this.listenerList[key]) {
-        this.removeListener(key, this.listenerList[key]);
-        delete this.listenerList[key];
+      var id = key.split(':', 1)[0];
+      if (this.listenerList[id]) {
+        this.removeListener(this.listenerList[id]['key'], this.listenerList[id]['cb']);
+        delete this.listenerList[id];
       }
       if (this.releaseList[key]) {
         delete this.releaseList[key];
