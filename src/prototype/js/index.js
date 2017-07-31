@@ -10,7 +10,7 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = false;
+Util.HITRATIO = true;
 Util.DETAIL = true;
 
 // strategies

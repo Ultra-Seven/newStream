@@ -101,7 +101,9 @@ var ProgressiveDataStructure = (function(GarbageCollectingDataStructure) {
 
     this.storeData(data, header);
 
-
+    if (Util.DETAIL) {
+      console.log("ADDBLOCK:", "key:", key, "block:", block);
+    }
     if (Util.DEBUG) {
       this.addBlockTime += (Date.now() - now);
       this.addBlockNum += 1;
@@ -275,6 +277,8 @@ var SampleProgDataStructure = (function(ProgressiveDataStructure) {
     var key = data.key
     var id = data.table.id;
     if (key in this.idx) {
+      if (Util.DETAIL) 
+            console.log("remove:", data.key);
       delete this.idx[key]['data'][id];
       for (i in this.idx[key]['data']) {
         return;

@@ -17,7 +17,7 @@ var Engine = (function(EventEmitter) {
     this.vizes = {};
     this.datastructs = {};
     this.ringbuf = new RingBuffer(nbytes);
-    this.requester = new Requester(this, {minInterval: 100});
+    this.requester = new Requester(this, {minInterval: 500});
 
     EventEmitter.call(this);
   };
@@ -79,6 +79,7 @@ var Engine = (function(EventEmitter) {
   //
   Engine.prototype.registerQuery = function(q, cb, id) {
     let start = Date.now();
+    // this.requester.stopLoop();
     let that = this;
     //console.log("start time", start);
     // 1. see if the data structures can immediately answer the query
@@ -89,8 +90,13 @@ var Engine = (function(EventEmitter) {
         // cache partial hit
         if (Util.DETAIL)
           console.log(r);
+        if (Util.HITRATIO) {
+          console.log("cache hit!");
+          Util.Debug.addHits();
+        }
       }
       else if (r) {
+        this.requester.startLoop();
         if (Util.HITRATIO) {
           console.log("cache hit!");
           Util.Debug.addHits();
@@ -122,6 +128,8 @@ var Engine = (function(EventEmitter) {
         timer.apply(timer, arguments);
       }
       cb.apply(cb, arguments);
+
+      // that.requester.startLoop();
     }
     for (var dsid in this.datastructs) {
       var ds = this.datastructs[dsid];
