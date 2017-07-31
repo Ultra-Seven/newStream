@@ -72,8 +72,8 @@ def setup_spec(db, spec):
       param_vals[expr] = list(vals)
 
     # setup the data struture
-    # ds = GBDataStruct(db, spec)
-    # ds.setup_cache(param_vals)
+    ds = GBDataStruct(db, spec)
+    ds.setup_cache(param_vals)
 
 
 
@@ -155,7 +155,7 @@ if __name__ == "__main__":
   db = create_engine("postgresql://localhost/test")
 
   ## Uncomment to re-generate dataset and repopulate database
-  # setup_db(db, dims, measures, 5)
+  setup_db(db, dims, measures, 5)
 
   ## Uncomment to recompute offline data structures
   setup_specs(db, viz_setup)

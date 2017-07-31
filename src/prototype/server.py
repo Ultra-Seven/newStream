@@ -15,21 +15,41 @@ from py.ds import *
 from py.manager import *
 from py.debug import *
 from py.ringbuf import *
+from py.latency import Latency
+
+import datetime
 
 
 app = Flask(__name__)
 app.config.from_object('configure.Config')
-print app.config
+# Latency(app)
 
+# ------------------------------------
+# latency simulation
+# 
+def before_latency():
+  t = 0.1
+  time.sleep(t)
+
+# def after_latency(response):
+#   t = 1
+#   time.sleep(t)
+#   return response
+
+app.before_request(before_latency)
+# app.after_request(after_latency)
+
+# ------------------------------------
 # stop logging HTTP logs for debug
-# import logging
-# log = logging.getLogger('werkzeug')
-# log.setLevel(logging.ERROR)
+# 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
-#
+# ------------------------------------
 # Global variables
 #
-flask.DEBUG = True
+flask.DEBUG = app.config.get('DEBUG', False)
 flask.val = 0
 flask.dist = []
 flask.dist_update_time = None

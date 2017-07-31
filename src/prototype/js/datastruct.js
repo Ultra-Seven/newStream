@@ -176,7 +176,7 @@ var GarbageCollectingDataStructure = (function(DataStructure) {
     }
 
     // Let the world know you have data
-    this.emit(key, decodedData);
+    this.emit(key, this, decodedData);
 
   };
 
