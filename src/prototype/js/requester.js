@@ -36,7 +36,7 @@ var Requester = (function(EventEmitter) {
     if (Util.PREDICTOR) {
       this.logger = new Logger({
         minResolution: 5,
-        traceLength: 50
+        traceLength: 150
       });
       this.logger.bind(document);
     }

@@ -152,8 +152,13 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 
 
 
-
-
+  
+var predictWorker = new Worker("/static/js/predictor_worker.js");
+// predictWorker.postMessage();
+predictWorker.onmessage = function(e) {
+  let results = e.data;    
+  console.log('Message received from worker', results);
+}
 //
 // Start the data stream!
 //

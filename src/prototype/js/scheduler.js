@@ -1,6 +1,7 @@
 var Scheduler = (function() {
   function Scheduler(timeRange) {
     this.history = {};
+    
     _.each(timeRange, time => {
       this.history[time.toString()] = [];
     })

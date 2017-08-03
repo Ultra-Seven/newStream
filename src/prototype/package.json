@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "async": "2.1.4",
+    "babel-cli": "^6.24.1",
     "gaussian": "^1.1.0",
     "google-protobuf": "3.2.0-rc.2",
     "jssqlparser": "0.0.9",

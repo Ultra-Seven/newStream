@@ -20,6 +20,9 @@ def gen_csv_file(outf, dims, measures, scale=100):
   @scale number of rows to generate per group
   """
   names, iters = zip(*dims)
+  print names
+  print "iters"
+  print iters
   nrows = 0
   for dim_vals in product(*iters):
     groups = dict(zip(names, dim_vals))
