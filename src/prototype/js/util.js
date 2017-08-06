@@ -4,7 +4,6 @@
 //
 //
 
-
 // Get domain informaiton for x and y axes
 //
 // opts:  {
@@ -27,7 +26,16 @@ var getAttrStats = function(opts, cb) {
   });
 
 }
-
+var getMapStats = function(opts, cb) {
+  $.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    url: "/attr/map",
+    data:  JSON.stringify(opts),
+    success: cb,
+    dataType: "json"
+  });
+}
 
 // access the infinite byte stream via a fetch() call
 var stream_from = function(url, cb, final_cb) {
@@ -169,6 +177,7 @@ module.exports = {
   stream_from: stream_from,
   Debug: Debug,
   getAttrStats:getAttrStats,
+  getMapStats:getMapStats,
   DEBUG: true,
   WRITEDEBUG: true,
   DISTDEBUG: true,

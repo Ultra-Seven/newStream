@@ -47,7 +47,7 @@ var Engine = (function(EventEmitter) {
     var id = _.size(this.queryTemplates) + 1;
     this.queryTemplates[id] = template;
     template.id = id;
-
+    const data = JSON.stringify(template.toWire());
     // register with the server!
     $.ajax({
       type: "POST",
@@ -56,6 +56,7 @@ var Engine = (function(EventEmitter) {
       data:  JSON.stringify(template.toWire()),
       success: function (data) {
         // TODO: could use a debugging statement here
+        console.log("query template:", data);
       },
       dataType: "json"
     });

@@ -12,6 +12,7 @@ var Logger = (function() {
   Logger.prototype.pushXYT = function(e, action) {
     var now = Date.now();
     this.addPoint([e.pageX, e.pageY, now, action]);
+    console.log([e.pageX, e.pageY, now, action])
     while (this.trace.length > 1 &&
            _.last(this.trace)[2] - this.trace[0][2] > this.traceLength) {
       this.trace.shift();

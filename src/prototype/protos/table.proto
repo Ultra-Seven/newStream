@@ -28,3 +28,18 @@ message ProgressiveTable {
     repeated string name = 1;
   }
 }
+
+message SimpleVizTable {
+  Schema schema = 1;
+  repeated Col pop = 2;
+  repeated Col lat = 2;
+  repeated Col lon = 2;
+
+  message Col {
+    repeated float val = 1;
+  }
+
+  message Schema {
+    repeated string name = 1;
+  }
+}

@@ -20,7 +20,7 @@ Util.PREDICTOR = true;
 var bytespermb = 1048576;
 var ringbufsize = 4500;
 var engine = window.engine = new Engine(ringbufsize); // replace 450 with bytespermb * #MBs
-engine.registerRingBufferSize(ringbufsize);
+// engine.registerRingBufferSize(ringbufsize);
 
 //
 // Setup Data Structures
@@ -151,14 +151,6 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
 })
 
 
-
-  
-var predictWorker = new Worker("/static/js/predictor_worker.js");
-// predictWorker.postMessage();
-predictWorker.onmessage = function(e) {
-  let results = e.data;    
-  console.log('Message received from worker', results);
-}
 //
 // Start the data stream!
 //

@@ -1,8 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
   <script type="text/javascript" src="/static/js/d3.min.js"></script>
   <script type="text/javascript" src="/static/js/jquery.min.js"></script>
   <script type="text/javascript" src="/static/js/underscore-min.js"></script>
+  <link type="text/css" href="/static/css/leaflet.css" rel="stylesheet"/>
+  <link type="text/css" href="/static/css/leaflet.markercluster.css" rel="stylesheet"/>
+  <link type="text/css" href="/static/css/dc.css" rel="stylesheet"/>
+  <style>
+        #holder {
+            width:1500px;
+            margin:20px auto;
+        }
+        #holder>div {
+            padding:30px 0;
+            clear:both;
+        }
+        .map {
+            width:600px;
+            height:400px;
+        }
+        .pie {
+            margin-left:30px;
+        }
+    </style>
 </head>
 <body>
   <div style="display: none;">
@@ -10,7 +31,14 @@
     <button id="btn2">Show D vs B</button>
     <button id="btn3">Show E vs B</button>
   </div>
-  <div>
+  <svg id="holder">
+    <div id = "simpleViz">
+      <div class="map"></div>  
+      <button id="zoomin">Zoom In</button>
+      <button id="zoomout">Zoom Out</button>
+    </div>
+  </svg>
+  <div id = "barchart">
     <svg id="viz1"></svg>
     <svg id="viz2"></svg>
     <svg id="viz3"></svg>
@@ -18,5 +46,15 @@
     
 </body>
 <script type="text/javascript" src="/static/js/sylvester.js"></script>
+<!-- dc.leaflet -->
+<script type="text/javascript" src="/static/js/d3.js"></script>
+<script type="text/javascript" src="/static/js/crossfilter.js"></script>
+<script type="text/javascript" src="/static/js/dc.js"></script>
+<script type="text/javascript" src="/static/js/leaflet.js"></script>
+
+<!--Optional-->
+<script type="text/javascript" src="/static/js/leaflet.markercluster.js"></script>
+<script type="text/javascript" src="/static/js/dc.leaflet.js"></script>
+
 <script type="text/javascript" src="/static/js/index.js"></script>
 </html>

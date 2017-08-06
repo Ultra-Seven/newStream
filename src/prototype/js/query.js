@@ -110,6 +110,79 @@ var GBQueryTemplate = (function(QueryTemplateBase) {
   return GBQueryTemplate;
 })(QueryTemplateBase);
 
+//
+// Highly constrained subset of single-table olap queries
+//
+// JS version of the query templates supported by py/ds.py:GBDataStruct
+var LikeQueryTemplate = (function(QueryTemplateBase) {
+  extend(LikeQueryTemplate, QueryTemplateBase);
+
+  // @param select: a mapping from output alias to an expression string
+  //         { x: "month", y: "avg(salary)" }
+  // @param from:   table name
+  // @param like list of like strings
+  //         [ "month" ]
+  // @param params: a mapping from an attribute to its data type.
+  //         specifies the attribute predicates in the WHERE clause
+  //
+  //         for example, if params is { "hour": "num" } 
+  //         then setting "hour" to 1 is the same as adding
+  //
+  //           WHERE hour = 1
+  //         to the query
+  //
+  function LikeQueryTemplate(select, from, like, params) {
+    this.select = select;
+    this.from = from;
+    this.like = like;
+    this.params = params || {};
+    this.name = "like"
+    QueryTemplateBase.call(this);
+  }
+
+  LikeQueryTemplate.prototype.getParamNames = function() { return this.params; }
+
+  LikeQueryTemplate.prototype.toSQL = function(params) {
+    // which of the arguments are allowed by this.params?
+    var p = {};
+    params = params || {};
+    for (var key in this.params) {
+      if (key in params && !_.isNull(params[key])) {
+       p[key] = params[key] 
+      }
+    }
+
+    var sel = _.map(this.select, function(e, alias) {
+      return e + " AS " + alias;
+    }).join(", ");
+    
+    // TODO: make work for str attr types too.  Either way, not very secure..
+    var where = _.map(p, function(v, attr) { 
+      v = "'%" + v + "%'";
+      return attr + " LIKE " + v; 
+    });
+    where = where.join(" AND ");
+    where = (where.length > 0)? " WHERE " + where : "";
+    
+    var sql = ["SELECT", sel, "FROM", this.from, where].join(" ");
+    return sql;
+  }
+
+  LikeQueryTemplate.prototype.toWire = function() {
+    return {
+      tid: this.id,
+      name: this.name,
+      select: this.select,
+      from: this.from,
+      fr: this.from,
+      like: this.like,
+      params: this.params
+    };
+  }
+
+  return LikeQueryTemplate;
+})(QueryTemplateBase);
+
 //var q = new GBQueryTemplate({x: "avg(sal)", y: "sum(sal)"}, "data", ["month"], { a: "num", b: "num"});
 //console.log(q.toSQL({a: 1, b: 99}))
 
@@ -194,5 +267,6 @@ var Query = (function(EventEmitter) {
 
  module.exports = {
    GBQueryTemplate: GBQueryTemplate,
+   LikeQueryTemplate: LikeQueryTemplate,
    Query: Query
 }

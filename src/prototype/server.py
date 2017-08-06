@@ -15,21 +15,41 @@ from py.ds import *
 from py.manager import *
 from py.debug import *
 from py.ringbuf import *
+from py.latency import Latency
+
+import datetime
 
 
 app = Flask(__name__)
 app.config.from_object('configure.Config')
-print app.config
+# Latency(app)
 
+# ------------------------------------
+# latency simulation
+# 
+def before_latency():
+  t = 0.1
+  time.sleep(t)
+
+# def after_latency(response):
+#   t = 1
+#   time.sleep(t)
+#   return response
+
+app.before_request(before_latency)
+# app.after_request(after_latency)
+
+# ------------------------------------
 # stop logging HTTP logs for debug
+# 
 # import logging
 # log = logging.getLogger('werkzeug')
 # log.setLevel(logging.ERROR)
 
-#
+# ------------------------------------
 # Global variables
 #
-flask.DEBUG = True
+flask.DEBUG = app.config.get('DEBUG', False)
 flask.val = 0
 flask.dist = []
 flask.dist_update_time = None
@@ -51,6 +71,44 @@ flask.log_get_dist = app.config['LOG_GET_DIST']
 def index():
   return render_template("index.html")
 
+@app.route("/attr/map", methods=["post", "get"])
+def map_stats():
+  """
+  Used by client to get the domain of the x and y axis expressions/attributes
+
+  opts: {
+    table: <table name>
+    attrs: {
+        <attrname>: <data type> ("continuous" | "discrete")
+    }
+  }
+  """
+  sql = "SELECT %s FROM %s WHERE %s"
+
+  opts = json.loads(request.data)
+  table = opts['table']
+  s = ["%s AS %s" % (expr, alias) for alias, expr in opts['select'].items()]
+  s = ", ".join(s)
+  where = ["true"]
+  contattrs = []
+  ret = {}
+  for attr, value in opts.get("attrs", {}).items():
+    like = "'%" + "z" + str(value) + "%'"
+    where.append("%s LIKE %s" % (attr, like))
+  where = where and " AND ".join(where)
+  q = text(sql % (s, table, where))
+  all_result = flask.db.execute(q).fetchall()
+  all_list = []
+  for x in xrange(0, len(all_result)):
+    result_dict = {}
+    result_list = list(all_result[x])
+    i = 0
+    for alias, expr in opts['select'].items():
+      result_dict[alias] = result_list[i]
+      i = i + 1
+    ret[str(x)] = result_dict
+    all_list.append(result_dict)
+  return Response(json.dumps(all_list))
 
 @app.route("/attr/stats", methods=["post", "get"])
 def table_stats():

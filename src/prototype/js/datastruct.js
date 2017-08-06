@@ -161,7 +161,7 @@ var GarbageCollectingDataStructure = (function(DataStructure) {
     };
     this.rangeIdx.add(byteRange, data);
     if (Util.DETAIL) 
-      console.log("addBlock:", key);
+      console.log("addBlock:", key, decodedData);
     this.storeData(data, header);
 
 
@@ -176,7 +176,7 @@ var GarbageCollectingDataStructure = (function(DataStructure) {
     }
 
     // Let the world know you have data
-    this.emit(key, decodedData);
+    this.emit(key, this, decodedData);
 
   };
 

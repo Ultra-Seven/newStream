@@ -48,8 +48,8 @@ class Manager(object):
       if flask.DEBUG and flask.log_scheduler:
         flask.logger.log('2 : before scheduler')
 
-      # result = self.naive_schedule()
-      result = self.proportion_schedule(True)
+      result = self.naive_schedule()
+      # result = self.proportion_schedule(True)
       # result = self.test_schedule(True);
       for header, content in result:
         yield header
@@ -91,17 +91,14 @@ class Manager(object):
     size = 0
     total_time = int(times[-1])
     num_times = len(times)
-    print times
     for i in range(num_times):
       time = times[i]
       if i == num_times - 1 or int(time) == 0:
         # last time frame or exact query
         size = remain_size
-        print i, num_times, int(time)
       else:
         # logarithmic allocation of memory
         size = remain_size * (1 - float(time)/total_time)
-        print i, time, total_time, size
 
       if flask.DEBUG and flask.log_scheduler:
         flask.logger.log("105 : allocate %d bytes for time %s" % (size, time))
@@ -146,8 +143,11 @@ class Manager(object):
     Which parts to send:
       All the parts
     """
-    key = min(flask.dist.keys(), key=lambda x:int(x))
-    (query, prob) = tuple(max(flask.dist[key], key=lambda pair: pair[1]))
+    dist = flask.dist
+    key = min(dist.keys(), key=lambda x:int(x))
+    if len(dist[key]) == 0:
+      return
+    (query, prob) = tuple(max(dist[key], key=lambda pair: pair[1]))
     self.prev_dist_update_time = flask.dist_update_time
     if prob == 0: 
       return
@@ -155,6 +155,7 @@ class Manager(object):
     ds, iterable = self.get_iterable(query, prob)
     if iterable is None: return
     for block in iterable:
+      print "block:", ds.id, ds.encoding, len(block)
       # write the header: length of the block and the data structure's encoding id
       if flask.DEBUG:
         print "\n\nds.id: %d\tenc: %d\tlen: %d" % (ds.id, ds.encoding, len(block))
@@ -178,7 +179,6 @@ class Manager(object):
     tid = template['tid']
     name = template['name']
     args = query["data"]
-
     if tid not in self.data_structs: 
       return None, None
 

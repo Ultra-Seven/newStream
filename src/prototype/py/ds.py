@@ -17,7 +17,7 @@ import math
 def powerset(iterable):
   "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
   s = list(iterable)
-  return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+  return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
 def decode_table(buf):
@@ -25,16 +25,22 @@ def decode_table(buf):
   table.ParseFromString(buf)
   return table
 
-def encode_table(schema, rows):
+def encode_table(schema, rows, tableName = "SimpleViz"):
   """
   assume everything is uints
   @schema list of attr names
   @rows 
   """
-  s = Table.Schema()
-  s.name.extend(schema)
-  table = Table(schema=s)
-  table.cols.extend(Table.Col(val=col) for col in zip(*rows))
+  if tableName == "SimpleViz":
+    s = SimpleVizTable.Schema()
+    s.name.extend(schema)
+    table = SimpleVizTable(schema=s)
+    table.cols.extend(SimpleVizTable.Col(val=col) for col in zip(*rows))
+  else :
+    s = Table.Schema()
+    s.name.extend(schema)
+    table = Table(schema=s)
+    table.cols.extend(Table.Col(val=col) for col in zip(*rows))
   return table.SerializeToString()
 
 
@@ -137,7 +143,7 @@ class Precompute(DS):
     """
     return json.dumps(sorted(data.items())).replace(" ", "")
 
-  def setup_cache(self, query_iterable):
+  def setup_cache(self, query_iterable, vizName):
     """
     This is called ahead of time to create data structures
 
@@ -147,7 +153,7 @@ class Precompute(DS):
       cur = self.db.execute(*exec_args)
       schema = cur.keys()
       rows = cur.fetchall()
-      self.cache[key] = encode_table(schema, rows)
+      self.cache[key] = encode_table(schema, rows, vizName)
 
   def lookup(self, key):
     s = self.lookup_bytes(key)
@@ -161,6 +167,73 @@ class Precompute(DS):
     if self.key(data) in self.cache:
       return 100
     return None
+
+
+class LikeStruct(Precompute):
+  name = "like"
+  def __init__(self, db, spec, *args, **kwargs):
+    """
+    spec = {
+        select: { alias: expr },
+        fr: <tablename>,
+        groupby: [ "expr", ... ],
+        params: { attr: <data type "num" or "str"> }
+    }
+    """
+    fname = "like_%s.cache" % ",".join(spec["params"].keys())
+    kwargs['fname'] = kwargs.get("fname", fname)
+    super(LikeStruct, self).__init__(db, *args, **kwargs)
+
+    self.name = LikeStruct.name
+    self.spec = spec
+    self.encoding = 4
+
+  def spec_to_sql(self, params):
+    qtemplate = """ SELECT %s FROM %s WHERE %s """
+    s = ["%s AS %s" % (expr, alias) for alias, expr in self.spec['select'].items()]
+    s = ", ".join(s)
+    g = ", ".join(self.spec["like"])
+    w = ["true"]
+    for attr, val in params.iteritems():
+      val = "'%" + str(val) + "%'";
+      if attr in self.spec['params']:
+        if self.spec['params'][attr] == "num":
+          w.append("%s LIKE %s" % (attr, val))
+        elif self.spec['params'][attr] == "str":
+          w.append("%s LIKE %s" % (attr, val))
+        else:
+          w.append("%s LIKE '%s'" % (attr, val))
+    w = w and " AND ".join(w)
+    q = text(qtemplate % (s, self.spec["fr"], w))
+    return q
+
+  def setup_cache(self, param_ranges):
+    def f():
+      all_names = param_ranges.keys()
+      for names in powerset(all_names):
+        iters = map(param_ranges.get, names)
+        for i, vals in enumerate(product(*iters)):
+          data = dict(zip(names, vals))
+          key = self.key(data)
+          q = self.spec_to_sql(data)
+          yield key, [q]
+
+    Precompute.setup_cache(self, f(), "SimpleViz")
+
+  def key(self, data):
+    """
+    This maps the query data to a unique key.
+    The analagous function in javascript is js/datastruct.js:queryToKey()
+    THESE FUNCTIONS MUST MATCH!!
+    """
+    return json.dumps(sorted(data.items())).replace(" ", "")
+
+  @staticmethod
+  def can_answer(query_template):
+    """
+    @query_template is the output of the client's QueryTemplate.toWire() method.
+    """
+    return query_template.get('name') == LikeStruct.name
 
 
 
@@ -210,6 +283,7 @@ class GBDataStruct(Precompute):
           data = dict(zip(names, vals))
           key = self.key(data)
           q = self.spec_to_sql(data)
+          print data, key, q
           yield key, [q]
 
     Precompute.setup_cache(self, f())
@@ -525,7 +599,7 @@ class SQLTemplates(Precompute):
 
 
 # register relevant data structer classes
-# ds_klasses = [GBDataStruct, SQLTemplates]
-ds_klasses = [GBDataStruct, SampleProgDataStruct, SQLTemplates]
+ds_klasses = [GBDataStruct, SQLTemplates, LikeStruct]
+# ds_klasses = [GBDataStruct, SampleProgDataStruct, SQLTemplates]
 # ds_klasses = [GBdataStruct, SampleProgDataStruct, WaveletProgDataStruct, SQLTemplates]
 

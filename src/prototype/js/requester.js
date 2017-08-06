@@ -33,6 +33,7 @@ var Requester = (function(EventEmitter) {
     this.running = false;
     this.runningQuery = 0;
     this.logger;
+
     if (Util.PREDICTOR) {
       this.logger = new Logger({
         minResolution: 5,
@@ -189,13 +190,25 @@ var Requester = (function(EventEmitter) {
   var getInteractableElements = function() {
     //throw Error("Implement Me");
     let elements = this.interactableElements || [];
+    let elements_zoomin = [];
+    let elements_zoomout = [];
     if(elements.length == 0) {
-      elements = document.getElementsByClassName('mark');
+      elements = [].slice.call(document.getElementsByClassName('mark')) || [];
+      elements_zoomin = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-in')) || [];
+      elements_zoomout = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-out')) || [];
+      elements = elements.concat(elements_zoomin);
+      elements = elements.concat(elements_zoomout);
       var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
       //var target = document.querySelector('#some-id');
       var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-          elements = document.getElementsByClassName('mark');
+          elements = [].slice.call(document.getElementsByClassName('mark')) || [];
+          elements_zoomin = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-in')) || [];
+          elements_zoomout = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-out')) || [];
+          
+          elements = elements.concat(elements_zoomin);
+          elements = elements.concat(elements_zoomout);
+
           this.interactableElements = elements;
         });
       });
@@ -219,24 +232,26 @@ var Requester = (function(EventEmitter) {
     // 2. be able to map a DOM element to the query+params that it would
     //    trigger if the user interacts with it
     var magicalGetQueryParams = function(el) {
-      var row = d3.select(el).data()[0];
-      var jelm = $(el);
-      var svg = jelm.parent().parent().parent()[0];
-      var visName = "#" + svg.id;
+      // var row = d3.select(el).data()[0];
+      // var jelm = $(el);
+      // var svg = jelm.parent().parent().parent()[0];
+      // var visName = "#" + svg.id;
       //engine.vizes
       retQueries = [];
       _.each(engine.vizes, function(v1, i1) {
-        if(v1.id === visName) {
-          var attr = v1.qtemplate.select['x']
-          var data = { };
-          data[attr] = row['x'];
-          _.each(engine.vizes, function(v2, i2) {
-            if (i1 != i2) {
-              var q = new Query.Query(v2.qtemplate, data);
-              retQueries.push(q);
-            }
-          });
-        }
+        let queries = v1.getQueries(el);
+        retQueries = retQueries.concat(queries);
+        // if(v1.id === visName) {
+        //   var attr = v1.qtemplate.select['x']
+        //   var data = { };
+        //   data[attr] = row['x'];
+        //   _.each(engine.vizes, function(v2, i2) {
+        //     if (i1 != i2) {
+        //       var q = new Query.Query(v2.qtemplate, data);
+        //       retQueries.push(q);
+        //     }
+        //   });
+        // }
       });
       return retQueries;
     }

@@ -1,5 +1,6 @@
 var proto = require("./table_pb");
 var Table = proto.Table;
+var SimpleVizTable = proto.SimpleVizTable;
 var ProgressiveTable = proto.ProgressiveTable
 
 // Wrapper around protocol buffer decoder to return a list of js objects instead of the protocol buffer object
@@ -29,7 +30,32 @@ var TableDecoder = (function() {
 
   return TableDecoder;
 })();
+var SimpleTableDecoder = (function() {
+  var SimpleTableDecoder = function() {};
 
+  SimpleTableDecoder.prototype.decode = function(buf) {
+    var pbTable = window.pbTable = SimpleVizTable.deserializeBinary(new Uint8Array(buf));
+    var attrs = pbTable.getSchema().getNameList();
+    if (attrs.length == 0) return [];
+
+    var colList = pbTable.getColsList();
+    if (colList.length == 0) return [];
+    var ret = _.map(colList[0].getValList(), function(v) {
+      var ret = {}; 
+      ret[attrs[0]] = v;
+      return ret;
+    });
+    for (var i = 1; i < colList.length; i++) {
+      var col = colList[i].getValList();
+      for (var j = 0; j < col.length; j++) {
+        ret[j][attrs[i]] = col[j];
+      }
+    }
+    return ret;
+  };
+
+  return SimpleTableDecoder;
+})();
 
 var ProgressiveTableDecoder = (function() {
   var ProgressiveTableDecoder = function() {};
@@ -74,5 +100,6 @@ var JSONDecoder = (function(){
 module.exports = {
   TableDecoder: TableDecoder,
   JSONDecoder: JSONDecoder,
+  SimpleTableDecoder: SimpleTableDecoder,
   ProgressiveTableDecoder: ProgressiveTableDecoder
 }
