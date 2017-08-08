@@ -4,7 +4,9 @@ var Util = window.Util = require("../../util");
 var GBDataStructure = require("../../gbds").GBDataStructure;
 var SampleProgDataStructure = require("../../progds").SampleProgDataStructure;
 var Query = window.Query = require("../../query");
-var Viz = require("./viz");
+var MapViz = require("./map_viz");
+var TypeViz = require("./type_viz");
+var LineViz = require("./linechart_viz");
 
 Util.DEBUG = false;
 Util.WRITEDEBUG = false;
@@ -14,7 +16,7 @@ Util.HITRATIO = true;
 Util.DETAIL = true;
 
 // strategies
-Util.PREDICTOR = true;
+Util.PREDICTOR = false;
 
 
 var bytespermb = 1048576;
@@ -25,81 +27,66 @@ var engine = window.engine = new Engine(ringbufsize); // replace 450 with bytesp
 //
 // Setup Data Structures
 //
-// var gbDS = new GBDataStructure();
+var gbDS = new GBDataStructure();
 // var progDS = new ProgressiveDataStructure();
-var sampleDS = new SampleProgDataStructure();
+// var sampleDS = new SampleProgDataStructure();
 
 // TODO: comment next line to use the ProgressiveDataStructure to answer queries
-// engine.registerDataStruct(gbDS);
+engine.registerDataStruct(gbDS);
 
 // TODO: uncomment the next line to enable ProgressiveDataStructures
-engine.registerDataStruct(sampleDS);
+// engine.registerDataStruct(sampleDS);
 
 
 var q1 = window.q1 = new Query.GBQueryTemplate(
-    { x: "a", y: "avg(d)", fill: "'black'" },
+    { x: "Year", y: "sum(GDP)", fill: "'black'" },
     "data",
-    [ "a"],
-    { "b": "num", "c": "num"}
+    [ "Year"],
+    { "Type": "num", "Metro": "str"}
 );
 var q2 = window.q2 = new Query.GBQueryTemplate(
-    { x: "b", y: "avg(e)", fill: "'black'" },
+    { x: "Type", y: "sum(GDP)", fill: "'black'" },
     "data",
-    [ "b"],
-    { "a": "num", "c": "num"}
-);
-var q3 = window.q3 = new Query.GBQueryTemplate(
-    { x: "c", y: "avg(e)", fill: "'black'" },
-    "data",
-    [ "c"],
-    { "a": "num", "b": "num"}
+    [ "Type"],
+    { "Year": "num", "Metro": "str"}
 );
 engine.registerQueryTemplate(q1);
 engine.registerQueryTemplate(q2);
-engine.registerQueryTemplate(q3);
 
-function setupViz(qtemplate, opts) {
-  var viz = new Viz.Viz(engine, qtemplate, opts).setup();
+function setupViz(viz, qtemplate) {
   engine.registerViz(viz);
   var q = new Query.Query(qtemplate, {});
   engine.registerQuery(q, viz.render.bind(viz), viz.id);
   return viz;
 }
-
+$("#holder").css('display','none');
+$("#barchart").css('display','none');
 var makeViz1 = function(cb) {
-  var data = { 
-    table: "data", attrs: { 
-      a: "discrete", 
-      d: "continuous" 
-    }
+  opts = {
+    id: "#viz1",
+    groupname: "mapchart"
   };
-
-  Util.getAttrStats(data,
-    function(data) {
-      var opts = {
-        id: "#viz1", 
-        xdomain: data.a, 
-        ydomain: data.d
-      };
-      cb(null, setupViz(q1, opts));
-  })
+  var viz = new MapViz.MapViz(engine, null, opts).setup();
+  engine.registerViz(viz);
+  cb(null, viz);
 };
 var makeViz2 = function(cb) {
   var data = { 
     table: "data", attrs: { 
-      b: "discrete", 
-      e: "continuous" 
+      Type: "discrete", 
+      GDP: "continuous" 
     }
   };
 
   Util.getAttrStats(data,
     function(data) {
       var opts = {
-        id: "#viz2", 
-        xdomain: data.b, 
-        ydomain: data.e
+        id: "#viz2",
+        groupname: "pie-barchart",
+        range: data
       };
-      cb(null, setupViz(q2, opts));
+      var viz = new TypeViz.TypeViz(engine, q2, opts).setup();
+      cb(null, setupViz(viz, q2));
   })
 };
 
@@ -107,46 +94,29 @@ var makeViz2 = function(cb) {
 var makeViz3 = function(cb) {
   var data = { 
     table: "data", attrs: { 
-      c: "discrete", 
-      e: "continuous" 
+      Type: "discrete", 
+      GDP: "continuous" 
     }
   };
 
   Util.getAttrStats(data,
     function(data) {
       var opts = {
-        id: "#viz3", 
-        xdomain: data.c, 
-        ydomain: data.e
+        id: "#viz3",
+        groupname: "linechart",
+        range: data
       };
-      cb(null, setupViz(q3, opts));
+      var viz = new LineViz.LineViz(engine, q1, opts).setup();
+      cb(null, setupViz(viz, q1));
   })
 };
 
 
 
 // link the vizes
-async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
+async.parallel([makeViz1, makeViz2, makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
-    v1.on("mouseover", function(viz, el, row) {
-      // create the parameter data for the query
-      var attr = v1.qtemplate.select['x']
-      var data = { };
-      data[attr] = row['x'];
-
-      _.each(vizes, function(v2, i2) {
-        if (i1 == i2) return;
-        var q = new Query.Query(v2.qtemplate, data);
-        const id = v2.id;
-        if (Util.DETAIL) 
-          console.log("REQUEST:for vis:" + id, "send query:" + q.toSQL());
-        if (Util.HITRATIO) {
-          Util.Debug.hitRatios();
-          Util.Debug.addQuery();
-        }
-        engine.registerQuery(q, v2.render.bind(v2), id);
-      });
-    });
+    
   });
 })
 
