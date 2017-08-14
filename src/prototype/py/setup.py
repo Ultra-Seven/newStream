@@ -9,7 +9,7 @@ from sqlalchemy.sql import text
 
 from ds import *
 from table_pb2 import *
-
+import sys
 
 
 def gen_csv_file(outf, dims, measures, scale=100):
@@ -49,13 +49,14 @@ def setup_db(db, dims, measures, scale=50, csv=None, bcsv=True, bdb=True):
     if bcsv:
       with file("data.csv", "w") as f:
         gen_csv_file(f, dims, measures, scale=scale)
-        sql_str = "DROP TABLE IF EXISTS data; CREATE TABLE data(%s)" % ",".join(["%s FLOAT(2)" % a for a in  allattrs])
+        sql_str = "DROP TABLE IF EXISTS data; CREATE TABLE data(%s)" % ",".join(["%s int" % a for a in  allattrs])
         path = os.path.join(os.path.abspath("."), "data.csv")
+  elif "GDP" in csv:
+    allattrs = ["Metro VARCHAR(50)","Latitude FLOAT", "Longitude FLOAT", "Type int", "Year int", "GDP int"]
+    sql_str = "DROP TABLE IF EXISTS data; CREATE TABLE data(%s)" % ",".join(["%s" % a for a in  allattrs])
+    path = os.path.join(os.path.abspath("."), csv)
   else:
-    print csv
-    allattrs = ["Zip_Code FLOAT(2)","Total_Population FLOAT(2)","Median_Age FLOAT(2)",
-    "Total_Males FLOAT(2)","Total_Females FLOAT(2)","Total_Households FLOAT(2)",
-    "Average_Household_Size FLOAT(2)", "Latitude FLOAT(2)", "Longitude FLOAT(2)", "Zoom VARCHAR(50)"]
+    allattrs = ["Zip_Code VARCHAR(10)", "Latitude FLOAT", "Longitude FLOAT", "City VARCHAR(50)", "State VARCHAR(50)", "Country VARCHAR(50)"]
     sql_str = "DROP TABLE IF EXISTS data; CREATE TABLE data(%s)" % ",".join(["%s" % a for a in  allattrs])
     path = os.path.join(os.path.abspath("."), csv)
 
@@ -77,10 +78,9 @@ def setup_spec(db, spec):
     # figure out the valid values for the parameters
     param_vals = dict()
     for expr in spec["params"]:
-      q = "SELECT distinct %s::int FROM %s" % (expr, spec["fr"])
+      q = "SELECT distinct %s FROM %s" % (expr, spec["fr"])
       vals = zip(*db.execute(q).fetchall())[0]
       param_vals[expr] = list(vals)
-
     # setup the data struture
     ds = GBDataStruct(db, spec)
     ds.setup_cache(param_vals)
@@ -109,90 +109,141 @@ def setup_specs(db, specs):
 if __name__ == "__main__":
 
   # Literally a copy of the client visualization setup in static/js/index.js
-  viz_setup = [
-    # dict(
-    #   id="#viz1",
-    #   template=dict(
-    #     name="gbquery",
-    #     select=dict(
-    #       x="a",
-    #       y="avg(d)::int"
-    #     ),
-    #     fr="data",
-    #     groupby=["a"],
-    #     params=dict(
-    #       b="num", c="num"
-    #     )
-    #   )
-    # ),
-    # dict(
-    #   id="#viz2",
-    #   template=dict(
-    #     name="gbquery",
-    #     select=dict(
-    #       x="b",
-    #       y="avg(e)::int"
-    #     ),
-    #     fr="data",
-    #     groupby=["b"],
-    #     params=dict(
-    #       a="num", c="num"
-    #     )
-    #   )
-    # ),
-    # dict(
-    #   id="#viz3",
-    #   template=dict(
-    #     name="gbquery",
-    #     select=dict(
-    #       x="c",
-    #       y="avg(e)::int"
-    #     ),
-    #     fr="data",
-    #     groupby=["c"],
-    #     params=dict(
-    #       a="num", b="num"
-    #     )
-    #   )
-    # )
-    dict(
-      id="#simpleviz",
-      template=dict(
-        name="like",
-        select=dict(
-          x="Total_Population",
-          y="Latitude",
-          z="Longitude"
+  dims = []
+  measures = []
+  if len(sys.argv) <= 1:
+    print "Please input like: python <filename> <vizName: simple, barchart, complex>"
+  else:
+    vizName = sys.argv[1]
+    if vizName == "simple":
+      viz_setup = [
+        dict(
+          id="#simpleviz",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="Latitude",
+              y="Longitude",
+            ),
+            fr="data",
+            groupby=["Longitude", "Latitude"],
+            params=dict(
+              State = "str"
+            ),
+            vizName = "SimpleViz"
+          ),
+        )
+      ]
+      csv_file = "data/zip_codes_states.csv"
+    elif vizName == "barchart":
+      viz_setup = [
+        dict(
+          id="#viz1",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="a",
+              y="avg(d)::int"
+            ),
+            fr="data",
+            groupby=["a"],
+            params=dict(
+              b="num", c="num"
+            ),
+            vizName = "barchart"
+          ),
         ),
-        fr="data",
-        params=dict(
-          Zoom = "str"
+        dict(
+          id="#viz2",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="b",
+              y="avg(e)::int"
+            ),
+            fr="data",
+            groupby=["b"],
+            params=dict(
+              a="num", c="num"
+            ),
+            vizName = "barchart"
+          ),
         ),
-        like=dict(Zoom=["z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15"])
-      ),
-      vizName = "SimpleViz"
-    )
-  ]
-   
+        dict(
+          id="#viz3",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="c",
+              y="avg(e)::int"
+            ),
+            fr="data",
+            groupby=["c"],
+            params=dict(
+              a="num", b="num"
+            ),
+            vizName = "barchart"
+          ),
+        )
+      ]
+      dims = [
+      ('a', range(50)),
+      ('b', range(50)),
+      ('c', range(30))
+      ]
+      measures = ['d', 'e', 'f']
+      csv_file = None
+    elif vizName == "complex":
+      viz_setup = [
+        dict(
+          id="#linechart_detail",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="Year",
+              y="SUM(GDP)::int"
+            ),
+            fr="data",
+            groupby=["Year"],
+            params=dict(
+              Type="num", Metro="str"
+            ),
+            vizName = "ComplexViz"
+          ),
+        ),
 
+        dict(
+          id="#piechart_detail",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="Type",
+              y="SUM(GDP)"
+            ),
+            fr="data",
+            groupby=["Type"],
+            params=dict(
+              Year="num", Metro="str"
+            ),
+            vizName = "ComplexViz"
+          )
+        )
+      ]
+      csv_file = "data/realGDP_metro_years.csv"
+    else:
+      print "Please input like: python <filename> <vizName: simple, barchart, complex>"
+      sys.exit(0)
+    
 
-  dims = [
-    ('a', range(50)),
-    ('b', range(50)),
-    ('c', range(30))
-  ]
-  measures = ['d', 'e', 'f']
+    db = create_engine("postgresql://localhost/test")
 
+    ## Uncomment to re-generate dataset and repopulate database
+    setup_db(db, dims, measures, 5, csv_file)
 
-  db = create_engine("postgresql://localhost/test")
+    ## Uncomment to recompute offline data structures
+    # setup_specs(db, viz_setup)
 
-  ## Uncomment to re-generate dataset and repopulate database
-  setup_db(db, dims, measures, 5, "data/2010_Census_Populations_Geo.csv")
-
-  ## Uncomment to recompute offline data structures
-  setup_specs(db, viz_setup)
-
-  # ds = GBDataStruct(db, viz_setup[1]["template"])
-  # print ds(dict(c=1))
+    # ds = GBDataStruct(db, viz_setup[1]["template"])
+    # print ds(dict(c=1))
 
 

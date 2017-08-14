@@ -31,11 +31,25 @@ def encode_table(schema, rows, tableName = "SimpleViz"):
   @schema list of attr names
   @rows 
   """
+
   if tableName == "SimpleViz":
     s = SimpleVizTable.Schema()
     s.name.extend(schema)
     table = SimpleVizTable(schema=s)
-    table.cols.extend(SimpleVizTable.Col(val=col) for col in zip(*rows))
+    location = []
+    for col in zip(*rows):
+      lat = []
+      for el in col:
+        if el != None:
+          lat.append(el)
+      location.append(tuple(lat))
+
+    table.cols.extend(SimpleVizTable.Col(val=col) for col in location)
+  elif tableName == "ComplexViz":
+    s = Table.Schema()
+    s.name.extend(schema)
+    table = Table(schema=s)
+    table.cols.extend(Table.Col(val=col) for col in zip(*rows))
   else :
     s = Table.Schema()
     s.name.extend(schema)
@@ -258,7 +272,10 @@ class GBDataStruct(Precompute):
     self.encoding = 1
 
   def spec_to_sql(self, params):
-    qtemplate = """ SELECT %s FROM %s WHERE %s GROUP BY %s """
+    if len(self.spec["groupby"]):
+      qtemplate = """ SELECT %s FROM %s WHERE %s GROUP BY %s """
+    else:
+      qtemplate = """ SELECT %s FROM %s WHERE %s """
     s = ["%s AS %s" % (expr, alias) for alias, expr in self.spec['select'].items()]
     s = ", ".join(s)
     g = ", ".join(self.spec["groupby"])
@@ -270,23 +287,26 @@ class GBDataStruct(Precompute):
         else:
           w.append("%s = '%s'" % (attr, val))
     w = w and " AND ".join(w) 
-    q = text(qtemplate % (s, self.spec["fr"], w, g))
+    if len(self.spec["groupby"]):
+      q = text(qtemplate % (s, self.spec["fr"], w, g))
+    else:
+      q = text(qtemplate % (s, self.spec["fr"], w))
+    print q
     return q
 
   def setup_cache(self, param_ranges):
     def f():
       all_names = param_ranges.keys()
       for names in powerset(all_names):
-        print names
+        # print names
         iters = map(param_ranges.get, names)
         for i, vals in enumerate(product(*iters)):
           data = dict(zip(names, vals))
           key = self.key(data)
           q = self.spec_to_sql(data)
-          print data, key, q
+          # print data, key, q
           yield key, [q]
-
-    Precompute.setup_cache(self, f())
+    Precompute.setup_cache(self, f(), self.spec['vizName'])
 
   @staticmethod
   def can_answer(query_template):

@@ -97,7 +97,9 @@ var Engine = (function(EventEmitter) {
         }
       }
       else if (r) {
-        this.requester.startLoop();
+        if (Util.PREDICTOR) {
+          this.requester.startLoop();
+        }
         if (Util.HITRATIO) {
           console.log("cache hit!");
           Util.Debug.addHits();

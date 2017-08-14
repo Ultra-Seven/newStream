@@ -258,13 +258,6 @@ var Query = (function(EventEmitter) {
   return Query;
 })(EventEmitter);
 
-
-
-
-
-
-
-
  module.exports = {
    GBQueryTemplate: GBQueryTemplate,
    LikeQueryTemplate: LikeQueryTemplate,

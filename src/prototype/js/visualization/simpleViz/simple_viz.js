@@ -19,28 +19,24 @@ var Viz = (function(EventEmitter) {
     this.id = opts.id || ""
     this.groupname = opts.groupname || "marker-select"
     this.chart = null;
-    this.zoom = opts["zoom"] || 12;
+    this.zoom = opts["zoom"] || 7;
     this.data = opts["data"] || [];
+    this.state = opts["state"]
     this.map = null;
+    this.centerLat = 38.889931;
+    this.centerLon = -77.009003;
     return this;
   };
 
+
   // Resize and create the plot background 
   Viz.prototype.setup = function() {
+    this.addButtons();
     this.render(this.data);
-    document.getElementById('zoomin').addEventListener('click', () => {
-      this.zoom = this.zoom + 1;
-      // this.map.zoomIn();
-      this.send();
-    });
-    document.getElementById('zoomout').addEventListener('click', () => {
-      this.zoom = this.zoom - 1;
-      this.send();
-    });
     return this;
   }
-  Viz.prototype.send = function() {
-    var q = new Query.Query(this.qtemplate, {Zoom: "z"+this.zoom});
+  Viz.prototype.send = function(state) {
+    var q = new Query.Query(this.qtemplate, {State: state});
     const id = this.id;
     if (Util.DETAIL) 
       console.log("REQUEST:for vis:" + id, "send query:" + q.toSQL());
@@ -52,13 +48,34 @@ var Viz = (function(EventEmitter) {
   }
   // data attributes are directly mapped to mark attributes
   // except for x, and y which will be transformed using this.x/yscale
+  Viz.prototype.addButtons = function() {
+    _.each(this.state, st => {
+      let button = $("<button id=" + st + " class='interactable'>" + st + "</button>");
+      // button.on("click", e => {
+      //   //do something...
+      //   this.send(st);
+      // })
+      $('#buttons').after(button);
+    });
+    $(".interactable").css("margin", "10px 10px 10px 10px");
+  }
   Viz.prototype.render = function(data) {
+    if (data.length) {
+      this.centerLat = _.reduce(data, function(memo, num) {
+        return memo + num.x;
+      }, 0) / (data.length === 0 ? 1 : data.length);
+      this.centerLon = _.reduce(data, function(memo, num) {
+          return memo + num.y;
+      }, 0) / (data.length === 0 ? 1 : data.length);
+    }
+
+
     if (this.map) {
       this.map.off();
       this.map.remove();
     }
     this.xf = crossfilter(data);
-    this.facilities = this.xf.dimension(function(d) {return [d.y, d.z, d.x];});
+    this.facilities = this.xf.dimension(function(d) {return [d.x, d.y];});
     this.facilitiesGroup = this.facilities.group().reduceCount();
     this.chart = this.chart || dc.leafletMarkerChart("#simpleViz .map", this.groupname);
     this.chart = this.chart
@@ -66,30 +83,29 @@ var Viz = (function(EventEmitter) {
         .group(this.facilitiesGroup)
         .width(600)
         .height(400)
-        .center([34.052235, -118.243683])
+        .center([this.centerLat, this.centerLon])
         .zoom(this.zoom)
         .cluster(true)
         .renderPopup(true)
         .popup(function(d,feature) {
-          return "Population:"+" : "+d.key[2];
+          return "TODO"
         });
     dc.renderAll(this.groupname);
     let mymap = this.chart.map();
     this.map = mymap;
-    mymap._layersMaxZoom = 15;
-    mymap._layersMinZoom = 8;
+  }
+
+  Viz.prototype.getInteractableElements = function() {
+    this.element = this.element || [].slice.call(document.getElementsByClassName('interactable'));
+    return this.element;
   }
 
   Viz.prototype.getQueries = function(element) {
-    if (element.className === "leaflet-control-zoom-in") {
-      return [new Query.Query(this.qtemplate, {Zoom: "z"+(this.zoom + 1)})];
+    const state = $(element).attr('id');
+    if (state) {
+      return [new Query.Query(this.qtemplate, {State: state})];
     }
-    else if(element.className === "leaflet-control-zoom-out") {
-      return [new Query.Query(this.qtemplate, {Zoom: "z"+(this.zoom - 1)})];
-    }
-    else {
-
-    }
+    return [];
   }
   
 

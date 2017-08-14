@@ -37,6 +37,28 @@ var getMapStats = function(opts, cb) {
   });
 }
 
+var getMouseTrace = function(cb) {
+  $.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    url: "/log/getMouse",
+    data:  JSON.stringify({}),
+    success: cb,
+    dataType: "json"
+  });
+}
+
+var writeResults = function(data, cb) {
+  $.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    url: "/log/writeResults",
+    data:  JSON.stringify(data),
+    success: cb,
+    dataType: "json"
+  });
+}
+
 // access the infinite byte stream via a fetch() call
 var stream_from = function(url, cb, final_cb) {
   fetch(url).then(function(resp) {
@@ -176,8 +198,10 @@ function first(func) {
 module.exports = {
   stream_from: stream_from,
   Debug: Debug,
-  getAttrStats:getAttrStats,
-  getMapStats:getMapStats,
+  getAttrStats: getAttrStats,
+  getMapStats: getMapStats,
+  getMouseTrace: getMouseTrace,
+  writeResults: writeResults,
   DEBUG: true,
   WRITEDEBUG: true,
   DISTDEBUG: true,

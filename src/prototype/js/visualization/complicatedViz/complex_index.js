@@ -115,9 +115,14 @@ var makeViz3 = function(cb) {
 
 // link the vizes
 async.parallel([makeViz1, makeViz2, makeViz3], function(err, vizes) {
-  _.each(vizes, function(v1, i1) {
-    
-  });
+
+  _.each(vizes, (viz) => {
+      engine.requester.vizMap[viz.id] = viz;
+  }); 
+  // Disable the prediction by commenting this line
+  if(Util.PREDICTOR)
+    engine.requester.run();
+  
 })
 
 

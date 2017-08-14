@@ -110,6 +110,7 @@ def map_stats():
     all_list.append(result_dict)
   return Response(json.dumps(all_list))
 
+
 @app.route("/attr/stats", methods=["post", "get"])
 def table_stats():
   """
@@ -199,6 +200,35 @@ def dist_set():
     # flask.logger.writeLog()
   return Response("ok", mimetype="application/wu")
 
+
+@app.route("/log/write", methods=["post"])
+def writeLogToFile():
+  """
+  TODO
+  """
+  data = json.loads(request.data)
+  with open('./test/mouse.txt', 'w') as outfile:
+    json.dump(data, outfile)
+  return Response("ok", mimetype="application/wu")
+
+@app.route("/log/getMouse", methods=["post"])
+def getMouseFromFile():
+  """
+  TODO
+  """
+  with open('./test/mouse.txt') as data_file:    
+    data = json.load(data_file)
+  return Response(json.dumps(data))
+
+@app.route("/log/writeResults", methods=["post"])
+def drawPredictorResults():
+  """
+  TODO
+  """
+  data = json.loads(request.data)
+  with open('./test/results.txt', 'w') as outfile:
+    json.dump(data, outfile)
+  return Response("ok", mimetype="application/wu")
 
 @app.route("/data")
 def data():

@@ -7,6 +7,10 @@ barchart: js/*.js js/visualization/barChartViz/*
 	browserify js/*.js js/visualization/barChartViz/* -o static/js/index.js
 	python ./server.py
 
-simple: js/*.js js/visualization/simpleViz/*
-	browserify js/*.js js/visualization/simpleViz/* -o static/js/index.js
+simple: js/*.js js/visualization/simpleViz/* js/test/*
+	browserify js/*.js js/visualization/simpleViz/* js/test/* -o static/js/index.js
+	python ./server.py
+
+complex: js/*.js js/visualization/complicatedViz/*
+	browserify js/*.js js/visualization/complicatedViz/* -o static/js/index.js
 	python ./server.py

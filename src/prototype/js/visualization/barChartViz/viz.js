@@ -29,6 +29,7 @@ var Viz = (function(EventEmitter) {
     this.engine = engine;
     this.start = {};
     this.end = {};
+    this.elements = [];
     return this;
   };
 
@@ -85,7 +86,26 @@ var Viz = (function(EventEmitter) {
     return this;
   }
 
-  
+  Viz.prototype.getInteractableElements = function() {
+    const selector = this.id + " g .mark";
+    this.elements = this.elements.length == 0 ? $(selector).toArray() : this.elements;
+    return this.elements;
+  }
+
+  Viz.prototype.getQueries = function(element) {
+    let retQueries = [];
+    const row = d3.select(element).data()[0];
+    const attr = this.qtemplate.select['x'];
+    let data = { };
+    data[attr] = row['x'];
+    _.each(this.engine.vizes, (v1, i1) => {
+      if (v1 != this) {
+        var q = new Query.Query(v1.qtemplate, data);
+        retQueries.push(q);
+      }
+    });
+    return retQueries;
+  }
 
   return Viz;
 })(EventEmitter);

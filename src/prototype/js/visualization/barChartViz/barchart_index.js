@@ -5,16 +5,17 @@ var GBDataStructure = require("../../gbds").GBDataStructure;
 var SampleProgDataStructure = require("../../progds").SampleProgDataStructure;
 var Query = window.Query = require("../../query");
 var Viz = require("./viz");
-
+var Test = require("../../test/predictor_test").PredTest;
 Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
 Util.HITRATIO = true;
-Util.DETAIL = true;
+Util.DETAIL = false;
 
 // strategies
 Util.PREDICTOR = true;
+Util.TEST = false;
 
 
 var bytespermb = 1048576;
@@ -25,15 +26,15 @@ var engine = window.engine = new Engine(ringbufsize); // replace 450 with bytesp
 //
 // Setup Data Structures
 //
-// var gbDS = new GBDataStructure();
+var gbDS = new GBDataStructure();
 // var progDS = new ProgressiveDataStructure();
-var sampleDS = new SampleProgDataStructure();
+// var sampleDS = new SampleProgDataStructure();
 
 // TODO: comment next line to use the ProgressiveDataStructure to answer queries
-// engine.registerDataStruct(gbDS);
+engine.registerDataStruct(gbDS);
 
 // TODO: uncomment the next line to enable ProgressiveDataStructures
-engine.registerDataStruct(sampleDS);
+// engine.registerDataStruct(sampleDS);
 
 
 var q1 = window.q1 = new Query.GBQueryTemplate(
@@ -57,6 +58,9 @@ var q3 = window.q3 = new Query.GBQueryTemplate(
 engine.registerQueryTemplate(q1);
 engine.registerQueryTemplate(q2);
 engine.registerQueryTemplate(q3);
+
+$("#holder").css('display','none');
+$("#tableau-like").css('display','none');
 
 function setupViz(qtemplate, opts) {
   var viz = new Viz.Viz(engine, qtemplate, opts).setup();
@@ -128,7 +132,20 @@ var makeViz3 = function(cb) {
 // link the vizes
 async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   _.each(vizes, function(v1, i1) {
+    engine.requester.vizMap[v1.id] = v1;
     v1.on("mouseover", function(viz, el, row) {
+      if (Util.TEST && v1.id === "#viz1") {
+        Util.getMouseTrace(function(data){
+          let results = {}
+          for(let i = 10; i <= 30; i += 5) {
+            let test = new Test(data, engine, i);
+            results[i+""] = test.getAverageTime();
+          }
+          Util.writeResults(results, function(data) {
+            console.log(data);
+          });
+        });
+      }
       // create the parameter data for the query
       var attr = v1.qtemplate.select['x']
       var data = { };
@@ -148,6 +165,8 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
       });
     });
   });
+  if(Util.PREDICTOR)
+    engine.requester.run();
 })
 
 
@@ -163,8 +182,6 @@ Util.stream_from("/data", function(arr) {
   if (Util.WRITEDEBUG)
     Util.Debug.updateWrite(arr);
 }, Util.Debug.debug.bind(Util.Debug));
-
-
 
 
 

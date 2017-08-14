@@ -144,6 +144,7 @@ class Manager(object):
       All the parts
     """
     dist = flask.dist
+    # print dist
     key = min(dist.keys(), key=lambda x:int(x))
     if len(dist[key]) == 0:
       return
@@ -184,6 +185,7 @@ class Manager(object):
 
     # find the data struture with the minimum cost
     dses = self.data_structs[tid]
+
     costs = [(ds.cost_est(args), ds) for ds in dses]
     costs = filter(lambda (cost, ds): cost is not None, costs)
     if not costs: 

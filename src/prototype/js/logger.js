@@ -5,6 +5,7 @@ var Logger = (function() {
     this.traceLength = opts.traceLength || 20;
 
     this.trace = [];
+    this.traceTest = [];
   }
 
 
@@ -12,7 +13,7 @@ var Logger = (function() {
   Logger.prototype.pushXYT = function(e, action) {
     var now = Date.now();
     this.addPoint([e.pageX, e.pageY, now, action]);
-    console.log([e.pageX, e.pageY, now, action])
+    // console.log([e.pageX, e.pageY, now, action])
     while (this.trace.length > 1 &&
            _.last(this.trace)[2] - this.trace[0][2] > this.traceLength) {
       this.trace.shift();
@@ -32,6 +33,22 @@ var Logger = (function() {
    */
   Logger.prototype.addPoint = function(point) {
     var trace = this.trace;
+    this.traceTest.push(point);
+
+    if (this.traceTest.length == 1000) {
+      $.ajax({
+        type: "POST",
+        contentType: "application/json; charset=utf-8",
+        url: "/log/write",
+        data:  JSON.stringify(this.traceTest),
+        success: function(data) {
+          console.log(data);
+        },
+        dataType: "json"
+      });
+      this.traceTest = [];
+      alert("You've got a mouse trace!");
+    }
     if (trace.length == 0) {
       trace.push(point);
       return;

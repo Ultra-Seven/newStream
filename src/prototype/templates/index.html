@@ -8,21 +8,25 @@
   <link type="text/css" href="/static/css/leaflet.markercluster.css" rel="stylesheet"/>
   <link type="text/css" href="/static/css/dc.css" rel="stylesheet"/>
   <style>
-        #holder {
-            width:1500px;
-            margin:20px auto;
-        }
-        #holder>div {
-            padding:30px 0;
-            clear:both;
-        }
-        .map {
-            width:600px;
-            height:400px;
-        }
-        .pie {
-            margin-left:30px;
-        }
+    .interactable {
+      width: 90px;
+      height:40px;
+    }
+    #holder {
+      width:1500px;
+      margin:20px auto;
+    }
+    #holder>div {
+      padding:30px 0;
+      clear:both;
+    }
+    .map {
+      width:600px;
+      height:400px;
+    }
+    .pie {
+      margin-left:30px;
+    }
     </style>
 </head>
 <body>
@@ -31,19 +35,36 @@
     <button id="btn2">Show D vs B</button>
     <button id="btn3">Show E vs B</button>
   </div>
-  <svg id="holder">
+  <div id="holder">
     <div id = "simpleViz">
       <div class="map"></div>  
-      <button id="zoomin">Zoom In</button>
-      <button id="zoomout">Zoom Out</button>
+      <div id = "buttons"></div>
+      <div id = "test">
+        <button id="trace">generate mouse trace</button>
+        <button id="evaluate">generate length-accuracy figure</button>
+      </div>
     </div>
-  </svg>
+  </div>
   <div id = "barchart">
     <svg id="viz1"></svg>
     <svg id="viz2"></svg>
     <svg id="viz3"></svg>
   </div>
-    
+  <div id = "tableau-like">
+    <h2>Marker Chart</h2>
+    <i></i>
+    <div id = "container">
+        <div class="map"></div>
+        <div class="barChart">
+            <i></i>
+        </div>
+        <div class="pieChart"><i></i></div>
+
+    </div>
+    <div id = "lineChart">
+        <div class="lineChart"><i></i></div>
+    </div>
+  </div>
 </body>
 <script type="text/javascript" src="/static/js/sylvester.js"></script>
 <!-- dc.leaflet -->

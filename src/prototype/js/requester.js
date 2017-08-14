@@ -27,7 +27,7 @@ var Requester = (function(EventEmitter) {
     opts = opts || {};
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
-    this.minProb = opts.minProb || 0.0001;
+    this.minProb = opts.minProb || 0;
     this.timeRange = opts.timeRange || [25, 50, 150, 200];
     this.K = opts.K || 5;
     this.running = false;
@@ -44,7 +44,7 @@ var Requester = (function(EventEmitter) {
     
     this.mousePredictor = new Pred.YourPredictor([]);
    
-    this.interactableElements = [];
+    this.interactableElements = null;
 
     this.scheduler = new Scheduler.Scheduler(this.timeRange);
 
@@ -56,9 +56,8 @@ var Requester = (function(EventEmitter) {
     this.timeoutId;
     EventEmitter.call(this);
 
-    // Disable the prediction by commenting this line
-    if(Util.PREDICTOR)
-      this.run();
+    this.vizMap = {};
+    
   };
 
   //
@@ -187,34 +186,11 @@ var Requester = (function(EventEmitter) {
   //
   //             https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
   //
-  var getInteractableElements = function() {
-    //throw Error("Implement Me");
-    let elements = this.interactableElements || [];
-    let elements_zoomin = [];
-    let elements_zoomout = [];
-    if(elements.length == 0) {
-      elements = [].slice.call(document.getElementsByClassName('mark')) || [];
-      elements_zoomin = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-in')) || [];
-      elements_zoomout = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-out')) || [];
-      elements = elements.concat(elements_zoomin);
-      elements = elements.concat(elements_zoomout);
-      var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
-      //var target = document.querySelector('#some-id');
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          elements = [].slice.call(document.getElementsByClassName('mark')) || [];
-          elements_zoomin = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-in')) || [];
-          elements_zoomout = [].slice.call(document.getElementsByClassName('leaflet-control-zoom-out')) || [];
-          
-          elements = elements.concat(elements_zoomin);
-          elements = elements.concat(elements_zoomout);
-
-          this.interactableElements = elements;
-        });
-      });
-      observer.observe(document, {childList:true,subtree:true});
-    }
-    this.interactableElements = elements;
+  Requester.prototype.getInteractableElements = function() {
+    this.interactableElements = {};
+    _.each(this.engine.vizes, (v1, i1) => {
+      this.interactableElements[v1.id] = v1.getInteractableElements();
+    });
     return this.interactableElements;
   };
 
@@ -227,33 +203,12 @@ var Requester = (function(EventEmitter) {
   // @return query distribution
   Requester.prototype.mapMouseToQueryDistribution = function(mouseDist, time) {
     // 1. get interactable DOM elements
-    var els = getInteractableElements();
+    var elsMap = this.getInteractableElements();
 
     // 2. be able to map a DOM element to the query+params that it would
     //    trigger if the user interacts with it
-    var magicalGetQueryParams = function(el) {
-      // var row = d3.select(el).data()[0];
-      // var jelm = $(el);
-      // var svg = jelm.parent().parent().parent()[0];
-      // var visName = "#" + svg.id;
-      //engine.vizes
-      retQueries = [];
-      _.each(engine.vizes, function(v1, i1) {
-        let queries = v1.getQueries(el);
-        retQueries = retQueries.concat(queries);
-        // if(v1.id === visName) {
-        //   var attr = v1.qtemplate.select['x']
-        //   var data = { };
-        //   data[attr] = row['x'];
-        //   _.each(engine.vizes, function(v2, i2) {
-        //     if (i1 != i2) {
-        //       var q = new Query.Query(v2.qtemplate, data);
-        //       retQueries.push(q);
-        //     }
-        //   });
-        // }
-      });
-      return retQueries;
+    var magicalGetQueryParams = function(el, viz) {
+      return viz.getQueries(el);
     }
 
     // 3. be able to compute the probability of interacting with a DOM element
@@ -274,19 +229,24 @@ var Requester = (function(EventEmitter) {
     };
     let queryDistribution = new Dist.NaiveDistribution(null);
     // 4. use the above to construct a query distribution
-    _.each(els, el => {
-      let queries = magicalGetQueryParams(el);
-      // add it to a query distribution
-      var prob = markProbability(el);
-      _.each(queries, query => {
-        if (prob > this.minProb) {
-          let key = queryDistribution.keyFunc(query);
-          let probablity = this.scheduler.send(key, prob, time);
-          if (probablity > 0) {
-            queryDistribution.set(query, probablity);
-          }
+    _.each(elsMap, (value, key) => {
+      _.each(value, (el) => {
+        let queries = magicalGetQueryParams(el, this.vizMap[key]);
+        if (queries.length) {
+        // add it to a query distribution
+          var prob = markProbability(el);
+          _.each(queries, query => {
+            if (prob > this.minProb) {
+              // let key = queryDistribution.keyFunc(query);
+              // let probablity = this.scheduler.send(key, prob, time);
+              // if (probablity > 0) {
+              //   queryDistribution.set(query, probablity);
+              // }
+              queryDistribution.set(query, prob);
+            }
+          });
         }
-      });
+      }); 
     });
     return queryDistribution;
   }

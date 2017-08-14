@@ -31,9 +31,7 @@ message ProgressiveTable {
 
 message SimpleVizTable {
   Schema schema = 1;
-  repeated Col pop = 2;
-  repeated Col lat = 2;
-  repeated Col lon = 2;
+  repeated Col cols = 2;
 
   message Col {
     repeated float val = 1;

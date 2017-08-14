@@ -20,10 +20,8 @@ var LineViz = (function(EventEmitter) {
     this.groupname = opts.groupname || "marker-select"
     this.lineChart = null;
     this.range = opts["range"] || [];
+    this.metro = null;
     
-
-    
-
     return this;
   };
 
@@ -32,54 +30,69 @@ var LineViz = (function(EventEmitter) {
     this.lineChart = dc.lineChart("#lineChart .lineChart");
     return this;
   }
-  LineViz.prototype.send = function() {
-    var q = new Query.Query(this.qtemplate, {Zoom: "z"+this.zoom});
-    const id = this.id;
-    if (Util.DETAIL) 
-      console.log("REQUEST:for vis:" + id, "send query:" + q.toSQL());
-    if (Util.HITRATIO) {
-      Util.Debug.hitRatios();
-      Util.Debug.addQuery();
-    }
-    engine.registerQuery(q, this.render.bind(this), id);
-  }
   // data attributes are directly mapped to mark attributes
   // except for x, and y which will be transformed using this.x/yscale
   LineViz.prototype.render = function(data) {
-    this.drawLineChart(data);
+    let data_list = [];
+    if (data.length > 0) {
+      if (data[0].x <= 2013 && data[0].x >= 2000) {
+        _.each(data, (element) => {
+          data_list.push({
+            Year: element.x,
+            GDP: element.y
+          });
+        });
+      }
+      else {
+        _.each(data, (element) => {
+          data_list.push({
+            Year: element.y,
+            GDP: element.x
+          });
+        });
+      }
+    }
+    
+    this.drawLineChart(data_list);
     this.lineChart.render();
   }
 
-  LineViz.prototype.getQueries = function(element) {
-    if (element.className === "leaflet-control-zoom-in") {
-      return [new Query.Query(this.qtemplate, {Zoom: "z"+(this.zoom + 1)})];
-    }
-    else if(element.className === "leaflet-control-zoom-out") {
-      return [new Query.Query(this.qtemplate, {Zoom: "z"+(this.zoom - 1)})];
-    }
-    else {
+  LineViz.prototype.getInteractableElements = function() {
+    return [];
+  }
 
-    }
+  LineViz.prototype.getQueries = function(element) {
+    return [];
+  }
+
+  LineViz.prototype.setTargetMetro = function(metro) {
+    this.metro = metro;
   }
   
   LineViz.prototype.drawLineChart = function(data) {
+    let min = data[0].GDP;
+    let max = data[0].GDP;
+    _.each(data, (d)=> {
+      if (d.GDP > max) {max = d.GDP}
+      if (d.GDP < min) {min = d.GDP}
+    })
     var ndx = crossfilter(data);
 //        var all = ndx.groupAll();
-    var runDimension = ndx.dimension(function(d) {return +d.x;});
+    var runDimension = ndx.dimension(function(d) {return +d.Year;});
     var GDPGroup = runDimension.group().reduceSum(function(d) {
-      return d.y;
+      return d.GDP;
     });
     this.lineChart
       .width(768)
       .height(480)
       .x(d3.scale.linear().domain([2000, 2014]))
-      // .y(d3.scale.linear().domain([0,this.range["GDP"][1]]))
+      .y(d3.scale.linear().domain([min, max]))
       .interpolate('cardinal')
       // .renderArea(true)
       .brushOn(false)
       .clipPadding(10)
-      .yAxisLabel("Speed")
-      .xAxisLabel("Run")
+      .yAxisLabel("GDP")
+      .xAxisLabel("Year")
       .dimension(runDimension)
       .group(GDPGroup);
   }
