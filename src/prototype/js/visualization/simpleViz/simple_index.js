@@ -18,7 +18,7 @@ Util.DETAIL = true;
 
 // strategies
 Util.PREDICTOR = false;
-Util.TEST = true;
+Util.TEST = false;
 
 
 var bytespermb = 1048576;
@@ -71,14 +71,22 @@ else {
     Util.getMouseTrace(function(data){
       const opts = {
         n: 100,
-        testTimes: 5
+        testTimes: 10,
+        topK: 5,
+        mouse: true
       }
       let test = new Test(data, engine, opts);
-
-      
-      // Util.writeResults(results, function(data) {
-      //   console.log(data);
-      // });
+      // test.varyK();
+      test.varyLength();
+      let results = test.getResults();
+      let wrapper = {
+        data: results,
+        // file: "mouse_varyK.txt"
+        file: "mouse_varyLength.txt"
+      }
+      Util.writeResults(wrapper, function(data) {
+        console.log(data);
+      });
     });
   });
 }
@@ -121,13 +129,13 @@ async.parallel([makeViz1], function(err, vizes) {
 //
 // Start the data stream!
 //
-// Util.stream_from("/data", function(arr) {
-//   if (Util.DEBUG)
-//     Util.Debug.update(arr);
-//   if (Util.WRITEDEBUG)
-//     Util.Debug.updateWriteTime();
-//   console.log("data:", arr)
-//   engine.ringbuf.write(arr);
-//   if (Util.WRITEDEBUG)
-//     Util.Debug.updateWrite(arr);
-// }, Util.Debug.debug.bind(Util.Debug));
+Util.stream_from("/data", function(arr) {
+  if (Util.DEBUG)
+    Util.Debug.update(arr);
+  if (Util.WRITEDEBUG)
+    Util.Debug.updateWriteTime();
+  console.log("data:", arr)
+  engine.ringbuf.write(arr);
+  if (Util.WRITEDEBUG)
+    Util.Debug.updateWrite(arr);
+}, Util.Debug.debug.bind(Util.Debug));

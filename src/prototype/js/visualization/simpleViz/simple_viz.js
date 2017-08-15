@@ -51,13 +51,13 @@ var Viz = (function(EventEmitter) {
   Viz.prototype.addButtons = function() {
     _.each(this.state, st => {
       let button = $("<button id=" + st + " class='interactable'>" + st + "</button>");
-      // button.on("click", e => {
-      //   //do something...
-      //   this.send(st);
-      // })
+      button.on("click", e => {
+        //do something...
+        this.send(st);
+      })
       $('#buttons').after(button);
     });
-    $(".interactable").css("margin", "10px 10px 10px 10px");
+    // $(".interactable").css("margin", "10px 10px 10px 10px");
   }
   Viz.prototype.render = function(data) {
     if (data.length) {

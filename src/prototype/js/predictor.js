@@ -85,7 +85,7 @@ var YourPredictor = (function(Predictor) {
     //console.log("trace:", trace);
     var pt = null;
     let mydists = [];
-    if (trace.length <= 2) {
+    if (trace.length <= 0) {
       if (trace.length == 0) return null;
       pt = trace[trace.length - 1];
     } else {

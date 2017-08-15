@@ -207,8 +207,10 @@ def writeLogToFile():
   TODO
   """
   data = json.loads(request.data)
-  with open('./test/mouse.txt', 'w') as outfile:
-    json.dump(data, outfile)
+  fileName = './test/' + data["file"]
+  print fileName
+  with open(fileName, 'w') as outfile:
+    json.dump(data["data"], outfile)
   return Response("ok", mimetype="application/wu")
 
 @app.route("/log/getMouse", methods=["post"])
@@ -226,8 +228,9 @@ def drawPredictorResults():
   TODO
   """
   data = json.loads(request.data)
-  with open('./test/results.txt', 'w') as outfile:
-    json.dump(data, outfile)
+  fileName = './test/' + data["file"]
+  with open(fileName, 'w') as outfile:
+    json.dump(data["data"], outfile)
   return Response("ok", mimetype="application/wu")
 
 @app.route("/data")
