@@ -37,12 +37,12 @@ var getMapStats = function(opts, cb) {
   });
 }
 
-var getMouseTrace = function(cb) {
+var getMouseTrace = function(fileName, cb) {
   $.ajax({
     type: "POST",
     contentType: "application/json; charset=utf-8",
     url: "/log/getMouse",
-    data:  JSON.stringify({}),
+    data:  JSON.stringify({file: fileName}),
     success: cb,
     dataType: "json"
   });

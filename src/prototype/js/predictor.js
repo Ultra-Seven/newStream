@@ -37,39 +37,218 @@ var Predictor = (function() {
 })();
 
 
+
 // Baseline prediction that is based on KTM that we provide
 //
-// var BaselinePredictor = (function(Predictor) {
-//   extend(BaselinePredictor, Predictor);
-
-//   // @boxes List of bounding boxes for the clickable elements on the page
-//   // @templates list of precomputed KTM templates (default is loaded from /static/data/ktmdata.json)
-//   function BaselinePredictor(boxes, templates) {
-//     //console.log("init here", templates);
-//     this.ktm = new ktmPred.KTM(templates);
-//     this.defaultPrediction = Dist.NaiveDistribution.from([0,0,'m'], mouseToKey);
-//     Predictor.apply(this, arguments);
-//   };
-
-//   BaselinePredictor.prototype.predict = function(trace, deltaTime) {
-//     var pt = null;
-//     if (trace.length <= 2) {
-//       if (trace.length == 0) return this.defaultPrediction;
-//       pt = trace[trace.length - 1];
-//     } else {
-//       try{
-//         pt = this.ktm.predictPosition(trace, deltaTime);
-//       } catch (e) { return this.defaultPrediction; }
-//     }
-//     var pred = [pt[0], pt[1], "m"];
-//     var dist = Dist.NaiveDistribution.from(pred, mouseToKey);
-//     dist.set(pred, 1);
-//     return dist;
-//   };
-//   return BaselinePredictor;
-// })(Predictor);
+var BaselinePredictor = (function(Predictor) {
+  extend(BaselinePredictor, Predictor);
 
 
+  function BaselinePredictor(length, logs, range) {
+    //console.log("init here", templates);
+    this.n = length;
+    this.logs = logs;
+    this.tkRange = range || [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+    this.modelTable = {};
+    _.each(this.tkRange, tk => {
+      let VL = {};
+      _.each([2, 3, 4, 5], length => {
+        VL[length+""] = this.pathModelConstructionByTime(tk, length);
+      });
+      this.modelTable[tk+""] = VL;
+    })
+    Predictor.apply(this, arguments);
+  };
+
+  BaselinePredictor.prototype.predict = function(queryTrace, deltaTime) {
+    let hashTable = this.modelTable[deltaTime+""];
+    for (let i = 0; i < queryTrace.length; i++) {
+      let P = queryTrace.slice(i, queryTrace.length);
+      let len = P.length + "";
+      let request = _.reduce(P, function(memo, num){ return memo + "+" + num[0]; }, "");
+      if (len in hashTable && request in hashTable[len]) {
+        return hashTable[len][request];
+      }
+    }
+    return null
+  };
+
+  BaselinePredictor.prototype.getQnIndex = function(k, trace, end) {
+    let min = Math.abs(trace[end][2] - trace[end - 1][2] - k);
+    let index = end;
+    for (let i = end + 1; i < trace.length; i++) {
+      let timeElapse = trace[i][2] - trace[end - 1][2];
+      if (Math.abs(timeElapse - k) < min) {
+        min = Math.abs(timeElapse - k);
+        index = i;
+      }
+      else
+        return index;
+    }
+  }
+  BaselinePredictor.prototype.pathModelConstructionByTime = function(deltaTime, length) {
+    // filter log file
+
+    // initialize table
+    let table = {};
+    let model = {};
+    let maxTable = {};
+    for (let i = 0; i < this.logs.length; i++) {
+      let session = this.logs[i];
+      for (let j = 0; j < session.length; j++) {
+        if (session.length - j  > 100) {
+          // find a sub-string of length n starting at alphabet j
+          let P = session.slice(j, j + length);
+          let request = _.reduce(P, function(memo, num){ return memo + "+" + num[0]; }, "");
+          // find the next click
+          let nextIndex = this.getQnIndex(deltaTime, session, j + length);
+          if (Math.abs(session[nextIndex][2] - session[j + length - 1][2] - deltaTime) > 5) {continue;}
+          let C = session[nextIndex];
+          const key = request + ":" + C[0];
+          if (key in table) {
+            table[key]++;
+          }
+          else {
+            table[key] = 1;
+          }
+        }
+      }
+    }
+    _.each(table, (value, key) => {
+      const list = key.split(":");
+      const trace = list[0];
+      const prediction = list[1];
+      if (trace in model) {
+        model[trace][prediction] = value;
+      }
+      else {
+        model[trace] = {};
+        model[trace][prediction] = value;
+      }
+    });
+    _.each(model, (dist, key) => {
+      let probs = Object.values(dist);
+      let sum = _.reduce(probs, function(memo, num){ return memo + num; }, 0);
+      _.each(dist, (value, k) => {
+        model[key][k] = value / sum;
+      });
+    })
+
+    return model;
+  };
+
+  return BaselinePredictor;
+})(Predictor);
+
+
+var MousePredictor = (function(Predictor) {
+  extend(MousePredictor, Predictor);
+
+  function MousePredictor(logs, range, lengths) {
+    this.logs = logs;
+    this.tkRange = range || [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+    this.lengths = lengths || [2, 3, 4, 5];
+    this.modelTable = {};
+    _.each(this.tkRange, tk => {
+      let VL = {};
+      _.each(this.lengths, length => {
+        VL[length+""] = this.pathModelConstructionByTime(tk, length);
+      });
+      this.modelTable[tk+""] = VL;
+    });
+
+    Predictor.apply(this, arguments);
+  };
+
+  MousePredictor.prototype.getQnIndex = function(k, trace, end) {
+    let min = Math.abs(trace[end][2] - trace[end - 1][2] - k);
+    let index = end;
+    for (let i = end + 1; i < trace.length; i++) {
+      let timeElapse = trace[i][2] - trace[end - 1][2];
+      if (Math.abs(timeElapse - k) < min) {
+        min = Math.abs(timeElapse - k);
+        index = i;
+      }
+      else
+        return index;
+    }
+  }
+
+
+  MousePredictor.prototype.predict = function(queryTrace, deltaTime) {
+    let hashTable = this.modelTable[deltaTime+""];
+    for (let i = 0; i < queryTrace.length; i++) {
+      let P = queryTrace.slice(i, queryTrace.length);
+      let len = P.length + "";
+      let request = _.reduce(P, function(memo, num){ return memo + num[3]; }, "");
+      if (len in hashTable && request in hashTable[len]) {
+        return hashTable[len][request];
+      }
+    }
+    return null
+  };
+
+  MousePredictor.prototype.pathModelConstructionByTime = function(deltaTime, length) {
+    // filter log file
+
+    // initialize table
+    let table = {};
+    let model = {};
+    let maxTable = {};
+    for (let i = 0; i < this.logs.length; i++) {
+      let session = this.logs[i];
+      for (let j = 0; j < session.length; j++) {
+        if (session.length - j  > 100) {
+          // find a sub-string of length n starting at alphabet j
+          let P = session.slice(j, j + length);
+          let request = _.reduce(P, function(memo, num){ return memo + num[3]; }, "");
+          // find the next click
+          let nextIndex = this.getQnIndex(deltaTime, session, j + length);
+          if (Math.abs(session[nextIndex][2] - session[j + length - 1][2] - deltaTime) > 5) {continue;}
+          let C = session[nextIndex];
+          const key = request + ":" + C[3];
+          if (key in table) {
+            table[key]++;
+          }
+          else {
+            table[key] = 1;
+          }
+        }
+      }
+    }
+    _.each(table, (value, key) => {
+      const list = key.split(":");
+      const trace = list[0];
+      const prediction = list[1];
+      if (trace in model) {
+        model[trace][prediction] = value;
+      }
+      else {
+        model[trace] = {};
+        model[trace][prediction] = value;
+      }
+    });
+    _.each(model, (dist, key) => {
+      let probs = Object.values(dist);
+      let sum = _.reduce(probs, function(memo, num){ return memo + num; }, 0);
+      _.each(dist, (value, k) => {
+        model[key][k] = value / sum;
+      });
+    })
+
+    return model;
+  };
+
+
+
+  // TODO: fill in with your code
+  MousePredictor.prototype.predict = function(trace, deltaTime) {
+    
+    return mydists;
+  };
+
+  return MousePredictor;
+})(Predictor);
 
 
 var YourPredictor = (function(Predictor) {
@@ -77,6 +256,7 @@ var YourPredictor = (function(Predictor) {
 
   function YourPredictor(boxes) {
     this.defaultPrediction = Dist.NaiveDistribution.from([0,0,'m'], mouseToKey);
+
     Predictor.apply(this, arguments);
   };
 
@@ -86,107 +266,135 @@ var YourPredictor = (function(Predictor) {
     var pt = null;
     let mydists = [];
     if (trace.length <= 0) {
-      if (trace.length == 0) return null;
-      pt = trace[trace.length - 1];
-    } else {
-    
+        if (trace.length == 0) return null;
+        pt = trace[trace.length - 1];
+    } 
+    else {
+
       // R to add random noise
       // to the known position of the mouse.  The higher the
       // values, the more noise
-      var decay = 0.003; 
-      var R = Matrix.Diagonal([0.1, 0.1]);
-          
-      // initial state (location and velocity)
+      var decay = 0.003;
+      var R = Matrix.Diagonal([0.1, 0.1, 0.1, 0.1, 0, 0]);
+
+      // initial state (location and velocity, acceleration)
       var x = $M([
-        [trace[0][0]], 
-        [trace[0][1]], 
-        [0], 
-        [0] 
+          [trace[0][0]],
+          [trace[0][1]],
+          [0],
+          [0],
+          [0],
+          [0]
       ]);
 
       // external motion
-     var u = $M([
-          [0], 
-          [0], 
-          [0], 
+      var u = $M([
+          [0],
+          [0],
+          [0],
+          [0],
+          [0],
           [0]
       ]);
-              
+
       // initial uncertainty
-      var P = Matrix.Random(4, 4);
-    
+      var P = Matrix.Random(6, 6);
+
 
       // measurement function (4D -> 2D)
       // This one has to be this way to make things run
       var H = $M([
-          [1, 0, 0, 0], 
-          [0, 1, 0, 0]
-      ]); 
+          [1, 0, 0, 0, 0, 0],
+          [0, 1, 0, 0, 0, 0],
+          [0, 0, 1, 0, 0, 0],
+          [0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 1, 0],
+          [0, 0, 0, 0, 0, 1],
+      ]);
 
       // identity matrix
-      var I = Matrix.I(4);
+      var I = Matrix.I(6);
 
       // To determine dt
-      var time = trace[0][2]; 
+      var time = trace[0][2];
 
       var Q = $M(
-          [[0.1, 0, 0, 0],
-          [0, 0.1, 0, 0],
-          [0, 0, 0.1, 0],
-          [0, 0, 0, 0.1]
-      ]);
+          [
+              [0.1, 0, 0, 0, 0, 0],
+              [0, 0.1, 0, 0, 0, 0],
+              [0, 0, 0.1, 0, 0, 0],
+              [0, 0, 0, 0.1, 0, 0],
+              [0, 0, 0, 0, 0.1, 0],
+              [0, 0, 0, 0, 0, 0.1]
+          ]);
       let timeElapse = [];
       for (let i = 0; i < trace.length - 1; i++) {
-        timeElapse.push(trace[i + 1][2] - trace[i][2]);
+          timeElapse.push(trace[i + 1][2] - trace[i][2]);
       }
-      for (var i = 1; i < trace.length; i++) {
+      for (var i = 2; i < trace.length; i++) {
         let dt = timeElapse[i - 1];
         // Derive the next state
-        F = $M([[1, 0, dt, 0], 
-                [0, 1, 0, dt], 
-                [0, 0, 1, 0], 
-                [0, 0, 0, 1]
-               ]); 
-       
+        const dt2 = Math.pow(dt, 2);
+        F = $M([
+            [1, 0, dt, 0, dt2, 0],
+            [0, 1, 0, dt, 0, dt2],
+            [0, 0, 1, 0, dt, 0],
+            [0, 0, 0, 1, 0, dt],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1]
+        ]);
+
         // decay confidence
         // to account for change in velocity
         P = P.map(function(x) {
             return x * (1 + decay * dt);
         });
-        
+
         // Fake uncertaintity in our measurements
-        xMeasure = trace[i][0] + R.e(1,1) * 2 * (Math.random() - 0.5);
-        yMeasure = trace[i][1] + R.e(2,2) * 2 * (Math.random() - 0.5);
-        
+        let xMeasure = trace[i][0];
+        let yMeasure = trace[i][1];
+        let vxMeasure = (trace[i][0] - trace[i - 1][0]) / dt;
+        let vyMeasure = (trace[i][1] - trace[i - 1][1]) / dt;
+        let vxpMeasure = (trace[i - 1][0] - trace[i - 2][0]) / timeElapse[i - 2];
+        let vypMeasure = (trace[i - 1][1] - trace[i - 2][1]) / timeElapse[i - 2];
+        let axMeasure = (vxMeasure - vxpMeasure) * 2 / (dt + timeElapse[i - 2]);
+        let ayMeasure = (vyMeasure - vypMeasure) * 2 / (dt + timeElapse[i - 2]);
+
+
+
         // prediction
         x = F.x(x).add(u);
         P = F.x(P).x(F.transpose()).add(Q);
 
         // measurement update
-        Z = $M([[xMeasure, yMeasure]]);
+        Z = $M([[xMeasure, yMeasure, vxMeasure, vyMeasure, axMeasure, ayMeasure]]);
         y = Z.transpose().subtract(H.x(x));
         S = H.x(P).x(H.transpose()).add(R);
 
         K = P.x(H.transpose()).x(S.inverse());
         x = x.add(K.x(y));
         P = I.subtract(K.x(H)).x(P);
-        
+
       }
       for (let i = 0; i < deltaTime.length; i++) {
-        // Derive the next state
+          // Derive the next state
         const delta = deltaTime[i];
-        let F_time = $M([[1, 0, delta, 0], 
-                [0, 1, 0, delta], 
-                [0, 0, 1, 0], 
-                [0, 0, 0, 1]
-               ]); 
-         
+        const delta2 = Math.pow(deltaTime[i], 2);
+        let F_time = $M([
+            [1, 0, delta * 0.6, 0, 0, 0],
+            [0, 1, 0, delta * 0.6, 0, 0],
+            [0, 0, 1, 0, delta, 0],
+            [0, 0, 0, 1, 0, delta],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1]
+        ]);
+
         // decay confidence
         // to account for change in velocity
         let P_time = P.map(function(x) {
-           return x * (1 + decay * deltaTime[i]);
+            return x * (1 + decay * deltaTime[i]);
         });
-          
+
         // prediction
         let x_time = F_time.x(x).add(u);
         P_time = F_time.x(P_time).x(F_time.transpose()).add(Q);
@@ -212,5 +420,7 @@ var YourPredictor = (function(Predictor) {
 
 module.exports = {
   Predictor: Predictor,
-  YourPredictor: YourPredictor
+  BaselinePredictor: BaselinePredictor,
+  YourPredictor: YourPredictor,
+  MousePredictor: MousePredictor
 }

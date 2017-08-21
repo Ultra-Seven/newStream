@@ -207,8 +207,7 @@ def writeLogToFile():
   TODO
   """
   data = json.loads(request.data)
-  fileName = './test/' + data["file"]
-  print fileName
+  fileName = './test/' + data["file"] + ".txt"
   with open(fileName, 'w') as outfile:
     json.dump(data["data"], outfile)
   return Response("ok", mimetype="application/wu")
@@ -218,7 +217,8 @@ def getMouseFromFile():
   """
   TODO
   """
-  with open('./test/mouse.txt') as data_file:    
+  data = json.loads(request.data)
+  with open('./test/' + data["file"]) as data_file:    
     data = json.load(data_file)
   return Response(json.dumps(data))
 
@@ -228,9 +228,12 @@ def drawPredictorResults():
   TODO
   """
   data = json.loads(request.data)
-  fileName = './test/' + data["file"]
+  fileName = './test/' + data["file"] + ".txt"
+  rawFileName = './test/' + data["file"] + "_raw.txt"
   with open(fileName, 'w') as outfile:
     json.dump(data["data"], outfile)
+  with open(rawFileName, 'w') as outfile:
+    json.dump(data["raw"], outfile)
   return Response("ok", mimetype="application/wu")
 
 @app.route("/data")

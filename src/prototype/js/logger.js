@@ -35,12 +35,14 @@ var Logger = (function() {
     var trace = this.trace;
     this.traceTest.push(point);
 
-    if (this.traceTest.length == 1000) {
+    if (this.traceTest.length == 10000) {
       $.ajax({
         type: "POST",
         contentType: "application/json; charset=utf-8",
         url: "/log/write",
-        data:  JSON.stringify(this.traceTest),
+        data:  JSON.stringify({
+          file: "eventTrace", 
+          data:this.traceTest}),
         success: function(data) {
           console.log(data);
         },
@@ -90,11 +92,12 @@ var Logger = (function() {
 
   Logger.prototype.onmousemove = function(e) {
     var now = Date.now();
+    console.log(now);
     if (this.trace.length > 0) {
       if (now - _.last(this.trace)[2] < this.minResolution) 
         return;
     }
-    this.pushXYT(e, "m");
+    this.pushXYT(e, "m", now);
   }
   Logger.prototype.onmousedown = function(e) {
     this.pushXYT(e, "d");

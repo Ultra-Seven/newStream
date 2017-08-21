@@ -86,7 +86,7 @@ var makeViz1 = function(cb) {
         id: "#viz1", 
         state: data['State']
       };
-      cb(null, setupViz(q1, opts));
+      cb(null, setupViz([q1, q2], opts));
   });
 };
 

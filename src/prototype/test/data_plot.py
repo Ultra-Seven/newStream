@@ -19,7 +19,7 @@ else:
 line_markers = [ 'o', 'v', '^', '*', 'x', '.', '>', ',', '+', '<', 'D', 'p' ]
 def multi_plot(xs, ys, out_file, paths, reversed, xlabel, ylabel):
     global line_markers
-    xs, ys = scala_tn_special(xs, ys)
+    #xs, ys = scala_tn_special(xs, ys)
     xs = list(xs)
     ys = list(ys)
     if reversed:
@@ -51,11 +51,12 @@ def multi_plot(xs, ys, out_file, paths, reversed, xlabel, ylabel):
 def set_tick(plt, xs):
     xticks = [0]
     xticks = xticks + max(xs, key=len)
-    if len(xticks) > 10:
+    if len(xticks) > 15:
         xticks = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     # xticks = [1,2,4,8,12,16,24]
     if xticks:
         plt.xticks(xticks)
+    # plt.yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
 def scala_tn_special(xs, ys):
     return list(zip(*[ (x, y) if x[0] == 1 else ([ xi // 2 for xi in x ], y) for x, y in zip(xs, ys) ]))

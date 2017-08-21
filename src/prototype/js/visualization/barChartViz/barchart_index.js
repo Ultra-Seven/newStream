@@ -5,16 +5,17 @@ var GBDataStructure = require("../../gbds").GBDataStructure;
 var SampleProgDataStructure = require("../../progds").SampleProgDataStructure;
 var Query = window.Query = require("../../query");
 var Viz = require("./viz");
+var Logger = require("../../logger").Logger;
 var Test = require("../../test/predictor_test").PredTest;
 Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = true;
+Util.HITRATIO = false;
 Util.DETAIL = false;
 
 // strategies
-Util.PREDICTOR = true;
+Util.PREDICTOR = false;
 Util.TEST = false;
 
 
@@ -168,7 +169,6 @@ async.parallel([makeViz1, makeViz2,  makeViz3], function(err, vizes) {
   if(Util.PREDICTOR)
     engine.requester.run();
 })
-
 
 //
 // Start the data stream!

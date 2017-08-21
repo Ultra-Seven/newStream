@@ -14,3 +14,7 @@ simple: js/*.js js/visualization/simpleViz/* js/test/*
 complex: js/*.js js/visualization/complicatedViz/*
 	browserify js/*.js js/visualization/complicatedViz/* -o static/js/index.js
 	python ./server.py
+
+drag: js/*.js js/visualization/draggingViz/*
+	browserify js/*.js js/visualization/draggingViz/* -o static/js/index.js
+	python ./server.py

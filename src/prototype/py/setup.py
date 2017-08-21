@@ -132,6 +132,22 @@ if __name__ == "__main__":
             ),
             vizName = "SimpleViz"
           ),
+        ),
+        dict(
+          id="#simpleviz",
+          template=dict(
+            name="gbquery",
+            select=dict(
+              x="avg(Latitude)",
+              y="avg(Longitude)",
+            ),
+            fr="data",
+            groupby=["State"],
+            params=dict(
+              State = "str"
+            ),
+            vizName = "SimpleViz"
+          ),
         )
       ]
       csv_file = "data/zip_codes_states.csv"

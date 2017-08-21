@@ -52,9 +52,8 @@ var Viz = (function(EventEmitter) {
     _.each(this.state, st => {
       let button = $("<button id=" + st + " class='interactable'>" + st + "</button>");
       button.on("click", e => {
-        //do something...
         this.send(st);
-      })
+      });
       $('#buttons').after(button);
     });
     // $(".interactable").css("margin", "10px 10px 10px 10px");

@@ -13,16 +13,16 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = true;
-Util.DETAIL = true;
+Util.HITRATIO = false;
+Util.DETAIL = false;
 
 // strategies
 Util.PREDICTOR = false;
-Util.TEST = false;
+Util.TEST = true;
 
 
 var bytespermb = 1048576;
-var ringbufsize = 45000;
+var ringbufsize = 4500;
 var engine = window.engine = new Engine(ringbufsize); // replace 450 with bytespermb * #MBs
 // engine.registerRingBufferSize(ringbufsize);
 
@@ -68,25 +68,34 @@ else {
     this.logger.bind(document);
   });
   $("#evaluate").on("click", e => {
-    Util.getMouseTrace(function(data){
-      const opts = {
-        n: 100,
-        testTimes: 10,
-        topK: 5,
-        mouse: true
-      }
-      let test = new Test(data, engine, opts);
-      // test.varyK();
-      test.varyLength();
-      let results = test.getResults();
-      let wrapper = {
-        data: results,
-        // file: "mouse_varyK.txt"
-        file: "mouse_varyLength.txt"
-      }
-      Util.writeResults(wrapper, function(data) {
-        console.log(data);
-      });
+    Util.getMouseTrace("mouse.txt", function(data1){
+      // Util.getMouseTrace("eventTrace.txt", function(data2){
+        const opts = {
+          n: 100,
+          testTimes: 100,
+          topK: 5,
+          // type: "mouse",
+          // eventData: data2
+        }
+        let test = new Test(data1, engine, opts);
+        // test.varyK();
+        test.varyLength();
+        let results = test.getResults();
+        let rawReults = test.getRawResults();
+        let wrapper = {
+          data: results,
+          raw: rawReults,
+          // file: "top5_varyK"
+          file: "top5_varyLength"
+          // file: "mouse_varyLength"
+          // file: "mouse_varyK"
+          // file: "baseline_varyK"
+          // file: "baseline_varyLength"
+        }
+        Util.writeResults(wrapper, function(data) {
+          alert("test done!");
+        });
+      // });
     });
   });
 }
@@ -106,9 +115,7 @@ var makeViz1 = function(cb) {
     },
   };
   Util.getAttrStats(data,
-    function(data) {
-      console.log(data)
-      var opts = {
+    function(data) {      var opts = {
         id: "#viz1", 
         state: data['State']
       };

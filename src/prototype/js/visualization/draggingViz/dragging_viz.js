@@ -25,6 +25,8 @@ var Viz = (function(EventEmitter) {
     this.map = null;
     this.centerLat = 38.889931;
     this.centerLon = -77.009003;
+    this.currentState = "";
+    this.mouseDown = false;
     return this;
   };
 
@@ -36,8 +38,8 @@ var Viz = (function(EventEmitter) {
     this.render(this.data);
     return this;
   }
-  Viz.prototype.send = function(state) {
-    var q = new Query.Query(this.qtemplate, {State: state});
+  Viz.prototype.send = function(state, template) {
+    var q = new Query.Query(template, {State: state});
     const id = this.id;
     if (Util.DETAIL) 
       console.log("REQUEST:for vis:" + id, "send query:" + q.toSQL());
@@ -55,6 +57,19 @@ var Viz = (function(EventEmitter) {
       button.on("click", e => {
         //do something...
         this.send(st);
+      });
+      button.on("mousemove", e => {
+        //do something...
+        var q = new Query.Query(this.qtemplate[1], {State: st});
+        const id = this.id;
+        let cb = function(data) {
+          const location = data[0];
+          if (location.x && location.y) {
+            $("#latitude").html(location.x);
+            $("#longitude").html(location.y);
+          }
+        }
+        engine.registerQuery(q, cb, id);
       })
       $('#buttons').after(button);
     });
@@ -63,13 +78,39 @@ var Viz = (function(EventEmitter) {
 
   Viz.prototype.addSlider = function() {
   	let slider = `
-        <div><input type="range" id="slideRange" value="0" min="0" max="` + (this.state.length - 1) + `" step="1">Score threshold: <span id="sliderValue">0</div>`;
+        <div><input type="range" id="slideRange" value="0" min="0" max="` + (this.state.length - 1) + `" step="1">center location: <span id="latitude">0</span>
+        <span>,</span><span id="longitude">0</div>`;
   	$('#slider').after(slider);
-  	$('#slideRange').on("mouseover", e => {
-  		alert("over");
+  	$('#slideRange').on("mousemove", e => {
+  		const slider = $('#slideRange');
+      const width = slider.width();
+      const offset = slider.offset();
+      const value = Math.round(((e.pageX - offset.left) / width) * (10 - 0)) + 0;
+      if (this.state[value] !== this.currentState) {
+        this.currentState = this.state[value];
+        var q = new Query.Query(this.qtemplate[1], {State: this.currentState});
+        const id = this.id;
+        let cb = function(data) {
+          const location = data[0];
+          if (location.x && location.y) {
+            $("#latitude").html(location.x);
+            $("#longitude").html(location.y);
+          }
+        }
+        engine.registerQuery(q, cb, id);
+      }
   	});
-  	$('#slideRange').on("change", e => {
-  		alert("change");
+    $('#slideRange').on("mousedown", (e) => {
+      console.log("mouse down");
+      this.mouseDown = true;
+    });
+    $('#slideRange').on("mouseup", (e) => {
+      console.log("mouse up");
+      this.mouseDown = false;
+    });
+  	$('#slideRange').on("change", () => {
+      const value = $('#slideRange').val()
+      this.send(this.state[value], this.qtemplate[0])
   	});
   }
 
@@ -117,7 +158,12 @@ var Viz = (function(EventEmitter) {
   Viz.prototype.getQueries = function(element) {
     const state = $(element).attr('id');
     if (state) {
-      return [new Query.Query(this.qtemplate, {State: state})];
+      if (this.mousedown) {
+        return [new Query.Query(this.qtemplate[0], {State: state})]
+      }
+      else {
+        return [new Query.Query(this.qtemplate[1], {State: state})];
+      }
     }
     return [];
   }
