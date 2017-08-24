@@ -13,11 +13,11 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = true;
+Util.HITRATIO = false;
 Util.DETAIL = true;
 
 // strategies
-Util.PREDICTOR = false;
+Util.PREDICTOR = true;
 Util.TEST = false;
 
 
@@ -64,6 +64,7 @@ engine.registerQueryTemplate(q2);
 
 $("#barchart").css('display','none');
 $("#tableau-like").css('display','none');
+$('#test').css('display','none');
 
 
 function setupViz(qtemplate, opts) {

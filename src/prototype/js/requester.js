@@ -4,6 +4,7 @@ var Dist = require("./dist");
 var Logger = require("./logger").Logger;
 var Scheduler = require("./scheduler.js");
 var Pred = require("./predictor.js");
+var Trace = require('./test/eventTrace')
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -28,7 +29,7 @@ var Requester = (function(EventEmitter) {
     this.engine = engine;
     this.minInterval = opts.minInterval || 50;
     this.minProb = opts.minProb || 0;
-    this.timeRange = opts.timeRange || [25, 50, 150, 200];
+    this.timeRange = opts.timeRange || [20, 60, 100, 200];
     this.K = opts.K || 5;
     this.running = false;
     this.runningQuery = 0;
@@ -43,6 +44,8 @@ var Requester = (function(EventEmitter) {
     }
     
     this.mousePredictor = new Pred.YourPredictor([]);
+    this.traceConfig = new Trace.Trace();
+    this.eventPredictor = new Pred.MousePredictor([this.traceConfig.eventTrace.slice(0, 8000)], this.kRange, [2, 3, 4, 5]);
    
     this.interactableElements = null;
 
@@ -160,11 +163,12 @@ var Requester = (function(EventEmitter) {
     dt = dt || 100;
     // predicting is a heavy calculation
     var mouseDists = this.mousePredictor.predict(trace, dt);
+    var eventDist = this.eventPredictor.predict(trace, dt);
     // TODO: Uncomment below when the function is implemented
     var queryDists = [];
     if(mouseDists && mouseDists.length) {
       _.each(mouseDists, (dist, idx) => {
-        queryDists.push(this.mapMouseToQueryDistribution(dist, dt[idx]));
+        queryDists.push(this.mapMouseToQueryDistribution(dist, eventDist[dt[idx]], dt[idx]));
       });
        //console.log("topK:", queryDist.getTopK(10));
     }
@@ -201,14 +205,15 @@ var Requester = (function(EventEmitter) {
   //
   // @mouseDist distribuiton of mouse positions (unimplementd)
   // @return query distribution
-  Requester.prototype.mapMouseToQueryDistribution = function(mouseDist, time) {
+  Requester.prototype.mapMouseToQueryDistribution = function(mouseDist, eventDist, time) {
     // 1. get interactable DOM elements
     var elsMap = this.getInteractableElements();
 
     // 2. be able to map a DOM element to the query+params that it would
     //    trigger if the user interacts with it
     var magicalGetQueryParams = function(el, viz) {
-      return viz.getQueries(el);
+
+      return viz.getQueries(el, eventDist);
     }
 
     // 3. be able to compute the probability of interacting with a DOM element
@@ -231,9 +236,8 @@ var Requester = (function(EventEmitter) {
     // 4. use the above to construct a query distribution
     _.each(elsMap, (value, key) => {
       _.each(value, (el) => {
-        let queries = magicalGetQueryParams(el, this.vizMap[key]);
-        if (queries.length) {
-        // add it to a query distribution
+        let queriesDict = magicalGetQueryParams(el, this.vizMap[key]);
+        _.each(queriesDict, (queries, event) => {
           var prob = markProbability(el);
           _.each(queries, query => {
             if (prob > this.minProb) {
@@ -242,10 +246,11 @@ var Requester = (function(EventEmitter) {
               // if (probablity > 0) {
               //   queryDistribution.set(query, probablity);
               // }
+              // queryDistribution.set(query, prob);
               queryDistribution.set(query, prob);
             }
           });
-        }
+        });
       }); 
     });
     return queryDistribution;

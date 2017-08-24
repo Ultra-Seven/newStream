@@ -79,7 +79,8 @@ var Logger = (function() {
         trace.push([
             trace[l-1][0] + rate * (point[0] - x),
             trace[l-1][1] + rate * (point[1] - y),
-            trace[l-1][2] + this.minResolution
+            trace[l-1][2] + this.minResolution,
+            trace[l-1][3]
         ]);
         timeDiff -= this.minResolution;
         l++;
@@ -92,12 +93,11 @@ var Logger = (function() {
 
   Logger.prototype.onmousemove = function(e) {
     var now = Date.now();
-    console.log(now);
     if (this.trace.length > 0) {
       if (now - _.last(this.trace)[2] < this.minResolution) 
         return;
     }
-    this.pushXYT(e, "m", now);
+    this.pushXYT(e, "m");
   }
   Logger.prototype.onmousedown = function(e) {
     this.pushXYT(e, "d");

@@ -18,7 +18,7 @@ Util.DETAIL = false;
 
 // strategies
 Util.PREDICTOR = false;
-Util.TEST = true;
+Util.TEST = false;
 
 
 var bytespermb = 1048576;
@@ -74,23 +74,28 @@ else {
           n: 100,
           testTimes: 100,
           topK: 5,
-          // type: "mouse",
+          type: "efficiency",
           // eventData: data2
         }
         let test = new Test(data1, engine, opts);
         // test.varyK();
-        test.varyLength();
+        // test.varyLength();
+        test.testEfficiency();
         let results = test.getResults();
         let rawReults = test.getRawResults();
         let wrapper = {
           data: results,
           raw: rawReults,
           // file: "top5_varyK"
-          file: "top5_varyLength"
+          // file: "top5_varyLength"
           // file: "mouse_varyLength"
           // file: "mouse_varyK"
           // file: "baseline_varyK"
           // file: "baseline_varyLength"
+          // file: "event_varyK"
+          // file: "event_varyLength"
+          // file: "efficiency_varyK"
+          file: "baseline_mlti-events"
         }
         Util.writeResults(wrapper, function(data) {
           alert("test done!");

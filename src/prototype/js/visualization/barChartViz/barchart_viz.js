@@ -104,6 +104,11 @@ var Viz = (function(EventEmitter) {
         retQueries.push(q);
       }
     });
+    return {
+      "m": retQueries,
+      "d": [],
+      "u": []
+    }
     return retQueries;
   }
 

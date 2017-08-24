@@ -121,7 +121,11 @@ var TypeViz = (function(EventEmitter) {
         retQueries.push(q);
       }
     });
-    return retQueries;
+    return {
+      "m": retQueries,
+      "d": [],
+      "u": []
+    };
   }
   
   TypeViz.prototype.getInteractableElements = function() {

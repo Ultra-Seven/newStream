@@ -62,7 +62,11 @@ var LineViz = (function(EventEmitter) {
   }
 
   LineViz.prototype.getQueries = function(element) {
-    return [];
+    return {
+      "m": [],
+      "d": [],
+      "u": []
+    };
   }
 
   LineViz.prototype.setTargetMetro = function(metro) {

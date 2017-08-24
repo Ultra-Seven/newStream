@@ -14,16 +14,19 @@ var PredTest = (function() {
     this.max = 80;
     this.testResults = {};
     this.rawTestResults = {};
+    this.testBaseLineResults = {};
+    this.rawTestBaseLineResults = {};
 
     // fix length, vary tk
-    this.lengths = [20, 50, 80];
+    this.lengths = [20];
     this.fixedLength = 50;
     this.kRange = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
 
     this.type = opts["type"] || "";
 
     this.traceConfig = new Trace.Trace();
-    this.eventPredictor = new Pred.MousePredictor(this.kRange, [this.traceConfig.eventTrace], this.kRange);
+    this.eventPredictor = new Pred.MousePredictor([this.traceConfig.eventTrace.slice(0, 6000)], this.kRange, [2, 3, 4, 5]);
+    this.eventTestSet = this.traceConfig.eventTrace.slice(6000, this.traceConfig.eventTrace.length);
 
     if (this.type === "mouse") {
       this.queryData = this.generateQueryTrace(this.traceConfig.eventTrace);
@@ -45,6 +48,63 @@ var PredTest = (function() {
       }
     });
     return queryData;
+  }
+
+  PredTest.prototype.testEfficiency = function() {
+    _.each([30], length => {
+      console.log("for length:" + length);
+      let result = this.testEfficiencyByK(length, false);
+      this.rawTestResults[length + ""] = result;
+      this.testResults[length + ""] = this.averageResults(result);
+    });
+    _.each([30], length => {
+      console.log("for length:" + length);
+      let result = this.testEfficiencyByK(length, true);
+      this.rawTestBaseLineResults[length + ""] = result;
+      this.testBaseLineResults[length + ""] = this.averageResults(result);
+    });
+  }
+
+  PredTest.prototype.testEfficiencyByK = function(length, baseline) {
+    let lengthResult = [];
+    for (let i = 0; i < this.testTimes; i++) {
+      console.log("start test times:" + (i + 1));
+      let trace = this.generateSubTrace(this.n);
+      let result = {};
+      for (let j = 0; j < this.kRange.length; j++) {
+        let out = false;
+        while(!out) {
+          let k = this.kRange[j];
+          let qnIndex = this.getQnIndex(k, trace, length);
+          let qn = null;
+          let trainingSet = trace.slice(0, length);
+          let tk = trace[qnIndex][2] - trainingSet[length - 1][2];
+          if (this.type === "mouse") {
+            qn = trace[qnIndex];
+          }
+          else if (this.type === "baseline") {
+            qn = trace[qnIndex];
+            tk = k;
+          }
+          else if(this.type === "event" || this.type === "efficiency") {
+            qn = trace[qnIndex];
+            tk = k;
+          }
+          else {
+            qn = this.getVizElementQueries(trace[qnIndex]);
+          }
+          if (qn.length == 0 || (Math.abs(tk - k)) > 5)  {
+            trace = this.generateSubTrace(this.n);
+            continue;
+          }
+          else {out = true;}
+          let accuracy = this.getEfficiency(trainingSet, tk, qn, baseline);
+          result["" + k] = accuracy;
+        }
+      }
+      lengthResult.push(result);
+    }
+    return lengthResult;
   }
 
   PredTest.prototype.varyLength = function() {
@@ -86,8 +146,13 @@ var PredTest = (function() {
             qn = trace[qnIndex];
             tk = k;
           }
+          else if(this.type === "event" || this.type === "efficiency") {
+            qn = trace[qnIndex];
+            tk = k;
+          }
           else {
             qn = this.getVizElementQueries(trace[qnIndex]);
+            tk = k;
           }
           if (qn.length == 0 || (Math.abs(tk - k)) > 5)  {
             trace = this.generateSubTrace(this.n);
@@ -104,6 +169,9 @@ var PredTest = (function() {
   }
 
   PredTest.prototype.getResults = function(k) {
+    if (this.type === "efficiency") {
+      return {baseline: this.testBaseLineResults, predictor: this.testResults};
+    }
     return this.testResults;
   }
 
@@ -158,12 +226,17 @@ var PredTest = (function() {
           if (this.type === "mouse") {
             qn = trace[qnIndex];
           }
+          else if(this.type === "event") {
+            qn = trace[qnIndex];
+            tk = k;
+          }
           else if (this.type === "baseline") {
             qn = trace[qnIndex];
             tk = k;
           }
           else {
             qn = this.getVizElementQueries(trace[qnIndex]);
+            tk = k;
           }
           if (qn.length == 0 || (Math.abs(tk - k)) > 5) {
             trace = this.generateSubTrace(this.n);
@@ -215,6 +288,10 @@ var PredTest = (function() {
       let start = _.random(0, this.testData.length - length);
       return this.testData.slice(start, start + length);
     }
+    else if(this.type === "event" || this.type === "efficiency") {
+      let start = _.random(0, this.eventTestSet.length - length);
+      return this.eventTestSet.slice(start, start + length);
+    }
     let start = _.random(0, this.data.length - length);
     return this.data.slice(start, start + length);
   }
@@ -224,6 +301,12 @@ var PredTest = (function() {
     if (this.type === "mouse") {
       let distributions = this.engine.requester.mousePredictor.predict(trainingSet, [tk]);
       accuracy = this.getMouseDistance(distributions, qn);
+    }
+    else if(this.type === "event") {
+      let dist = this.eventPredictor.predict(trainingSet, tk);
+      if (dist) {
+        accuracy = this.getQueryNDCG(dist, qn);
+      }
     }
     else if(this.type === "baseline") {
       let dist = this.queryePredictor.predict(trainingSet, tk);
@@ -235,9 +318,48 @@ var PredTest = (function() {
       let distributions = this.engine.requester.getQueryDistribution(trainingSet, [tk]);
       let dist = new Dist.TimeDistribution(null, this.timeRange); 
       dist.addNaiveDist(distributions[0], tk, this.K);
-      accuracy = this.getNDCG(dist, qn, tk, true);
+      accuracy = this.getNDCG(dist, qn, tk, false);
     }
     return accuracy;
+  }
+
+  PredTest.prototype.getEfficiency = function(trainingSet, tk, qn, baseline) {
+    let efficiency = 0;
+    if (this.type === "event" || this.type === "efficiency") {
+      let eventDist = this.eventPredictor.predict(trainingSet, [tk]);
+      let mouseDist = this.engine.requester.getQueryDistribution(trainingSet, [tk]);
+      if (qn[3] === "d") {
+        console.log("equal d")
+      }
+      if (baseline) {
+        return "d" === qn[3];
+      }
+      else {
+        if (eventDist[tk]) {
+          let rank = Object.values(eventDist[tk]);
+          let keys = Object.keys(eventDist[tk]);
+          let random = Math.random();
+          let prediction = "m";
+          for (let i = 0; i < rank.length; i++) {
+            if (random - rank[i] < 0) {
+              prediction = keys[i];
+              break;
+            }
+            else {
+              random = random - rank[i];
+            }
+          }
+          if (prediction === qn[3]) {
+            return 1;
+          }
+          
+          return 0;
+        }
+      }
+    }
+
+    
+    return efficiency;
   }
 
   PredTest.prototype.getVizElementQueries = function(point) {
@@ -257,7 +379,7 @@ var PredTest = (function() {
         let yph = bound.y + bound.h;
         let ymh = bound.y;
         if (point[0] < xpw && point[0] > xmw && point[1] < yph && point[1] > ymh) {
-          retList = viz.getQueries(element);
+          retList = viz.getQueries(element)[point[3]];
         }
       });
     });
@@ -279,10 +401,17 @@ var PredTest = (function() {
     let rank = Object.values(dist);
     let keys = Object.keys(dist);
     let prob = -1;
-    if (!(qn[0] in dist)) {
+    let selected = null;
+    if (this.type === "event") {
+      selected = qn[3];
+    }
+    else {
+      selected = qn[0];
+    }
+    if (!(selected in dist)) {
       return 0;
     }
-    prob = dist[qn[0]];
+    prob = dist[selected];
     let sorted = _.sortBy(rank, function(num){ return num * -1; })
     let values = _.map(sorted, function(value, idx) {return (Math.pow(2, value) - 1) / (Math.log(2 + idx))});
     const Z = _.reduce(values, (mem, num) => {return mem+num;});

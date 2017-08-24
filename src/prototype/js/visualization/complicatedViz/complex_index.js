@@ -12,11 +12,11 @@ Util.DEBUG = false;
 Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
-Util.HITRATIO = true;
+Util.HITRATIO = false;
 Util.DETAIL = true;
 
 // strategies
-Util.PREDICTOR = false;
+Util.PREDICTOR = true;
 
 
 var bytespermb = 1048576;

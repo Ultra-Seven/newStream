@@ -4,7 +4,7 @@ var Util = window.Util = require("../../util");
 var GBDataStructure = require("../../gbds").GBDataStructure;
 var SampleProgDataStructure = require("../../progds").SampleProgDataStructure;
 var Query = window.Query = require("../../query");
-var Viz = require("./viz");
+var Viz = require("./barchart_viz");
 var Logger = require("../../logger").Logger;
 var Test = require("../../test/predictor_test").PredTest;
 Util.DEBUG = false;
@@ -12,10 +12,10 @@ Util.WRITEDEBUG = false;
 Util.DISTDEBUG = false;
 Util.RESPONSIVE = false;
 Util.HITRATIO = false;
-Util.DETAIL = false;
+Util.DETAIL = true;
 
 // strategies
-Util.PREDICTOR = false;
+Util.PREDICTOR = true;
 Util.TEST = false;
 
 

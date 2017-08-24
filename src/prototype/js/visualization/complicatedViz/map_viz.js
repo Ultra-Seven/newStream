@@ -81,7 +81,11 @@ var MapViz = (function(EventEmitter) {
         ret.push(new Query.Query(v1.qtemplate, data));
       }
     });
-    return ret;
+    return {
+      "m": [],
+      "d": [],
+      "u": ret
+    };
   }
 
   MapViz.prototype.drawMarkerSelect = function(data) {

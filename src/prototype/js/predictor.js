@@ -146,6 +146,7 @@ var MousePredictor = (function(Predictor) {
 
   function MousePredictor(logs, range, lengths) {
     this.logs = logs;
+    this.event = ["m", "u", "d"];
     this.tkRange = range || [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
     this.lengths = lengths || [2, 3, 4, 5];
     this.modelTable = {};
@@ -176,16 +177,27 @@ var MousePredictor = (function(Predictor) {
 
 
   MousePredictor.prototype.predict = function(queryTrace, deltaTime) {
-    let hashTable = this.modelTable[deltaTime+""];
-    for (let i = 0; i < queryTrace.length; i++) {
-      let P = queryTrace.slice(i, queryTrace.length);
-      let len = P.length + "";
-      let request = _.reduce(P, function(memo, num){ return memo + num[3]; }, "");
-      if (len in hashTable && request in hashTable[len]) {
-        return hashTable[len][request];
+    let retDist = {};
+    _.each(deltaTime, time => {
+      retDist[time] = {};
+      _.each(this.event, e => {
+      retDist[time][e] = 0;
+      })
+      let hashTable = this.modelTable[time+""];
+      for (let i = 0; i < queryTrace.length; i++) {
+        let P = queryTrace.slice(i, queryTrace.length);
+        let len = P.length + "";
+        let request = _.reduce(P, function(memo, num){ return memo + num[3]; }, "");
+        if (len in hashTable && request in hashTable[len]) {
+          _.each(this.event, e => {
+            if (e in hashTable[len][request]) {
+              retDist[time][e] = hashTable[len][request][e];
+            }
+          });
+        }
       }
-    }
-    return null
+    });
+    return retDist;
   };
 
   MousePredictor.prototype.pathModelConstructionByTime = function(deltaTime, length) {
@@ -240,12 +252,6 @@ var MousePredictor = (function(Predictor) {
   };
 
 
-
-  // TODO: fill in with your code
-  MousePredictor.prototype.predict = function(trace, deltaTime) {
-    
-    return mydists;
-  };
 
   return MousePredictor;
 })(Predictor);

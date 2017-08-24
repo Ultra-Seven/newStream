@@ -102,9 +102,13 @@ var Viz = (function(EventEmitter) {
   Viz.prototype.getQueries = function(element) {
     const state = $(element).attr('id');
     if (state) {
-      return [new Query.Query(this.qtemplate, {State: state})];
+      return {
+        "m": [new Query.Query(this.qtemplate, {Center: state})],
+        "d": [new Query.Query(this.qtemplate, {State: state})],
+        // "u": [new Query.Query(this.qtemplate, {State: state})]
+      }
     }
-    return [];
+    return {};
   }
   
 

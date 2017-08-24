@@ -33,9 +33,9 @@ var Viz = (function(EventEmitter) {
 
   // Resize and create the plot background 
   Viz.prototype.setup = function() {
-    this.addButtons();
-    this.addSlider();
+    // this.addButtons();
     this.render(this.data);
+    this.addSlider();
     return this;
   }
   Viz.prototype.send = function(state, template) {
@@ -56,21 +56,21 @@ var Viz = (function(EventEmitter) {
       let button = $("<button id=" + st + " class='interactable'>" + st + "</button>");
       button.on("click", e => {
         //do something...
-        this.send(st);
+        this.send(st, this.qtemplate[0]);
       });
-      button.on("mousemove", e => {
-        //do something...
-        var q = new Query.Query(this.qtemplate[1], {State: st});
-        const id = this.id;
-        let cb = function(data) {
-          const location = data[0];
-          if (location.x && location.y) {
-            $("#latitude").html(location.x);
-            $("#longitude").html(location.y);
-          }
-        }
-        engine.registerQuery(q, cb, id);
-      })
+      // button.on("mousemove", e => {
+      //   //do something...
+      //   var q = new Query.Query(this.qtemplate[1], {State: st});
+      //   const id = this.id;
+      //   let cb = function(data) {
+      //     const location = data[0];
+      //     if (location.x && location.y) {
+      //       $("#latitude").html(location.x);
+      //       $("#longitude").html(location.y);
+      //     }
+      //   }
+      //   engine.registerQuery(q, cb, id);
+      // })
       $('#buttons').after(button);
     });
     // $(".interactable").css("margin", "10px 10px 10px 10px");
@@ -78,39 +78,51 @@ var Viz = (function(EventEmitter) {
 
   Viz.prototype.addSlider = function() {
   	let slider = `
-        <div><input type="range" id="slideRange" value="0" min="0" max="` + (this.state.length - 1) + `" step="1">center location: <span id="latitude">0</span>
-        <span>,</span><span id="longitude">0</div>`;
+        <div><input type="range" id="slideRange" value="0" min="0" max="` + (this.state.length - 1) + `" step="1"><span id="name">city</span>: <span id="latitude">0</span>
+        <span>,</span><span id="longitude">0</span></div>`;
   	$('#slider').after(slider);
+    $('#slideRange').css("width", "500px");
   	$('#slideRange').on("mousemove", e => {
   		const slider = $('#slideRange');
       const width = slider.width();
       const offset = slider.offset();
-      const value = Math.round(((e.pageX - offset.left) / width) * (10 - 0)) + 0;
+      const value = Math.round(((e.pageX - offset.left) / width) * (this.state.length - 0)) - 1;
+      const that = this;
       if (this.state[value] !== this.currentState) {
         this.currentState = this.state[value];
         var q = new Query.Query(this.qtemplate[1], {State: this.currentState});
         const id = this.id;
         let cb = function(data) {
           const location = data[0];
-          if (location.x && location.y) {
+          if (location && location.x && location.y) {
             $("#latitude").html(location.x);
             $("#longitude").html(location.y);
+            $("#name").html(that.currentState);
+
           }
         }
         engine.registerQuery(q, cb, id);
       }
   	});
-    $('#slideRange').on("mousedown", (e) => {
-      console.log("mouse down");
-      this.mouseDown = true;
-    });
-    $('#slideRange').on("mouseup", (e) => {
-      console.log("mouse up");
-      this.mouseDown = false;
-    });
+    // $('#slideRange').on("mousedown", (e) => {
+    //   console.log("mouse down");
+    //   this.mouseDown = true;
+    // });
+    // $('#slideRange').on("mouseup", (e) => {
+    //   console.log("mouse up");
+    //   const slider = $('#slideRange');
+    //   const width = slider.width();
+    //   const offset = slider.offset();
+    //   const value = Math.round(((e.pageX - offset.left) / width) * (this.state.length)) + 0;
+    //   this.mouseDown = false;
+    //   if (this.state[value] !== this.currentState) {
+    //     this.currentState = this.state[value];
+    //     this.send(this.currentState, this.qtemplate[0]);
+    //   }
+    // });
   	$('#slideRange').on("change", () => {
-      const value = $('#slideRange').val()
-      this.send(this.state[value], this.qtemplate[0])
+      const value = $('#slideRange').val();
+      this.send(this.state[parseInt(value)], this.qtemplate[0])
   	});
   }
 
@@ -151,24 +163,54 @@ var Viz = (function(EventEmitter) {
   }
 
   Viz.prototype.getInteractableElements = function() {
-    this.element = this.element || [].slice.call(document.getElementsByClassName('interactable'));
+    if (!this.element) {
+      this.element = [];
+      const el = $('#slideRange');
+      const bound = {
+        w: el.width(),
+        h: el.height(),
+        x: el.offset().left, // x=0 is left edge of the page
+        y: el.offset().top   // y=0 is top of the page
+      };
+      const width = bound.w / this.state.length;
+      const height = bound.h;
+      const top = bound.y;
+
+      for (let i = 0; i < this.state.length; i++) {
+        const left = bound.x + i * width;
+        const mock = this.getMockInteractableElements(width, height, left, top, this.state[i]);
+        this.element.push(mock);
+      }
+
+    }
     return this.element;
   }
 
-  Viz.prototype.getQueries = function(element) {
+  Viz.prototype.getMockInteractableElements = function(width, height, left, top, value) {
+    let mock = $('<div id=' + value + '></div>');
+    $('#slider').after(mock);
+    mock.css({ 
+      width: width, 
+      height: height,
+      position: "absolute",
+      left: left,
+      top: top,
+    });
+    return mock[0];
+  }
+
+  Viz.prototype.getQueries = function(element, eventDist) {
     const state = $(element).attr('id');
     if (state) {
-      if (this.mousedown) {
-        return [new Query.Query(this.qtemplate[0], {State: state})]
-      }
-      else {
-        return [new Query.Query(this.qtemplate[1], {State: state})];
+      return {
+        "m": [new Query.Query(this.qtemplate[1], {State: state})],
+        "d": [],
+        "u": [new Query.Query(this.qtemplate[0], {State: state})]
       }
     }
-    return [];
+    return {};
   }
   
-
   return Viz;
 })(EventEmitter);
 
